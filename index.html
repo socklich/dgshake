@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-002520';
+const BUILD = '20261125-003620';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -253,6 +253,9 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 .meter i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:5px;background:linear-gradient(90deg,#5fc8ff,#a98bff,#ff5fa2);transition:width .08s linear}
 .meter b{position:absolute;top:-3px;width:2px;height:11px;margin-left:-1px;border-radius:2px;background:#ffd36e;box-shadow:0 0 6px #ffd36e}
 .meter.over i{background:linear-gradient(90deg,#ff5fa2,#ff4d5e);box-shadow:0 0 10px rgba(255,77,94,.7)}
+.big{position:relative}
+.big .sub2{display:block;height:12px;margin-top:1px;font-size:10.5px;line-height:12px;font-weight:600;color:var(--dim);white-space:nowrap;text-align:center}
+.tmp{margin:0 2px}.tmp.cmb{font-weight:500;opacity:.85}
 </style>
 </head>
 <body>
@@ -283,12 +286,12 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   <div class="grid2">
     <div class="ch A">
       <div class="hd"><span class="nm">A 路</span><label class="sw"><input type="checkbox" id="chA"><span></span></label></div>
-      <div class="stp"><button data-d="A-">−</button><div class="big" id="strAv">0</div><button data-d="A+">＋</button></div>
+      <div class="stp"><button data-d="A-">−</button><div class="big"><span id="strAv">0</span><span class="sub2"><small class="tmp" id="tmpA"></small><small class="tmp cmb" id="cmbA"></small></span></div><button data-d="A+">＋</button></div>
       <div class="act">此刻 <span id="actA">--</span> · 封顶 <span id="limA">200</span></div>
     </div>
     <div class="ch B">
       <div class="hd"><span class="nm">B 路</span><label class="sw"><input type="checkbox" id="chB"><span></span></label></div>
-      <div class="stp"><button data-d="B-">−</button><div class="big" id="strBv">0</div><button data-d="B+">＋</button></div>
+      <div class="stp"><button data-d="B-">−</button><div class="big"><span id="strBv">0</span><span class="sub2"><small class="tmp" id="tmpB"></small><small class="tmp cmb" id="cmbB"></small></span></div><button data-d="B+">＋</button></div>
       <div class="act">此刻 <span id="actB">--</span> · 封顶 <span id="limB">200</span></div>
     </div>
   </div>
@@ -374,16 +377,6 @@ label.f .lb{white-space:nowrap;overflow:hidden}
     <div class="grph">更多 <small class="sd">一轮多长</small></div>
     <label class="f"><div class="lb"><span>一轮多长 (ms)<small class="sd">完整走一遍</small></span><b id="cycV">500</b></div><input type="range" id="cyc" min="100" max="3000" step="25"><div class="hint">完整的形状走一遍要多久。每次电击只播放开头那一段（长度由“每下电多久”决定）。</div></label>
   </div>
-</section>
-
-<!-- 视觉效果 -->
-<section class="card glass page" data-p="set" id="fxCard">
-  <h2>✨ 视觉效果<small class="sd">图表的炫酷皮肤</small><span class="sp"></span><label class="sw"><input type="checkbox" id="fxOn"><span></span></label></h2>
-  <div class="cap">摇一摇、听声音两页的图表换成会发光的动态画面，跟着晃动 / 音乐变化；点一下画面就换一种。关掉＝回到朴素的曲线图（更省电）。</div>
-  <div class="tog"><span>随机轮播<small class="sd">每隔一会儿自动换</small></span><label class="sw"><input type="checkbox" id="fxAuto"><span></span></label></div>
-  <label class="f"><div class="lb"><span>多久换一次 (s)<small class="sd">随机轮播的间隔</small></span><b id="fxEveryV">30</b></div><input type="range" id="fxEvery" min="8" max="180" step="1"></label>
-  <div class="grph" style="margin-top:6px">现在 / 指定一种 <small class="sd">关掉随机轮播就一直用选中的</small></div>
-  <div class="seg" id="fxSeg"></div>
 </section>
 
 <!-- 越挨越重 -->
@@ -544,6 +537,7 @@ if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.sof
 if ((S.ver|0) < 9){ S.preset = 'random'; }
 if ((S.ver|0) < 10){ S.rjOn = true; }
 S.ver = 10;
+S.fxOn = true;   // 视觉效果固定开启（只有极光流带一种）
 S.bfOn = false; S.softA = 200; S.softB = 200; // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 save(); // 迁移结果立即落盘
@@ -817,7 +811,24 @@ function renderStrength(){
     $('#str'+c+'v').textContent = S['str'+c];
     $('#lim'+c).textContent = soft;
   }
+  renderTmp();
 }
+// 主数值旁的灰色小字：越激动越重 / 随机惊喜 临时加的力度（+x），越挨越重当前的力度百分比
+function renderTmp(){
+  const now = performance.now();
+  const cl = typeof comboLevel === 'function' ? comboLevel(now) : 0;
+  const cg = S.comboOn && cl ? Math.round(comboGainOf(cl) * 100) : 0;
+  for (const c of ['A','B']){
+    const base = S['str'+c];
+    const add = typeof effStr === 'function' ? effStr(c) - base : 0;
+    const t1 = add > 0 ? '+' + add : '';
+    const t2 = cg && base > 0 && S['ch'+c] ? '🔥' + cg + '%' : '';
+    const e1 = $('#tmp'+c), e2 = $('#cmb'+c);
+    if (e1.textContent !== t1) e1.textContent = t1;
+    if (e2.textContent !== t2) e2.textContent = t2;
+  }
+}
+setInterval(renderTmp, 200);
 function setStrength(c, v){
   S['str'+c] = clamp(Math.round(v), 0, S['soft'+c]);
   strengthDirty = true; renderStrength(); save();
@@ -1283,11 +1294,11 @@ function beatStep(){
 }
 
 /* ================= 自动节拍：起音包络 → 自相关测速 → 梳状滤波定相 → 预测节拍网格 ================= */
-const HOP = 20, ENV_N = 400;                 // 20ms 一格，保留 8 秒
+const HOP = 20, ENV_N = 300;                 // 20ms 一格，只看最近 6 秒（换歌更快跟上）
 const envBuf = new Float32Array(ENV_N); let envI = 0, envCount = 0, envT = 0;
 let prevSpec = null, hopNext = 0, hopMax = 0, envPeak = 1;
 let tempoP = 0, tempoConf = 0, candP = 0, candHits = 0, lastAnal = 0;
-let nextBeatAt = 0, beatPendingMark = 0;
+let nextBeatAt = 0, beatPendingMark = 0, silentSince = 0;
 
 function autoFeed(flux, now){
   hopMax = Math.max(hopMax, flux);
@@ -1296,7 +1307,10 @@ function autoFeed(flux, now){
     pushEnv(hopMax, now); hopMax = 0;
     hopNext += HOP; if (now - hopNext > 200) hopNext = now + HOP;
   }
-  if (now - lastAnal > 500 && envCount >= 150){ lastAnal = now; analyzeTempo(now); }
+  // 停顿（歌与歌之间）超过 1 秒 → 清空，下一首从头快速锁定
+  if (mE < 8){ if (!silentSince) silentSince = now; else if (now - silentSince > 1000 && envCount){ envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0; } }
+  else silentSince = 0;
+  if (now - lastAnal > 250 && envCount >= 100){ lastAnal = now; analyzeTempo(now); }   // 有 2 秒音乐就开始判断，每 0.25 秒更新
   autoBeatTick(now);
 }
 
@@ -1357,12 +1371,14 @@ function analyzeTempo(now){
   if (!Lf) return;
   const best = Math.round(Lf);
   const P = Lf * HOP;
-  tempoConf = clamp(At(Lf) / ac0, 0, 1);
-  // 速度稳定：相近则平滑；倍/半速视为同一速度；明显不同要连续 3 次才切换
+  const newConf = clamp(At(Lf) / ac0, 0, 1);
+  // 速度稳定：相近则平滑；明显不同时，新速度把握大得多就马上换，否则连续 2 次才换
   const near = (a, b) => Math.abs(a - b) / b < 0.06;
-  if (!tempoP || near(P, tempoP)) tempoP = tempoP ? tempoP * 0.8 + P * 0.2 : P;
-  else if (candP && near(P, candP)){ if (++candHits >= 3){ tempoP = P; candHits = 0; nextBeatAt = 0; } }
-  else { candP = P; candHits = 1; }
+  const curConf = tempoP ? clamp(At(tempoP / HOP) / ac0, 0, 1) : 0;
+  if (!tempoP || near(P, tempoP)){ tempoP = tempoP ? tempoP * 0.7 + P * 0.3 : P; tempoConf = newConf; candHits = 0; }
+  else if (curConf < 0.2 || newConf > curConf + 0.25){ tempoP = P; tempoConf = newConf; candHits = 0; nextBeatAt = 0; }
+  else if (candP && near(P, candP)){ if (++candHits >= 2){ tempoP = P; tempoConf = newConf; candHits = 0; nextBeatAt = 0; } else tempoConf = curConf; }
+  else { candP = P; candHits = 1; tempoConf = curConf; }
   // 相位：在最近几拍上找梳状滤波得分最高的偏移
   const p = tempoP / HOP;
   let bestPh = 0, bestPs = -1;
@@ -1382,7 +1398,7 @@ function analyzeTempo(now){
     const grid = Math.min(tempoP, beatInterval());
     let err = (predicted - nextBeatAt) % grid;
     if (err > grid / 2) err -= grid; if (err < -grid / 2) err += grid;
-    nextBeatAt += err * 0.5;                  // 平滑校正相位，不跳变
+    nextBeatAt += err * 0.6;                  // 平滑校正相位，不跳变
   }
 }
 
@@ -1391,7 +1407,7 @@ function beatInterval(){ return tempoP / (+S.mult || 1); }
 function autoBeatTick(now){
   if (!tempoP || !nextBeatAt) return;
   const iv = beatInterval();
-  const ok = tempoConf >= 0.3 && mE > 6;     // 没有明显节奏或静音时不输出
+  const ok = tempoConf >= 0.22 && mE > 6;    // 没有明显节奏或静音时不输出
   let fireAt = nextBeatAt - S.lead;
   let guard = 0;
   while (now >= fireAt && guard++ < 8){
@@ -1641,7 +1657,7 @@ function drawWave(now){
 }
 
 /* ================= GPU 视觉：7 种风格随机轮播（WebGL，30fps，低功耗） ================= */
-const GLFX_STYLES = ['液态光球', '极光流带', '点阵脉冲', '超空间隧道', '液态涟漪', '霓虹环', '熔岩灯'];
+const GLFX_STYLES = ['极光流带'];
 const GL_VS = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
 const GL_COMMON = `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
@@ -1664,143 +1680,29 @@ vec3 post(vec3 c){ // 越线/出声时整体染红
 }
 `;
 const GL_FS = [
-// A 液态光球
-`void main(){
-  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
-  float bass=B[0]*.6+B[1]*.4, hi=(B[5]+B[6]+B[7])/3.;
-  float a=atan(uv.y,uv.x), r=length(uv);
-  vec2 dir=vec2(cos(a),sin(a));
-  float wob=fbm(dir*1.3+vec2(T*.5,T*.3))*.12 + hi*.05*sin(a*7.+T*5.);
-  float rad=.24+bass*.12+BEAT*.07+wob;
-  float d=r-rad;
-  vec2 q=uv*2.2+vec2(fbm(uv*2.+T*.3),fbm(uv*2.-T*.25));
-  vec3 inner=pal(fbm(q+T*.15)*1.6+dot(dir,vec2(.12,.07))+T*.05);
-  inner=mix(inner*inner*1.3,vec3(1.,.35,.65),.2);   // 平方加深饱和度
-  float body=smoothstep(.01,-.02,d);
-  float rim=exp(-abs(d)*55.)*(.6+BEAT*.8);
-  float halo=exp(-max(d,0.)*9.)*(.35+LVL*.5+BEAT*.6);
-  vec3 col=inner*body*(.55+.45*fbm(q*1.5))*(.85+BEAT*.3)+(rim*.8+halo*.7)*mix(vec3(.55,.4,1.),vec3(1.,.4,.7),.5+.5*dir.x*cos(T)+.5*dir.y*sin(T));
-  col+=vec3(1.,.7,.5)*BEAT*exp(-r*7.)*.35;
-  gl_FragColor=vec4(post(col/(1.+col*.35)),1.);
-}`,
-// B 极光流带
+// 极光流带：丝带形状直接跟着频谱 / 晃动历史起伏，节拍时张开、变粗、闪光
 `void main(){
   vec2 uv=gl_FragCoord.xy/R; vec2 p=uv; p.x*=R.x/R.y;
-  vec3 col=mix(vec3(.03,.02,.08),vec3(.10,.03,.14),uv.y);
-  col+=.18*pal(fbm(p*1.2+vec2(T*.05,0.))+.6)*fbm(p*2.+T*.1);
-  for(int k=0;k<4;k++){
-    float fk=float(k);
-    float amp=.10+band(uv.x)*.28*(1.-fk*.15);
-    float y=.5+(fbm(vec2(p.x*1.3+T*(.25+fk*.07),fk*3.1))-.5)*1.65*amp+sin(p.x*3.+T*1.2+fk)*.06;
+  vec3 col=mix(vec3(.02,.01,.06),vec3(.09,.02,.13),uv.y);
+  col+=.12*pal(fbm(p*1.1+vec2(T*.06,0.))+.6)*fbm(p*2.+T*.12)*(.8+LVL*1.5);
+  float avg=(B[0]+B[1]+B[2]+B[3]+B[4]+B[5]+B[6]+B[7])*.125;
+  float e=band(uv.x);
+  for(int k=0;k<5;k++){
+    float fk=float(k), sgn=mod(fk,2.)<.5?1.:-1.;
+    float spread=(.42+BEAT*.55)*(1.-fk*.1);
+    float shape=(e-avg*.35)*spread*sgn;                       // 能量高的地方丝带明显鼓起
+    float wob=(fbm(vec2(p.x*1.8+T*(.4+fk*.12),fk*3.1))-.5)*(.10+e*.30);
+    float rip=sin(p.x*(5.+fk)+T*(2.2+fk*.4)+fk*1.3)*.035*(1.+e*3.);
+    float y=.5+shape+wob+rip;
     float d=abs(uv.y-y);
-    float w=.010+band(uv.x)*.018+BEAT*.008;
+    float w=.005+e*.022+BEAT*.012;
     float line=w/(d+w*.5);
-    vec3 c=pal(fk*.18+uv.x*.35+T*.04);
-    col+=c*(line*line*.55+line*.18)*(.45+LVL*.7)*(1.-fk*.15);
-    col+=c*smoothstep(y,y-.35,uv.y)*step(uv.y,y)*.06*(1.-fk*.2);
+    vec3 c=pal(fk*.16+uv.x*.4+T*.05+e*.35);
+    col+=c*(line*line*.5+line*.16)*(.35+e*1.4+BEAT*.7)*(1.-fk*.1);
+    col+=c*smoothstep(.25,0.,abs(uv.y-y))*e*.05;               // 丝带周围的柔光
   }
-  col+=vec3(1.,.55,.8)*BEAT*.25*(1.-abs(uv.y-.5)*1.6);
-  gl_FragColor=vec4(post(col/(1.+col*.5)),1.);
-}`,
-// C 点阵脉冲
-`void main(){
-  float cell=R.y/20.;
-  vec2 g=floor(gl_FragCoord.xy/cell), c=(g+.5)*cell, f=gl_FragCoord.xy-c;
-  vec2 cu=c/R;
-  float x=abs(cu.x-.5)*2.;
-  float h=band(x)*.9+.04;
-  float yy=abs(cu.y-.5)*2.;
-  float on=step(yy,h);
-  vec2 cc=(c-.5*R)/R.y; float r=length(cc);
-  float wave=exp(-pow((r-(1.-BEAT)*.9)*8.,2.))*BEAT*1.4;
-  float tw=.15+.1*hash(g+floor(T*8.));
-  float br=on*(.55+.45*(1.-yy/max(h,.001)))+wave+tw*.25;
-  float dotR=cell*(.18+.22*clamp(br,0.,1.));
-  float dt=smoothstep(dotR,dotR-1.2,length(f));
-  float glow=exp(-length(f)/cell*3.)*br*.6;
-  vec3 hue=mix(vec3(1.,.35,.6),vec3(.45,.6,1.),x);
-  hue=mix(hue,vec3(1.,.85,.5),clamp(wave,0.,1.));
-  gl_FragColor=vec4(post(hue*(dt*clamp(br,.08,1.4)+glow)),1.);
-}`,
-// D 超空间隧道：光线从中心冲出
-`void main(){
-  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
-  float r=length(uv), a=atan(uv.y,uv.x)/6.2831+.5;
-  float speed=.6+LVL*3.+BEAT*2.;
-  float z=.18/(r+.015)+T*speed;
-  float idx=mod(floor(a*72.),72.);
-  float seg=floor(z*1.5);
-  float s=hash(vec2(idx,seg));
-  float fz=fract(z*1.5);
-  float streak=smoothstep(.72-band(idx/72.)*.35,1.,s)*smoothstep(0.,.25,fz)*smoothstep(1.,.6,fz);
-  float lane=smoothstep(.5,.0,abs(fract(a*72.)-.5));
-  vec3 c=pal(a*1.5+T*.05+z*.02);
-  vec3 col=c*streak*lane*smoothstep(.02,.25,r)*(1.2+BEAT);
-  col+=vec3(.9,.7,1.)*exp(-r*7.)*(.35+LVL*.6+BEAT*.9);
-  col+=vec3(1.,.6,.85)*exp(-pow((r-(1.-BEAT)*.7)*10.,2.))*BEAT*.8;
-  gl_FragColor=vec4(post(col/(1.+col*.4)),1.);
-}`,
-// E 液态涟漪：金属水面，每拍落一滴
-`float H(vec2 p){
-  float h=0.;
-  for(int i=0;i<3;i++){
-    float fi=float(i);
-    vec2 s=vec2(sin(T*.37+fi*2.1),cos(T*.29+fi*1.7))*vec2(.7,.25);
-    float d=length(p-s);
-    h+=sin(d*(18.+fi*4.)-T*(3.+fi))*exp(-d*1.6)*(.35+B[i*2]*.9);
-  }
-  float d=length(p);
-  h+=sin(d*26.-(1.-BEAT)*14.)*BEAT*exp(-d*2.)*1.4;
-  return h;
-}
-void main(){
-  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
-  float e=.004, h=H(uv);
-  vec2 n=vec2(H(uv+vec2(e,0.))-h,H(uv+vec2(0.,e))-h)/e*.02;
-  vec3 N=normalize(vec3(-n,1.));
-  vec3 L=normalize(vec3(.4,.6,.7));
-  float spec=pow(max(dot(reflect(-L,N),vec3(0,0,1)),0.),24.);
-  vec3 base=pal(.6+h*.25+N.x*.6+N.y*.3+T*.03);
-  base=base*base*.7;
-  float lit=pow(max(dot(N,L),0.),2.);
-  vec3 col=base*(.12+.9*lit)+spec*vec3(1.,.85,1.)*(.8+LVL*1.2);
-  col*=.7+LVL*.5;
-  gl_FragColor=vec4(post(col/(1.+col*.3)),1.);
-}`,
-// F 霓虹环：一圈旋转的发光音柱
-`void main(){
-  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
-  float r=length(uv);
-  float a=atan(uv.y,uv.x)/6.2831+.5+T*.03;
-  float N=64.;
-  float id=mod(floor(a*N),N);
-  float v=band(abs(id/(N*.5)-1.));
-  float r0=.20+BEAT*.03, len=.04+v*.30;
-  float inBar=step(r0,r)*step(r,r0+len)*step(abs(fract(a*N)-.5),.32);
-  float tip=exp(-abs(r-(r0+len))*90.);
-  vec3 c=pal(id/N+T*.05);
-  vec3 col=c*inBar*(.6+v)+c*tip*.9;
-  col+=c*exp(-abs(r-r0)*60.)*(.5+BEAT);
-  col+=vec3(1.,.6,.9)*exp(-r*9.)*(.25+BEAT*.8);
-  col+=c*exp(-max(r-r0-len,0.)*14.)*step(r0,r)*.10*(.5+v);
-  gl_FragColor=vec4(post(col/(1.+col*.4)),1.);
-}`,
-// G 熔岩灯：几团流体融合分离
-`void main(){
-  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
-  float f=0.; vec3 acc=vec3(0.);
-  for(int i=0;i<6;i++){
-    float fi=float(i);
-    vec2 c=vec2(sin(T*(.31+fi*.07)+fi*1.9)*.62, cos(T*(.23+fi*.05)+fi*2.7)*.22);
-    float rad=.07+B[i]*.08+BEAT*.025;
-    float k=rad*rad/max(dot(uv-c,uv-c),1e-4);
-    f+=k; acc+=pal(fi*.16+T*.03)*k;
-  }
-  vec3 c=acc/max(f,1e-3);
-  float body=smoothstep(.9,1.1,f);
-  float rim=exp(-abs(f-1.)*6.);
-  vec3 col=c*body*(.7+.3*fbm(uv*3.+T*.2))+c*rim*(.6+BEAT)+c*smoothstep(.2,1.,f)*.25;
-  gl_FragColor=vec4(post(col/(1.+col*.35)),1.);
+  col+=vec3(1.,.55,.85)*BEAT*.25*exp(-abs(uv.y-.5)*5.);
+  gl_FragColor=vec4(post(col/(1.+col*.45)),1.);
 }`];
 
 const GLFX = {ok: false, gl: null, cv: null, progs: [], cur: 0, nextSwap: 0, bands: new Float32Array(8), beat: 0, hot: 0, lvl: 0, label: null, wrap: null, host: ''};
@@ -1816,9 +1718,8 @@ function glfxInit(){
     const label = document.createElement('div'); label.className = 'fxlabel';
     wrap.appendChild(cv); wrap.appendChild(label);
     GLFX.wrap = wrap; GLFX.label = label;
-    wrap.addEventListener('click', () => glfxSwap(true));
     cv.addEventListener('webglcontextlost', e => { e.preventDefault(); GLFX.ok = false; glfxShowFallback(true); });
-    GLFX.cur = S.fxAuto ? Math.floor(Math.random() * GL_FS.length) : (S.fxStyle | 0);
+    GLFX.cur = 0;
   } catch(e){ GLFX.ok = false; }
 }
 function glfxProg(i){
@@ -1832,18 +1733,6 @@ function glfxProg(i){
   const U = n => gl.getUniformLocation(pr, n);
   const P = {pr, loc: gl.getAttribLocation(pr, 'p'), R: U('R'), T: U('T'), BEAT: U('BEAT'), LVL: U('LVL'), HOT: U('HOT'), B: U('B[0]')};
   GLFX.progs[i] = P; return P;
-}
-function glfxSwap(manual){
-  const n = GL_FS.length;
-  if (manual || S.fxAuto){
-    let k; do { k = Math.floor(Math.random() * n); } while (n > 1 && k === GLFX.cur);
-    GLFX.cur = k;
-  } else GLFX.cur = S.fxStyle | 0;
-  GLFX.nextSwap = performance.now() + S.fxEvery * 1000;
-  const L = GLFX.label;
-  L.textContent = '✨ ' + GLFX_STYLES[GLFX.cur]; L.classList.remove('show'); void L.offsetWidth; L.classList.add('show');
-  if (GLFX.wrap){ GLFX.wrap.classList.remove('swap'); void GLFX.wrap.offsetWidth; GLFX.wrap.classList.add('swap'); }
-  paintFxSeg && paintFxSeg();
 }
 // 把 GPU 画布挂到当前页面的图表位置（两个页面共用一个画布）
 function glfxMount(view){
@@ -1882,14 +1771,17 @@ function glfxInputs(now){
     beatAge = Math.min(beatAge, now - FX.trigAt);
   }
   if (S.view === 'music') beatAge = Math.min(beatAge, now - FX.trigAt);
-  for (let k = 0; k < 8; k++) b[k] += (target[k] - b[k]) * (target[k] > b[k] ? .6 : .18);
+  // 自动增益：按最近的最大值放大，安静的歌也能把丝带撑满
+  const mx = Math.max(...target);
+  GLFX.gmax = Math.max(mx, (GLFX.gmax || 0.2) * 0.993);
+  const gain = 1 / Math.max(0.12, GLFX.gmax);
+  for (let k = 0; k < 8; k++){ const t = clamp(target[k] * gain, 0, 1); b[k] += (t - b[k]) * (t > b[k] ? .75 : .22); }
   GLFX.lvl += (lvl - GLFX.lvl) * .3;
   GLFX.hot += (hot - GLFX.hot) * (hot > GLFX.hot ? .5 : .08);
   GLFX.beat = Math.max(0, 1 - beatAge / 420);
 }
 function glfxDraw(now){
   if (!GLFX.ok || !S.fxOn) return false;
-  if (S.fxAuto && now > GLFX.nextSwap) glfxSwap(false);
   glfxInputs(now);
   const gl = GLFX.gl, cv = GLFX.cv;
   const dpr = Math.min(1.5, window.devicePixelRatio || 1);
@@ -2197,21 +2089,8 @@ bindCheck('chA', 'chA', onChannel('A')); bindCheck('chB', 'chB', onChannel('B'))
 
 
 bindCheck('escOn', 'escOn', () => { escReset(); });
-let paintFxSeg = null;
-(() => {
-  const seg = $('#fxSeg');
-  seg.innerHTML = GLFX_STYLES.map((n, i) => `<button data-v="${i}">${n}</button>`).join('');
-  paintFxSeg = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.v === GLFX.cur));
-  seg.addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    S.fxStyle = +b.dataset.v; GLFX.cur = S.fxStyle; GLFX.nextSwap = performance.now() + S.fxEvery * 1000;
-    save(); paintFxSeg(); toast('视觉换成「' + GLFX_STYLES[S.fxStyle] + '」' + (S.fxAuto ? '（随机轮播还开着）' : ''));
-  });
-  paintFxSeg();
-})();
-bindCheck('fxOn', 'fxOn', () => glfxMount(S.view));
-bindCheck('fxAuto', 'fxAuto', () => { GLFX.nextSwap = performance.now() + S.fxEvery * 1000; if (!S.fxAuto){ S.fxStyle = GLFX.cur; save(); } });
-bindRange('fxEvery', 'fxEvery', null, () => { GLFX.nextSwap = performance.now() + S.fxEvery * 1000; });
+
+
 bindRange('escAddMin', 'escAddMin');
 bindRange('escAddMax', 'escAddMax');
 bindRange('escPct', 'escPct');
