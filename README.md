@@ -3,7 +3,7 @@
 单文件网页：用手机陀螺仪/加速度触发郊狼 3.0（DG-LAB Coyote V3）输出。
 
 - 在线地址：https://luke7628.github.io/DG/
-- iPhone：用 **Bluefy** 浏览器打开；Android：Chrome。
+- iPhone：用 **Bluefy** 浏览器打开；Android：任何支持网页蓝牙的浏览器（Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器 等），页面会自动检测。
 - 协议参考：https://github.com/sdewis/dg-lab-opensource-english/blob/main/coyote/v3/README_V3.md
 
 ## 用法

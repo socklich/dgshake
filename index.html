@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-000742';
+const BUILD = '20261125-002520';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -233,6 +233,26 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 .armp.on{background:rgba(78,224,160,.18);border-color:rgba(78,224,160,.5);color:var(--ok)}
 .armp.out{background:rgba(255,95,162,.35);border-color:rgba(255,95,162,.6);color:#fff}
 #strCard h2 .pill{margin-left:4px}
+.grp{margin-top:8px;padding-top:6px;border-top:1px solid var(--line)}
+.grph{font-size:12.5px;color:var(--dim);font-weight:600;margin-bottom:2px}
+.qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.qbtn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 2px;border-radius:14px;font-size:11px;line-height:1.25}
+.qbtn i{font-style:normal;font-size:18px}
+.qbtn b{font-size:11px;color:var(--dim);font-weight:500}
+.qbtn.on b{color:var(--ok)}
+.hl{animation:hl 1.4s ease-out}
+@keyframes hl{0%{box-shadow:0 0 0 2px rgba(255,211,110,.9),0 10px 40px rgba(0,0,0,.35)}100%{box-shadow:0 0 0 2px rgba(255,211,110,0),0 10px 40px rgba(0,0,0,.35)}}
+.fxwrap{position:relative;margin-top:6px;height:128px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#05050a;cursor:pointer}
+.fxwrap canvas.glfx{display:block;width:100%;height:100%;border:0;border-radius:0;background:#05050a}
+.fxwrap.swap canvas{animation:fxin .6s ease-out}
+@keyframes fxin{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+.fxlabel{position:absolute;left:8px;bottom:7px;font-size:11px;padding:3px 8px;border-radius:99px;background:rgba(0,0,0,.35);color:rgba(255,255,255,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .5s;pointer-events:none}
+.fxlabel.show{animation:lbl 2.6s ease-out forwards}
+@keyframes lbl{0%{opacity:0}12%{opacity:1}75%{opacity:1}100%{opacity:0}}
+.meter{position:relative;height:5px;margin-top:6px;border-radius:5px;background:rgba(255,255,255,.08);overflow:visible}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:5px;background:linear-gradient(90deg,#5fc8ff,#a98bff,#ff5fa2);transition:width .08s linear}
+.meter b{position:absolute;top:-3px;width:2px;height:11px;margin-left:-1px;border-radius:2px;background:#ffd36e;box-shadow:0 0 6px #ffd36e}
+.meter.over i{background:linear-gradient(90deg,#ff5fa2,#ff4d5e);box-shadow:0 0 10px rgba(255,77,94,.7)}
 </style>
 </head>
 <body>
@@ -253,7 +273,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 </header>
 
 <div id="noBle" class="card glass warnbox hidden">
-  ⚠️ 这个浏览器叫不来小狼（不支持网页蓝牙）。iPhone 请用 <b>Bluefy</b> 打开；安卓请用 Chrome。
+  ⚠️ 这个浏览器叫不来小狼（不支持网页蓝牙）。iPhone 请用 <b>Bluefy</b> 打开；安卓换一个支持网页蓝牙的浏览器，比如 Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器（应用商店能装到哪个用哪个）。
 </div>
 
 <!-- 力度（所有页面都显示） -->
@@ -278,6 +298,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 <section class="card glass page" data-p="motion" id="motionCard">
   <h2>📳 摇一摇<small class="sd">手机一晃，那边就挨一下</small></h2>
     <canvas id="motionCv" height="84" style="margin-top:6px"></canvas>
+    <div class="meter" id="meterM"><i></i><b></b></div>
     <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span>门槛 <b id="thrV2">0</b></span><span><b id="hzV">0</b> Hz</span></div>
     <div class="seg" id="srcSeg" style="margin-top:8px">
       <button data-v="rot">上下晃动</button><button data-v="acc">前后晃</button><button data-v="both">都算</button>
@@ -297,7 +318,8 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 <!-- ===== 节拍页 ===== -->
 <section class="card glass page" data-p="music" id="musicCard">
   <h2>🎵 听声音<small class="sd">跟着音乐来，或者不许出声</small></h2>
-    <canvas id="beatCv" height="56" style="margin-top:6px"></canvas>
+    <canvas id="beatCv" height="84" style="margin-top:6px"></canvas>
+    <div class="meter" id="meterB"><i></i><b></b></div>
     <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">门槛</span> <b id="beThrV">0</b></span><span>拍数 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
     <div class="hint">用麦克风听歌。最好用另一台手机或音箱放歌，同一台手机边放边听可能会被系统打断。</div>
     <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 音乐节奏</button><button data-v="quiet">🤫 别出声</button></div>
@@ -318,22 +340,24 @@ label.f .lb{white-space:nowrap;overflow:hidden}
     <label class="f"><div class="lb"><span>每拍电多久 (ms)<small class="sd">短＝点一下 长＝压一拍</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="25" max="3000" step="25"><div class="hint">每个拍点电多长时间。120 BPM 一拍是 500ms，想拍拍分明就别超过 300。</div></label>
 </section>
 
-<!-- ===== 两种玩法共用：越来越狠 / 手感 / 随机惊喜 ===== -->
-<section class="card glass page" data-p="motion music" id="comboCard">
-    <div class="tog" style="margin-top:0"><span>🔥 越挨越重<small class="sd">连着来，一下比一下狠</small> <small class="sd" id="comboMini"></small></span><label class="sw"><input type="checkbox" id="comboOn"><span></span></label></div>
-    <div class="hint">一下接一下不停时，力度逐级往上加；停下来喘口气，就一级一级退回去。</div>
-    <details>
-      <summary>加码规则 <small class="sd">起手 / 几下到满 / 喘息</small></summary>
-      <div class="grid2">
-        <label class="f"><div class="lb"><span>起手 %<small class="sd">第一下</small></span><b id="comboStartV">30</b></div><input type="range" id="comboStart" min="5" max="100" step="5"><div class="hint">第一下只给多少力。</div></label>
-        <label class="f"><div class="lb"><span>几下到满<small class="sd">加码速度</small></span><b id="comboStepsV">8</b></div><input type="range" id="comboSteps" min="2" max="40" step="1"><div class="hint">连着第几下用到全力。</div></label>
-      </div>
-      <label class="f"><div class="lb"><span>喘息时间 (ms)<small class="sd">超过就开始退</small></span><b id="comboWinV">600</b></div><input type="range" id="comboWin" min="150" max="3000" step="50"><div class="hint">两下之间隔得比这短才算“连着”；停得比这久，每过这么久退一级。</div></label>
-    </details>
+
+
+
+
+<!-- 加料快捷入口：点一下跳到设置里对应的位置 -->
+<section class="card glass page" data-p="motion music" id="quickCard">
+  <h2>加料<small class="sd">点一下去设置里调</small></h2>
+  <div class="qgrid">
+    <button class="qbtn" data-go="waveCard"><i>💗</i><span>手感</span><b id="qWave">猜不到</b></button>
+    <button class="qbtn" data-go="comboCard"><i>🔥</i><span>越挨越重</span><b id="qCombo">开</b></button>
+    <button class="qbtn" data-go="escCard"><i>🌡️</i><span>越激动越重</span><b id="qEsc">开</b></button>
+    <button class="qbtn" data-go="rjCard"><i>🎲</i><span>随机惊喜</span><b id="qRj">关</b></button>
+  </div>
 </section>
 
+<!-- ===== 设置页 ===== -->
 <!-- 手感（波形） -->
-<section class="card glass page" data-p="motion music" id="waveCard">
+<section class="card glass page" data-p="set" id="waveCard">
   <h2>💗 手感<small class="sd">每一下是什么滋味</small></h2>
   <div class="hint">每次电击的“形状”，每格 25ms。图上柱子越高越重，蓝线是颗粒感。</div>
   <div class="seg" id="presetSeg">
@@ -346,20 +370,57 @@ label.f .lb{white-space:nowrap;overflow:hidden}
     <label class="f"><div class="lb"><span>最轻 %<small class="sd">低谷</small></span><b id="minIV">0</b></div><input type="range" id="minI" min="0" max="100"><div class="hint">波形最轻的时候用几成力。</div></label>
     <label class="f"><div class="lb"><span>最重 %<small class="sd">高峰</small></span><b id="maxIV">100</b></div><input type="range" id="maxI" min="0" max="100"><div class="hint">波形最重的时候用几成力。</div></label>
   </div>
-  <details>
-    <summary>更多 <small class="sd">一轮多长</small></summary>
+  <div class="grp">
+    <div class="grph">更多 <small class="sd">一轮多长</small></div>
     <label class="f"><div class="lb"><span>一轮多长 (ms)<small class="sd">完整走一遍</small></span><b id="cycV">500</b></div><input type="range" id="cyc" min="100" max="3000" step="25"><div class="hint">完整的形状走一遍要多久。每次电击只播放开头那一段（长度由“每下电多久”决定）。</div></label>
-  </details>
+  </div>
 </section>
 
+<!-- 视觉效果 -->
+<section class="card glass page" data-p="set" id="fxCard">
+  <h2>✨ 视觉效果<small class="sd">图表的炫酷皮肤</small><span class="sp"></span><label class="sw"><input type="checkbox" id="fxOn"><span></span></label></h2>
+  <div class="cap">摇一摇、听声音两页的图表换成会发光的动态画面，跟着晃动 / 音乐变化；点一下画面就换一种。关掉＝回到朴素的曲线图（更省电）。</div>
+  <div class="tog"><span>随机轮播<small class="sd">每隔一会儿自动换</small></span><label class="sw"><input type="checkbox" id="fxAuto"><span></span></label></div>
+  <label class="f"><div class="lb"><span>多久换一次 (s)<small class="sd">随机轮播的间隔</small></span><b id="fxEveryV">30</b></div><input type="range" id="fxEvery" min="8" max="180" step="1"></label>
+  <div class="grph" style="margin-top:6px">现在 / 指定一种 <small class="sd">关掉随机轮播就一直用选中的</small></div>
+  <div class="seg" id="fxSeg"></div>
+</section>
 
+<!-- 越挨越重 -->
+<section class="card glass page" data-p="set" id="comboCard">
+    <div class="tog" style="margin-top:0"><span>🔥 越挨越重<small class="sd">连着来，一下比一下狠</small> <small class="sd" id="comboMini"></small></span><label class="sw"><input type="checkbox" id="comboOn"><span></span></label></div>
+    <div class="hint">一下接一下不停时，力度逐级往上加；停下来喘口气，就一级一级退回去。</div>
+    <div class="grp">
+      <div class="grph">加码规则 <small class="sd">起手 / 几下到满 / 喘息</small></div>
+      <div class="grid2">
+        <label class="f"><div class="lb"><span>起手 %<small class="sd">第一下</small></span><b id="comboStartV">30</b></div><input type="range" id="comboStart" min="5" max="100" step="5"><div class="hint">第一下只给多少力。</div></label>
+        <label class="f"><div class="lb"><span>几下到满<small class="sd">加码速度</small></span><b id="comboStepsV">8</b></div><input type="range" id="comboSteps" min="2" max="40" step="1"><div class="hint">连着第几下用到全力。</div></label>
+      </div>
+      <label class="f"><div class="lb"><span>喘息时间 (ms)<small class="sd">超过就开始退</small></span><b id="comboWinV">600</b></div><input type="range" id="comboWin" min="150" max="3000" step="50"><div class="hint">两下之间隔得比这短才算“连着”；停得比这久，每过这么久退一级。</div></label>
+    </div>
+</section>
 
-<!-- ===== 设置页 ===== -->
 <!-- 越激动越重 -->
 <section class="card glass page" data-p="set" id="escCard">
-  <h2>🌡️ 越激动越重<small class="sd">动静越来越大，力度自动往上加</small><span class="sp"></span><span class="pill" id="escStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="escOn"><span></span></label></h2>
-  <div class="cap">一直盯着最近的动静（晃得多猛 / 声音多大）：最近 5 秒比之前 10 秒明显更激动，力度就随机 +5~10 并保持住；平静回刚才的水平就撤回；之后又更激动，再加一级。三种玩法都生效。</div>
-  <div class="hint">“明显”＝至少高出 25%。每级至少隔 5 秒，最多叠 8 级；只加在力度不为 0 的那一路，不会超过封顶。刚开始要先观察 15 秒才会判断。</div>
+  <h2>🌡️ 越激动越重<small class="sd">动静大了就加码</small><span class="sp"></span><span class="pill" id="escStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="escOn"><span></span></label></h2>
+  <div class="cap">一直盯着最近的动静（晃得多猛 / 声音多大）：最近一段比之前明显更激动，力度就随机加一级并保持住；平静回刚才的水平就撤回；之后又更激动，再加一级。三种玩法都生效。</div>
+  <div class="hint">只加在力度不为 0 的那一路，不会超过封顶。刚开始要先观察「最近＋之前」那么长时间才会判断。</div>
+  <div class="grp">
+    <div class="grph">调节参数 <small class="sd">加多少 / 多敏感 / 怎么比</small></div>
+    <div class="grid2">
+      <label class="f"><div class="lb"><span>每级最少 +<small class="sd">随机下限</small></span><b id="escAddMinV">5</b></div><input type="range" id="escAddMin" min="1" max="40" step="1"><div class="hint">每加一级，力度最少加多少。</div></label>
+      <label class="f"><div class="lb"><span>每级最多 +<small class="sd">随机上限</small></span><b id="escAddMaxV">10</b></div><input type="range" id="escAddMax" min="1" max="40" step="1"><div class="hint">每加一级，力度最多加多少（在最少～最多之间随机）。</div></label>
+    </div>
+    <label class="f"><div class="lb"><span>激动门槛 %<small class="sd">高出多少算更激动</small></span><b id="escPctV">25</b></div><input type="range" id="escPct" min="5" max="150" step="5"><div class="hint">最近的平均比之前高出这么多百分比，才算“更激动了”。越小越容易加码。</div></label>
+    <div class="grid2">
+      <label class="f"><div class="lb"><span>最近 (s)<small class="sd">看最近多久</small></span><b id="escRecentV">5</b></div><input type="range" id="escRecent" min="2" max="15" step="1"><div class="hint">用最近多少秒的平均值代表“现在”。短＝反应快，长＝更稳。</div></label>
+      <label class="f"><div class="lb"><span>之前 (s)<small class="sd">跟之前多久比</small></span><b id="escBaseV">10</b></div><input type="range" id="escBase" min="5" max="30" step="1"><div class="hint">跟再往前多少秒的平均值比较。</div></label>
+    </div>
+    <div class="grid2">
+      <label class="f"><div class="lb"><span>每级间隔 (s)<small class="sd">至少隔多久</small></span><b id="escGapV">6</b></div><input type="range" id="escGap" min="2" max="30" step="1"><div class="hint">加完一级后至少等这么久才可能再加；这段时间里也会记下新的“激动水平”。</div></label>
+      <label class="f"><div class="lb"><span>最多几级<small class="sd">叠加上限</small></span><b id="escMaxV">8</b></div><input type="range" id="escMax" min="1" max="15" step="1"><div class="hint">最多叠几级。总加码＝每级加的数相加。</div></label>
+    </div>
+  </div>
 </section>
 
 <!-- 随机惊喜 -->
@@ -386,14 +447,14 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   <div class="minis" style="margin-top:0"><span id="devName" style="flex:1">找名字 47L121 开头的小狼</span>自动召唤<small class="sd" style="margin-right:4px">开页就连</small><label class="sw"><input type="checkbox" id="autoConn"><span></span></label></div>
   <div class="hint">打开页面自动连上认识的那只小狼；掉线了也会自己追回来。</div>
   <div class="sub">
-  <details id="diagBox" style="margin-top:0">
-    <summary>疑难杂症 <small class="sd">没反应时来这里看看</small></summary>
+  <div class="grp" id="diagBox" style="margin-top:0">
+    <div class="grph">疑难杂症 <small class="sd">没反应时来这里看看</small></div>
     <div class="seg" id="wmSeg" style="margin-top:8px">
       <button data-v="auto">发送：自动</button><button data-v="resp">稳妥模式</button><button data-v="noresp">快速模式</button>
     </div>
     <div class="cap">一般放着「自动」就好；小狼连上了却毫无反应，再换着试试</div>
     <div id="diagTxt" style="font:11px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);margin-top:6px;word-break:break-all"></div>
-  </details>
+  </div>
   </div>
 </section>
 
@@ -452,15 +513,16 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* ================= 设置 ================= */
 const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
-  src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:8, mode:'motion', burstMu:150, view:'motion',
+  src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:10, mode:'motion', burstMu:150, view:'motion',
   comboOn:true, comboStart:30, comboSteps:8, comboWin:600,
   autoConn:true, lastDev:'', bfOn:false,
-  escOn:true,
-  rjOn:false, rjType:'jolt', rjGapMin:3, rjGapMax:10, rjAddMin:5, rjAddMax:15, rjDurMin:0.3, rjDurMax:1.5,
+  fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
+  escOn:true, escAddMin:5, escAddMax:10, escPct:25, escRecent:5, escBase:10, escGap:6, escMax:8,
+  rjOn:true, rjType:'jolt', rjGapMin:3, rjGapMax:10, rjAddMin:5, rjAddMax:15, rjDurMin:0.3, rjDurMax:1.5,
   band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
-  preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
+  preset:'random', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
-let savedVer = 8; // 没有存档 = 新用户，直接用默认值
+let savedVer = 10; // 没有存档 = 新用户，直接用默认值
 try {
   const raw = JSON.parse(localStorage.getItem('coyoteShake') || 'null');
   if (raw){ savedVer = raw.ver | 0; Object.assign(S, raw); } // 版本号以存档为准，不能被 DEF 覆盖
@@ -477,10 +539,11 @@ if ((S.ver|0) < 5){ delete S.mapI; delete S.vib; delete S.motionTrig; delete S.m
 if (S.band === 'full') S.band = 'auto';
 if (S.band === 'bass') S.band = 'quiet';
 if ((S.ver|0) < 7){ S.bfOn = false; }
-S.rjOn = false; // 安全：随机抖动每次打开页面默认关闭
 if ((S.ver|0) < 8){ S.comboOn = true; }
 if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.softB = 200; }
-S.ver = 8;
+if ((S.ver|0) < 9){ S.preset = 'random'; }
+if ((S.ver|0) < 10){ S.rjOn = true; }
+S.ver = 10;
 S.bfOn = false; S.softA = 200; S.softB = 200; // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 save(); // 迁移结果立即落盘
@@ -517,7 +580,7 @@ function setConn(state, txt){
 }
 
 const NAME_PREFIX = '47L121';
-let lastConnErr = null;
+let lastConnErr = null, showAllNext = false;
 let autoTimer = 0, autoTries = 0;
 
 async function connect(){
@@ -527,10 +590,11 @@ async function connect(){
   try{
     setConn(1, '找小狼中…');
     step = 'requestDevice';
-    const d = await navigator.bluetooth.requestDevice({
-      filters:[{namePrefix:NAME_PREFIX}],
-      optionalServices:[SVC, BAT_SVC]
-    });
+    // 名称前缀或服务号任一匹配都显示（部分安卓机型广播包里不带完整名字）
+    const d = await navigator.bluetooth.requestDevice(showAllNext
+      ? {acceptAllDevices: true, optionalServices:[SVC, BAT_SVC]}
+      : {filters:[{namePrefix:NAME_PREFIX}, {namePrefix:'47L'}, {services:[SVC]}], optionalServices:[SVC, BAT_SVC]});
+    showAllNext = false;
     await useDevice(d);
   }catch(e){
     setConn(0, '未连接');
@@ -539,12 +603,13 @@ async function connect(){
     let tip = '';
     if (step === 'requestDevice' && /cancel/i.test(e.message)){
       tip = '';
-      toast(android ? '没找到小狼？看看蓝牙和位置信息开了没，它是不是正被别的手机牵着' : '没找到小狼？确认它醒着（开机），没被别的手机或官方 App 牵着');
+      toast(android ? '列表里没有小狼？点 🩺 看安卓专属检查清单' : '没找到小狼？确认它醒着（开机），没被别的手机或官方 App 牵着');
     }
     else if (step === 'requestDevice') tip = android
-      ? '\n\n安卓请检查：①用 Chrome 打开（不要用微信/QQ/系统浏览器）②手机蓝牙和「位置信息」都已打开 ③Chrome 已获得「附近的设备」/位置权限 ④郊狼没有同时连着 iPhone 或官方 App（它只能连一台，连着时搜不到）'
+      ? '\n\n安卓请检查：①用浏览器打开（不要在微信/QQ 里直接打开）②手机蓝牙和「位置信息」都已打开 ③浏览器已获得「附近的设备」/位置权限 ④郊狼没有同时连着 iPhone 或官方 App（它只能连一台，连着时搜不到）'
       : '\n\n请确认郊狼已开机、没有被其他手机或官方 App 连着。';
     else tip = '\n\n设备可能被其他手机/官方 App 占用，或信号太弱。关掉其他连接后重试。';
+    if (step === 'getPrimaryService 180C') toast('这个设备不是郊狼（没有郊狼的服务），换一个试试');
     lastConnErr = {step, name: e.name, msg: e.message};
     if (/cancel/i.test(e.message)) return;          // 用户取消：只提示，不弹自检
     runSelfCheck(true);                             // 其他失败：自动打开自检
@@ -1006,6 +1071,7 @@ function trigger(level, now, src){
   renderCombo(true);
   burstUntil = Math.max(burstUntil, now + dur);
   trigCount++; $('#trigCnt').textContent = trigCount;
+  fxTrig(src);
   const card = $(S.mode === 'music' ? '#musicCard' : '#motionCard');
   card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
 }
@@ -1091,7 +1157,7 @@ setInterval(rjTick, 100);
 // 每 100ms 采一次“激动程度”：晃动＝晃动幅度/门槛；别出声＝音量/门槛；音乐节奏＝音量/60
 // 近 5 秒平均明显高于之前 10 秒平均 → 力度 +5~10 并保持；回落到当时的平均值 → 撤掉这一级；
 // 加完之后如果又明显更高 → 再加一级
-const ESC_N = 150;                         // 15 秒 × 10 次/秒
+const ESC_N = 450;                         // 最长 45 秒 × 10 次/秒
 const escBuf = new Float32Array(ESC_N); let escI = 0, escCount = 0, escLastEval = 0, escLastUp = 0;
 let escStack = [];                         // [{add, base, ref}]
 const escAdd = () => escStack.reduce((a, l) => a + l.add, 0);
@@ -1114,11 +1180,12 @@ function escTick(){
   const now = performance.now();
   if (!S.escOn || !armed){ escReset(); escShow(); return; }
   escBuf[escI] = escSignal(); escI = (escI + 1) % ESC_N; escCount = Math.min(ESC_N, escCount + 1);
-  if (escCount < ESC_N || now - escLastEval < 1000){ escShow(); return; }
+  const R = S.escRecent * 10, B = S.escBase * 10;
+  if (escCount < R + B || now - escLastEval < 1000){ escShow(); return; }
   escLastEval = now;
-  const recent = escMean(0, 50);           // 最近 5 秒
-  const before = escMean(50, 150);         // 5 秒前的 10 秒
-  const margin = (v) => v * 1.25 + 0.08;   // 至少高出 25%（再加一点底噪余量），避免抖一抖就加码
+  const recent = escMean(0, R);            // 最近 N 秒
+  const before = escMean(R, R + B);        // 再往前 M 秒
+  const margin = (v) => v * (1 + S.escPct / 100) + 0.03;   // 至少高出 X%（再加一点底噪余量），避免抖一抖就加码
   let changed = false;
   // 回落：最近 5 秒回到某一级加码时的“刚才的平均值” → 撤掉这一级
   while (escStack.length && recent <= escStack[escStack.length - 1].base * 1.1 + 0.04){
@@ -1126,12 +1193,13 @@ function escTick(){
     log(`激动回落，力度 -${l.add}`);
   }
   // 刚加码后的 6 秒内，5 秒平均还在爬升，把这段的最高值记为这一级的“新水平”，避免一次变激动被算成两级
-  if (escStack.length && now - escLastUp <= 6000){ const top = escStack[escStack.length - 1]; top.ref = Math.max(top.ref, recent); }
+  if (escStack.length && now - escLastUp <= S.escGap * 1000){ const top = escStack[escStack.length - 1]; top.ref = Math.max(top.ref, recent); }
   // 加码：第一级跟“之前 10 秒”比；之后每级跟上一级加码时的强度比，且至少隔 5 秒
   const ref = escStack.length ? escStack[escStack.length - 1].ref : before;
   const base = escStack.length ? escStack[escStack.length - 1].ref : before;
-  if (recent > margin(ref) && now - escLastUp > 6000 && escStack.length < 8){
-    const add = 5 + Math.floor(Math.random() * 6);   // 5~10
+  if (recent > margin(ref) && now - escLastUp > S.escGap * 1000 && escStack.length < S.escMax){
+    const lo = Math.min(S.escAddMin, S.escAddMax), hi = Math.max(S.escAddMin, S.escAddMax);
+    const add = lo + Math.floor(Math.random() * (hi - lo + 1));
     escStack.push({add, base, ref: recent});
     escLastUp = now; changed = true;
     log(`越来越激动（${before.toFixed(2)} → ${recent.toFixed(2)}），力度 +${add}`);
@@ -1146,7 +1214,7 @@ function escShow(){
   el.classList.toggle('hidden', !a);
   el.textContent = '🔥+' + a;
   const st = $('#escStat');
-  st.textContent = !S.escOn ? '关' : !armed ? '等你开开关' : escCount < ESC_N ? `观察中 ${Math.round(escCount / 10)}/15s` : a ? `已加 +${a}（${escStack.length} 级）` : '盯着呢';
+  st.textContent = !S.escOn ? '关' : !armed ? '等你开开关' : escCount < (S.escRecent + S.escBase) * 10 ? `观察中 ${Math.round(escCount / 10)}/${S.escRecent + S.escBase}s` : a ? `已加 +${a}（${escStack.length} 级）` : '盯着呢';
 }
 setInterval(escTick, 100);
 
@@ -1328,7 +1396,7 @@ function autoBeatTick(now){
   let guard = 0;
   while (now >= fireAt && guard++ < 8){
     if (now - fireAt < 120 && ok){
-      beatCount++; beatPendingMark = 1;
+      beatCount++; beatPendingMark = 1; fxBeat(1);
       if (armed && S.mode === 'music') trigger(1, now, 'music');
     }
     nextBeatAt += iv; fireAt = nextBeatAt - S.lead;
@@ -1348,7 +1416,7 @@ function quietFeed(e, now){
   mAvg = quietBase;
   let beat = 0;
   if (!learning && e > thrE && now - beatLast >= S.beatGap){
-    beat = 1; beatLast = now; beatCount++;
+    beat = 1; beatLast = now; beatCount++; fxBeat(1);
     if (armed && S.mode === 'music') trigger(1, now, 'music');
   }
   bpm = 0;
@@ -1380,21 +1448,84 @@ function drawIdle(cv, txt){
   ctx.fillStyle = 'rgba(243,243,250,.45)'; ctx.font = '12.5px -apple-system,sans-serif'; ctx.textAlign = 'center';
   ctx.fillText(txt, w / 2, h / 2 + 4); ctx.textAlign = 'left';
 }
-function drawBeat(){
-  if (!micOn){ if (S.mode === 'music') drawIdle(bcv, '👆 轻点屏幕任意处，让我听听音乐'); return; }
-  const [ctx, w, h] = fitCanvas(bcv);
-  ctx.clearRect(0, 0, w, h);
-  const y = v => h - 4 - (v / 255) * (h - 8), bw = w / MH;
-  for (let i = 0; i < MH; i++){
-    const k = (mhI + i) % MH, v = mh[k];
-    ctx.fillStyle = mhB[k] ? 'rgba(255,95,162,.95)' : 'rgba(169,139,255,.55)';
-    ctx.fillRect(i * bw, y(v), Math.max(1, bw - 1), h - 4 - y(v));
+/* ================= 视觉特效（30fps 封顶，只画当前页面可见的画布） ================= */
+const FX = {trigAt: -1e9, trigDur: 100, beatAt: -1e9, rings: [], sparks: [], peaks: new Float32Array(40), lastFrame: 0};
+function fxTrig(src){
+  const now = performance.now();
+  FX.trigAt = now; FX.trigDur = src === 'music' ? S.burstMu : S.burst;
+  if (src === 'motion'){
+    for (let i = 0; i < 7; i++) FX.sparks.push({x: 1, y: 0, vx: -(0.4 + Math.random() * 1.4), vy: (Math.random() - 0.5) * 2.4, t: now});
+    if (FX.sparks.length > 40) FX.sparks.splice(0, FX.sparks.length - 40);
   }
+}
+function fxBeat(strength){
+  const now = performance.now();
+  FX.beatAt = now;
+  FX.rings.push({t: now, s: strength || 1});
+  if (FX.rings.length > 6) FX.rings.shift();
+}
+const ease = t => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+
+/* ---------- 听声音：镜像频谱 + 节拍光环 + 背景脉冲 ---------- */
+function drawBeat(now){
+  if (!micOn){ drawIdle(bcv, '👆 轻点屏幕任意处，让我听听音乐'); return; }
+  const [ctx, w, h] = fitCanvas(bcv);
+  const cy = h / 2, sinceBeat = now - FX.beatAt;
+  ctx.clearRect(0, 0, w, h);
+  // 背景随节拍呼吸
+  const glow = Math.max(0, 1 - sinceBeat / 450);
+  if (glow > 0){
+    const g = ctx.createRadialGradient(w / 2, cy, 0, w / 2, cy, w * 0.6);
+    g.addColorStop(0, `rgba(255,95,162,${0.28 * glow})`); g.addColorStop(1, 'rgba(255,95,162,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  }
+  // 镜像频谱：40 条对数分布的频段，中心对称，顶部有下落的峰值帽
+  const N = 40, gap = 2, bw = (w - gap * (N - 1)) / N;
+  const binHz = actx.sampleRate / analyser.fftSize;
+  const quiet = S.band === 'quiet';
+  const thrLine = quiet ? quietThr / 255 : 0;
+  for (let i = 0; i < N; i++){
+    const f0 = 40 * Math.pow(10000 / 40, i / N), f1 = 40 * Math.pow(10000 / 40, (i + 1) / N);
+    const b0 = Math.max(1, Math.floor(f0 / binHz)), b1 = Math.max(b0, Math.min(fbuf.length - 1, Math.ceil(f1 / binHz)));
+    let m = 0; for (let k = b0; k <= b1; k++) m = Math.max(m, fbuf[k]);
+    let v = Math.pow(m / 255, 1.6);                         // 压一下低值，让动态更明显
+    FX.peaks[i] = Math.max(v, FX.peaks[i] - 0.012);
+    const bh = v * (cy - 3), x = i * (bw + gap);
+    const hue = 330 - (i / N) * 140;                         // 粉 → 紫 → 蓝
+    const hot = quiet && m / 255 > thrLine;
+    ctx.fillStyle = hot ? 'rgba(255,90,106,.95)' : `hsla(${hue},90%,${62 + glow * 18}%,${0.55 + v * 0.45})`;
+    ctx.fillRect(x, cy - bh, bw, bh * 2 || 1);
+    ctx.fillStyle = `hsla(${hue},100%,85%,.85)`;
+    const py = FX.peaks[i] * (cy - 3);
+    ctx.fillRect(x, cy - py - 2, bw, 1.5); ctx.fillRect(x, cy + py + 0.5, bw, 1.5);
+  }
+  // 节拍光环（从中心扩散）
+  ctx.lineWidth = 2;
+  FX.rings = FX.rings.filter(r => now - r.t < 700);
+  for (const r of FX.rings){
+    const t = (now - r.t) / 700, rad = 6 + ease(t) * w * 0.45;
+    ctx.strokeStyle = `rgba(255,211,110,${(1 - t) * 0.8})`;
+    ctx.beginPath(); ctx.ellipse(w / 2, cy, rad, rad * h / w * 1.6, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  // 自动节拍：中间一颗随预测拍点跳动的“心跳”
+  if (!quiet && tempoP && nextBeatAt){
+    const ph = 1 - clamp((nextBeatAt - now) / beatInterval(), 0, 1);
+    const r = 3 + Math.pow(Math.max(0, 1 - sinceBeat / 250), 2) * 7 + ph * 1.5;
+    ctx.fillStyle = tempoConf >= 0.3 ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.4)';
+    ctx.beginPath(); ctx.arc(w / 2, cy, r, 0, Math.PI * 2); ctx.fill();
+  }
+  // 别出声：门槛线 + 学习提示
+  if (quiet){
+    const learning = now < quietLearnUntil;
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(255,184,78,.85)'; ctx.lineWidth = 1.2;
+    const ty = cy - Math.pow(thrLine, 1.6) * (cy - 3);
+    ctx.beginPath(); ctx.moveTo(0, ty); ctx.lineTo(w, ty); ctx.moveTo(0, h - ty); ctx.lineTo(w, h - ty); ctx.stroke(); ctx.setLineDash([]);
+    if (learning){ ctx.fillStyle = 'rgba(243,243,250,.8)'; ctx.font = '12px -apple-system,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🤫 安静一下，正在记住环境声…', w / 2, 14); ctx.textAlign = 'left'; }
+  }
+}
+function beatStats(now){
   if (S.band === 'quiet'){
-    ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(255,184,78,.85)'; ctx.lineWidth = 1.3; ctx.beginPath();
-    for (let i = 0; i < MH; i++){ const k = (mhI + i) % MH; if (i) ctx.lineTo(i * bw, y(mhT[k])); else ctx.moveTo(0, y(mhT[k])); }
-    ctx.stroke(); ctx.setLineDash([]);
-    $('#beThrL').textContent = performance.now() < quietLearnUntil ? '记忆安静中' : '门槛'; $('#beThrV').textContent = Math.round(Math.max(quietBase * S.sens, quietBase + 8, 12));
+    $('#beThrL').textContent = now < quietLearnUntil ? '记忆安静中' : '门槛'; $('#beThrV').textContent = Math.round(Math.max(quietBase * S.sens, quietBase + 8, 12));
   } else {
     $('#beThrL').textContent = '把握';
     $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '分析中';
@@ -1407,59 +1538,401 @@ function drawBeat(){
 function fitCanvas(cv){
   // 逻辑高度只读一次并缓存（设置 cv.height 会改写 height 属性，高 DPR 屏上会越算越大）
   if (!cv.dataset.h) cv.dataset.h = cv.getAttribute('height');
-  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = +cv.dataset.h;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth, h = +cv.dataset.h;   // 最多 2 倍像素，省电
   if (cv.width !== Math.round(w*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); cv.style.height = h + 'px'; }
   const ctx = cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
   return [ctx, w, h];
 }
+
+/* ---------- 摇一摇：发光曲线 + 越线区域 + 触发火花 ---------- */
 const mcv = $('#motionCv');
-function drawMotion(){
-  if (!sensorOn && S.mode === 'motion'){ drawIdle(mcv, '👆 轻点屏幕任意处，开始感应晃动'); drawBeat(); requestAnimationFrame(drawMotion); return; }
+function drawMotionCv(now){
+  if (!sensorOn){ drawIdle(mcv, '👆 轻点屏幕任意处，开始感应晃动'); return; }
   const [ctx, w, h] = fitCanvas(mcv);
   ctx.clearRect(0,0,w,h);
   const n = hist.length, top = Math.max(S.thr * 1.6, peak * 1.1, 50);
   const y = v => h - 6 - (v/top)*(h-12);
-  // 触发区
-  ctx.fillStyle = 'rgba(255,95,162,.16)';
+  const ty = y(S.thr), since = now - FX.trigAt, flash = Math.max(0, 1 - since / 300);
+  // 门槛以上的“危险区”，触发瞬间亮一下
+  const dz = ctx.createLinearGradient(0, 0, 0, ty);
+  dz.addColorStop(0, `rgba(255,95,162,${0.10 + flash * 0.25})`); dz.addColorStop(1, 'rgba(255,95,162,0)');
+  ctx.fillStyle = dz; ctx.fillRect(0, 0, w, ty);
+  // 触发过的时间段
+  ctx.fillStyle = 'rgba(255,95,162,.14)';
   for (let i=0; i<n; i++){ if (histB[(histI+i)%n]) ctx.fillRect(i*w/n, 0, w/n+1, h); }
-  // 阈值线
-  ctx.setLineDash([6,5]); ctx.strokeStyle = armed ? 'rgba(78,224,160,.9)' : 'rgba(255,184,78,.8)'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(0, y(S.thr)); ctx.lineTo(w, y(S.thr)); ctx.stroke(); ctx.setLineDash([]);
-  // 曲线
-  const grad = ctx.createLinearGradient(0,0,w,0); grad.addColorStop(0,'#5fc8ff'); grad.addColorStop(1,'#a98bff');
-  ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.beginPath();
+  // 门槛线
+  ctx.setLineDash([6,5]); ctx.strokeStyle = armed ? `rgba(78,224,160,${0.7 + flash * 0.3})` : 'rgba(255,184,78,.8)'; ctx.lineWidth = 1.5 + flash * 1.5;
+  ctx.beginPath(); ctx.moveTo(0, ty); ctx.lineTo(w, ty); ctx.stroke(); ctx.setLineDash([]);
+  // 曲线：填充 + 发光描边
+  ctx.beginPath();
   for (let i=0; i<n; i++){ const v = hist[(histI+i)%n], X = i*w/(n-1); i ? ctx.lineTo(X, y(v)) : ctx.moveTo(X, y(v)); }
-  ctx.stroke();
+  ctx.save();
+  const grad = ctx.createLinearGradient(0,0,w,0); grad.addColorStop(0,'rgba(95,200,255,.4)'); grad.addColorStop(.7,'#a98bff'); grad.addColorStop(1,'#ff5fa2');
+  ctx.strokeStyle = grad; ctx.lineWidth = 2.2; ctx.shadowColor = 'rgba(169,139,255,.9)'; ctx.shadowBlur = 8; ctx.stroke();
+  ctx.restore();
   ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
-  const fg = ctx.createLinearGradient(0,0,0,h); fg.addColorStop(0,'rgba(169,139,255,.28)'); fg.addColorStop(1,'rgba(169,139,255,0)');
+  const fg = ctx.createLinearGradient(0,0,0,h); fg.addColorStop(0,'rgba(169,139,255,.30)'); fg.addColorStop(1,'rgba(169,139,255,0)');
   ctx.fillStyle = fg; ctx.fill();
-  $('#magV').textContent = Math.round(filt); $('#peakV').textContent = Math.round(peak); $('#thrV2').textContent = S.thr; $('#hzV').textContent = evHz;
-  drawBeat();
-  requestAnimationFrame(drawMotion);
+  // 最新点：亮点 + 触发时的涟漪
+  const lastV = hist[(histI - 1 + n) % n], lx = w - 2, ly = y(lastV);
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(lx, ly, 2.5, 0, Math.PI * 2); ctx.fill();
+  if (since < 500){
+    const t = since / 500;
+    ctx.strokeStyle = `rgba(255,95,162,${1 - t})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(lx, ly, 4 + ease(t) * 26, 0, Math.PI * 2); ctx.stroke();
+  }
+  // 火花
+  FX.sparks = FX.sparks.filter(p => now - p.t < 600);
+  for (const p of FX.sparks){
+    const t = (now - p.t) / 600, px = lx + p.vx * t * 60, py = ty + p.vy * t * 30 + t * t * 20;
+    ctx.fillStyle = `rgba(255,211,110,${1 - t})`; ctx.fillRect(px, py, 2.2, 2.2);
+  }
 }
+function motionStats(){
+  $('#magV').textContent = Math.round(filt); $('#peakV').textContent = Math.round(peak); $('#thrV2').textContent = S.thr; $('#hzV').textContent = evHz;
+}
+
+/* ---------- 手感：圆角渐变柱 + 流光 + 触发时的播放头 ---------- */
 const wcv = $('#waveCv');
-function drawWave(){
+function drawWave(now){
+  now = now || performance.now();
   const [ctx, w, h] = fitCanvas(wcv);
   ctx.clearRect(0,0,w,h);
   const n = wave.length; if (!n) return;
-  const bw = w / n;
-  const grad = ctx.createLinearGradient(0,h,0,0); grad.addColorStop(0,'rgba(255,95,162,.5)'); grad.addColorStop(1,'rgba(169,139,255,.95)');
-  ctx.fillStyle = grad;
+  const bw = w / n, pad = bw > 4 ? 1 : 0;
+  // 播放头：触发后在“每下电多久”的长度内从左扫到右
+  const since = now - FX.trigAt, dur = Math.max(25, FX.trigDur);
+  const playing = since >= 0 && since < dur + 250;
+  const headX = playing ? Math.min(1, since / dur) * Math.min(w, (dur / 25) * bw) : -1;
   for (let i=0; i<n; i++){
-    const v = wave[i][1], bh = (v/100)*(h-10);
-    ctx.fillRect(i*bw + (bw>4?1:0), h-5-bh, Math.max(1, bw-(bw>4?2:0)), bh);
+    const v = wave[i][1], bh = Math.max(1, (v/100)*(h-12)), x = i*bw + pad, bwid = Math.max(1, bw - pad*2);
+    const lit = playing && x <= headX;
+    const g = ctx.createLinearGradient(0, h - 5 - bh, 0, h - 5);
+    g.addColorStop(0, lit ? '#ffd36e' : 'rgba(169,139,255,.95)'); g.addColorStop(1, lit ? 'rgba(255,95,162,.9)' : 'rgba(255,95,162,.45)');
+    ctx.fillStyle = g;
+    const r = Math.min(3, bwid / 2);
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, h - 5 - bh, bwid, bh, [r, r, 0, 0]); else ctx.rect(x, h - 5 - bh, bwid, bh);
+    ctx.fill();
   }
-  // 频率曲线（字节 10-240，越高越“稀”）
-  ctx.strokeStyle = 'rgba(95,200,255,.9)'; ctx.lineWidth = 1.5; ctx.beginPath();
+  // 流光：一条柔光带缓缓扫过
+  const sx = ((now / 2200) % 1.4 - 0.2) * w;
+  const sh = ctx.createLinearGradient(sx - 30, 0, sx + 30, 0);
+  sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(.5, 'rgba(255,255,255,.10)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sh; ctx.fillRect(sx - 30, 0, 60, h);
+  // 频率曲线（发光）
+  ctx.save();
+  ctx.strokeStyle = 'rgba(95,200,255,.95)'; ctx.lineWidth = 1.6; ctx.shadowColor = 'rgba(95,200,255,.9)'; ctx.shadowBlur = 6;
+  ctx.beginPath();
   for (let i=0; i<n; i++){
-    const y = h - 5 - ((wave[i][0] - 10) / 230) * (h - 10), x = i*bw + bw/2;
-    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    const yy = h - 5 - ((wave[i][0] - 10) / 230) * (h - 12), x = i*bw + bw/2;
+    i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy);
   }
-  if (n === 1) ctx.lineTo(w, h - 5 - ((wave[0][0] - 10) / 230) * (h - 10));
-  ctx.stroke();
+  if (n === 1) ctx.lineTo(w, h - 5 - ((wave[0][0] - 10) / 230) * (h - 12));
+  ctx.stroke(); ctx.restore();
+  // 播放头竖线
+  if (playing && headX >= 0){
+    ctx.fillStyle = `rgba(255,255,255,${since < dur ? .9 : .9 * (1 - (since - dur) / 250)})`;
+    ctx.fillRect(headX, 2, 2, h - 4);
+  }
   ctx.fillStyle = 'rgba(243,243,250,.55)'; ctx.font = '11px -apple-system,sans-serif';
-  ctx.fillText(`${n}×25ms · ▮强度  `, 8, 14);
-  ctx.fillStyle = 'rgba(95,200,255,.9)'; ctx.fillText('— 频率', 8 + ctx.measureText(`${n}×25ms · ▮强度  `).width, 14);
+  ctx.fillText(`${n}×25ms · ▮力度  `, 8, 13);
+  ctx.fillStyle = 'rgba(95,200,255,.9)'; ctx.fillText('— 颗粒', 8 + ctx.measureText(`${n}×25ms · ▮力度  `).width, 13);
+}
+
+/* ================= GPU 视觉：7 种风格随机轮播（WebGL，30fps，低功耗） ================= */
+const GLFX_STYLES = ['液态光球', '极光流带', '点阵脉冲', '超空间隧道', '液态涟漪', '霓虹环', '熔岩灯'];
+const GL_VS = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
+const GL_COMMON = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 R; uniform float T, BEAT, LVL, HOT; uniform float B[8];
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*noise(p);p*=2.03;a*=.5;}return v;}
+vec3 pal(float t){return .55+.45*cos(6.2831*(t+vec3(.0,.33,.67)));}
+float band(float x){
+  float f=clamp(x,0.,.999)*7.; int i=int(f); float r=fract(f);
+  float a=0.,b=0.; for(int k=0;k<8;k++){ if(k==i)a=B[k]; if(k==i+1)b=B[k]; } if(i==7)b=a; return mix(a,b,r);}
+vec3 post(vec3 c){ // 越线/出声时整体染红
+  c=mix(c, c*vec3(1.35,.4,.45)+vec3(.12,0.,.02), HOT*.65);
+  return c;
+}
+`;
+const GL_FS = [
+// A 液态光球
+`void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
+  float bass=B[0]*.6+B[1]*.4, hi=(B[5]+B[6]+B[7])/3.;
+  float a=atan(uv.y,uv.x), r=length(uv);
+  vec2 dir=vec2(cos(a),sin(a));
+  float wob=fbm(dir*1.3+vec2(T*.5,T*.3))*.12 + hi*.05*sin(a*7.+T*5.);
+  float rad=.24+bass*.12+BEAT*.07+wob;
+  float d=r-rad;
+  vec2 q=uv*2.2+vec2(fbm(uv*2.+T*.3),fbm(uv*2.-T*.25));
+  vec3 inner=pal(fbm(q+T*.15)*1.6+dot(dir,vec2(.12,.07))+T*.05);
+  inner=mix(inner*inner*1.3,vec3(1.,.35,.65),.2);   // 平方加深饱和度
+  float body=smoothstep(.01,-.02,d);
+  float rim=exp(-abs(d)*55.)*(.6+BEAT*.8);
+  float halo=exp(-max(d,0.)*9.)*(.35+LVL*.5+BEAT*.6);
+  vec3 col=inner*body*(.55+.45*fbm(q*1.5))*(.85+BEAT*.3)+(rim*.8+halo*.7)*mix(vec3(.55,.4,1.),vec3(1.,.4,.7),.5+.5*dir.x*cos(T)+.5*dir.y*sin(T));
+  col+=vec3(1.,.7,.5)*BEAT*exp(-r*7.)*.35;
+  gl_FragColor=vec4(post(col/(1.+col*.35)),1.);
+}`,
+// B 极光流带
+`void main(){
+  vec2 uv=gl_FragCoord.xy/R; vec2 p=uv; p.x*=R.x/R.y;
+  vec3 col=mix(vec3(.03,.02,.08),vec3(.10,.03,.14),uv.y);
+  col+=.18*pal(fbm(p*1.2+vec2(T*.05,0.))+.6)*fbm(p*2.+T*.1);
+  for(int k=0;k<4;k++){
+    float fk=float(k);
+    float amp=.10+band(uv.x)*.28*(1.-fk*.15);
+    float y=.5+(fbm(vec2(p.x*1.3+T*(.25+fk*.07),fk*3.1))-.5)*1.65*amp+sin(p.x*3.+T*1.2+fk)*.06;
+    float d=abs(uv.y-y);
+    float w=.010+band(uv.x)*.018+BEAT*.008;
+    float line=w/(d+w*.5);
+    vec3 c=pal(fk*.18+uv.x*.35+T*.04);
+    col+=c*(line*line*.55+line*.18)*(.45+LVL*.7)*(1.-fk*.15);
+    col+=c*smoothstep(y,y-.35,uv.y)*step(uv.y,y)*.06*(1.-fk*.2);
+  }
+  col+=vec3(1.,.55,.8)*BEAT*.25*(1.-abs(uv.y-.5)*1.6);
+  gl_FragColor=vec4(post(col/(1.+col*.5)),1.);
+}`,
+// C 点阵脉冲
+`void main(){
+  float cell=R.y/20.;
+  vec2 g=floor(gl_FragCoord.xy/cell), c=(g+.5)*cell, f=gl_FragCoord.xy-c;
+  vec2 cu=c/R;
+  float x=abs(cu.x-.5)*2.;
+  float h=band(x)*.9+.04;
+  float yy=abs(cu.y-.5)*2.;
+  float on=step(yy,h);
+  vec2 cc=(c-.5*R)/R.y; float r=length(cc);
+  float wave=exp(-pow((r-(1.-BEAT)*.9)*8.,2.))*BEAT*1.4;
+  float tw=.15+.1*hash(g+floor(T*8.));
+  float br=on*(.55+.45*(1.-yy/max(h,.001)))+wave+tw*.25;
+  float dotR=cell*(.18+.22*clamp(br,0.,1.));
+  float dt=smoothstep(dotR,dotR-1.2,length(f));
+  float glow=exp(-length(f)/cell*3.)*br*.6;
+  vec3 hue=mix(vec3(1.,.35,.6),vec3(.45,.6,1.),x);
+  hue=mix(hue,vec3(1.,.85,.5),clamp(wave,0.,1.));
+  gl_FragColor=vec4(post(hue*(dt*clamp(br,.08,1.4)+glow)),1.);
+}`,
+// D 超空间隧道：光线从中心冲出
+`void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
+  float r=length(uv), a=atan(uv.y,uv.x)/6.2831+.5;
+  float speed=.6+LVL*3.+BEAT*2.;
+  float z=.18/(r+.015)+T*speed;
+  float idx=mod(floor(a*72.),72.);
+  float seg=floor(z*1.5);
+  float s=hash(vec2(idx,seg));
+  float fz=fract(z*1.5);
+  float streak=smoothstep(.72-band(idx/72.)*.35,1.,s)*smoothstep(0.,.25,fz)*smoothstep(1.,.6,fz);
+  float lane=smoothstep(.5,.0,abs(fract(a*72.)-.5));
+  vec3 c=pal(a*1.5+T*.05+z*.02);
+  vec3 col=c*streak*lane*smoothstep(.02,.25,r)*(1.2+BEAT);
+  col+=vec3(.9,.7,1.)*exp(-r*7.)*(.35+LVL*.6+BEAT*.9);
+  col+=vec3(1.,.6,.85)*exp(-pow((r-(1.-BEAT)*.7)*10.,2.))*BEAT*.8;
+  gl_FragColor=vec4(post(col/(1.+col*.4)),1.);
+}`,
+// E 液态涟漪：金属水面，每拍落一滴
+`float H(vec2 p){
+  float h=0.;
+  for(int i=0;i<3;i++){
+    float fi=float(i);
+    vec2 s=vec2(sin(T*.37+fi*2.1),cos(T*.29+fi*1.7))*vec2(.7,.25);
+    float d=length(p-s);
+    h+=sin(d*(18.+fi*4.)-T*(3.+fi))*exp(-d*1.6)*(.35+B[i*2]*.9);
+  }
+  float d=length(p);
+  h+=sin(d*26.-(1.-BEAT)*14.)*BEAT*exp(-d*2.)*1.4;
+  return h;
+}
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
+  float e=.004, h=H(uv);
+  vec2 n=vec2(H(uv+vec2(e,0.))-h,H(uv+vec2(0.,e))-h)/e*.02;
+  vec3 N=normalize(vec3(-n,1.));
+  vec3 L=normalize(vec3(.4,.6,.7));
+  float spec=pow(max(dot(reflect(-L,N),vec3(0,0,1)),0.),24.);
+  vec3 base=pal(.6+h*.25+N.x*.6+N.y*.3+T*.03);
+  base=base*base*.7;
+  float lit=pow(max(dot(N,L),0.),2.);
+  vec3 col=base*(.12+.9*lit)+spec*vec3(1.,.85,1.)*(.8+LVL*1.2);
+  col*=.7+LVL*.5;
+  gl_FragColor=vec4(post(col/(1.+col*.3)),1.);
+}`,
+// F 霓虹环：一圈旋转的发光音柱
+`void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
+  float r=length(uv);
+  float a=atan(uv.y,uv.x)/6.2831+.5+T*.03;
+  float N=64.;
+  float id=mod(floor(a*N),N);
+  float v=band(abs(id/(N*.5)-1.));
+  float r0=.20+BEAT*.03, len=.04+v*.30;
+  float inBar=step(r0,r)*step(r,r0+len)*step(abs(fract(a*N)-.5),.32);
+  float tip=exp(-abs(r-(r0+len))*90.);
+  vec3 c=pal(id/N+T*.05);
+  vec3 col=c*inBar*(.6+v)+c*tip*.9;
+  col+=c*exp(-abs(r-r0)*60.)*(.5+BEAT);
+  col+=vec3(1.,.6,.9)*exp(-r*9.)*(.25+BEAT*.8);
+  col+=c*exp(-max(r-r0-len,0.)*14.)*step(r0,r)*.10*(.5+v);
+  gl_FragColor=vec4(post(col/(1.+col*.4)),1.);
+}`,
+// G 熔岩灯：几团流体融合分离
+`void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
+  float f=0.; vec3 acc=vec3(0.);
+  for(int i=0;i<6;i++){
+    float fi=float(i);
+    vec2 c=vec2(sin(T*(.31+fi*.07)+fi*1.9)*.62, cos(T*(.23+fi*.05)+fi*2.7)*.22);
+    float rad=.07+B[i]*.08+BEAT*.025;
+    float k=rad*rad/max(dot(uv-c,uv-c),1e-4);
+    f+=k; acc+=pal(fi*.16+T*.03)*k;
+  }
+  vec3 c=acc/max(f,1e-3);
+  float body=smoothstep(.9,1.1,f);
+  float rim=exp(-abs(f-1.)*6.);
+  vec3 col=c*body*(.7+.3*fbm(uv*3.+T*.2))+c*rim*(.6+BEAT)+c*smoothstep(.2,1.,f)*.25;
+  gl_FragColor=vec4(post(col/(1.+col*.35)),1.);
+}`];
+
+const GLFX = {ok: false, gl: null, cv: null, progs: [], cur: 0, nextSwap: 0, bands: new Float32Array(8), beat: 0, hot: 0, lvl: 0, label: null, wrap: null, host: ''};
+function glfxInit(){
+  try {
+    const cv = document.createElement('canvas'); cv.className = 'glfx';
+    const gl = cv.getContext('webgl', {antialias: false, alpha: false, powerPreference: 'low-power', preserveDrawingBuffer: false});
+    if (!gl) return;
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+    Object.assign(GLFX, {gl, cv, ok: true});
+    const wrap = document.createElement('div'); wrap.className = 'fxwrap';
+    const label = document.createElement('div'); label.className = 'fxlabel';
+    wrap.appendChild(cv); wrap.appendChild(label);
+    GLFX.wrap = wrap; GLFX.label = label;
+    wrap.addEventListener('click', () => glfxSwap(true));
+    cv.addEventListener('webglcontextlost', e => { e.preventDefault(); GLFX.ok = false; glfxShowFallback(true); });
+    GLFX.cur = S.fxAuto ? Math.floor(Math.random() * GL_FS.length) : (S.fxStyle | 0);
+  } catch(e){ GLFX.ok = false; }
+}
+function glfxProg(i){
+  if (GLFX.progs[i]) return GLFX.progs[i];
+  const gl = GLFX.gl;
+  const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  const pr = gl.createProgram();
+  gl.attachShader(pr, sh(gl.VERTEX_SHADER, GL_VS));
+  gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, GL_COMMON + GL_FS[i]));
+  gl.linkProgram(pr);
+  const U = n => gl.getUniformLocation(pr, n);
+  const P = {pr, loc: gl.getAttribLocation(pr, 'p'), R: U('R'), T: U('T'), BEAT: U('BEAT'), LVL: U('LVL'), HOT: U('HOT'), B: U('B[0]')};
+  GLFX.progs[i] = P; return P;
+}
+function glfxSwap(manual){
+  const n = GL_FS.length;
+  if (manual || S.fxAuto){
+    let k; do { k = Math.floor(Math.random() * n); } while (n > 1 && k === GLFX.cur);
+    GLFX.cur = k;
+  } else GLFX.cur = S.fxStyle | 0;
+  GLFX.nextSwap = performance.now() + S.fxEvery * 1000;
+  const L = GLFX.label;
+  L.textContent = '✨ ' + GLFX_STYLES[GLFX.cur]; L.classList.remove('show'); void L.offsetWidth; L.classList.add('show');
+  if (GLFX.wrap){ GLFX.wrap.classList.remove('swap'); void GLFX.wrap.offsetWidth; GLFX.wrap.classList.add('swap'); }
+  paintFxSeg && paintFxSeg();
+}
+// 把 GPU 画布挂到当前页面的图表位置（两个页面共用一个画布）
+function glfxMount(view){
+  const host = view === 'music' ? $('#beatCv') : view === 'motion' ? $('#motionCv') : null;
+  if (!GLFX.ok || !host || !S.fxOn){ glfxShowFallback(true); return; }
+  if (GLFX.host !== view){ host.parentNode.insertBefore(GLFX.wrap, host); GLFX.host = view; }
+  glfxShowFallback(false);
+}
+function glfxShowFallback(on){
+  $('#motionCv').classList.toggle('hidden', !on);
+  $('#beatCv').classList.toggle('hidden', !on);
+  if (GLFX.wrap) GLFX.wrap.classList.toggle('hidden', on);
+}
+// 每帧的输入：听声音 → 频谱；摇一摇 → 最近的晃动历史
+function glfxInputs(now){
+  const b = GLFX.bands;
+  let target = new Array(8).fill(0), hot = 0, lvl = 0, beatAge = now - FX.beatAt;
+  if (S.view === 'music' && micOn && fbuf){
+    const binHz = actx.sampleRate / analyser.fftSize;
+    for (let k = 0; k < 8; k++){
+      const f0 = 40 * Math.pow(250, k / 8), f1 = 40 * Math.pow(250, (k + 1) / 8);
+      const i0 = Math.max(1, Math.floor(f0 / binHz)), i1 = Math.max(i0, Math.min(fbuf.length - 1, Math.ceil(f1 / binHz)));
+      let m = 0; for (let i = i0; i <= i1; i++) m = Math.max(m, fbuf[i]);
+      target[k] = Math.pow(m / 255, 1.5);
+    }
+    lvl = clamp(mE / 120, 0, 1);
+    if (S.band === 'quiet') hot = mE > quietThr && now > quietLearnUntil ? 1 : 0;
+  } else if (S.view === 'motion' && sensorOn){
+    const n = hist.length, seg = n / 8, top = S.thr * 1.6;
+    for (let k = 0; k < 8; k++){
+      let m = 0; for (let i = Math.floor(k * seg); i < Math.floor((k + 1) * seg); i++) m = Math.max(m, hist[(histI + i) % n]);
+      target[k] = clamp(m / top, 0, 1);
+    }
+    lvl = clamp(filt / top, 0, 1);
+    hot = filt > S.thr ? 1 : 0;
+    beatAge = Math.min(beatAge, now - FX.trigAt);
+  }
+  if (S.view === 'music') beatAge = Math.min(beatAge, now - FX.trigAt);
+  for (let k = 0; k < 8; k++) b[k] += (target[k] - b[k]) * (target[k] > b[k] ? .6 : .18);
+  GLFX.lvl += (lvl - GLFX.lvl) * .3;
+  GLFX.hot += (hot - GLFX.hot) * (hot > GLFX.hot ? .5 : .08);
+  GLFX.beat = Math.max(0, 1 - beatAge / 420);
+}
+function glfxDraw(now){
+  if (!GLFX.ok || !S.fxOn) return false;
+  if (S.fxAuto && now > GLFX.nextSwap) glfxSwap(false);
+  glfxInputs(now);
+  const gl = GLFX.gl, cv = GLFX.cv;
+  const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+  const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
+  if (!w || !h) return true;
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  let P;
+  try { P = glfxProg(GLFX.cur); } catch(e){ log('视觉效果编译失败：' + GLFX_STYLES[GLFX.cur]); GLFX.cur = 0; return false; }
+  gl.useProgram(P.pr);
+  gl.enableVertexAttribArray(P.loc); gl.vertexAttribPointer(P.loc, 2, gl.FLOAT, false, 0, 0);
+  gl.viewport(0, 0, w, h);
+  gl.uniform2f(P.R, w, h); gl.uniform1f(P.T, (now / 1000) % 3600);
+  gl.uniform1f(P.BEAT, GLFX.beat); gl.uniform1f(P.LVL, GLFX.lvl); gl.uniform1f(P.HOT, GLFX.hot);
+  gl.uniform1fv(P.B, GLFX.bands);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  return true;
+}
+// 门槛刻度条（GPU 视觉看不出门槛，在下面补一条细条）
+function meterDraw(){
+  let v = 0, thr = 0, top = 1;
+  if (S.view === 'motion'){ top = Math.max(S.thr * 1.6, peak * 1.05, 50); v = filt; thr = S.thr; }
+  else if (S.view === 'music'){
+    if (S.band === 'quiet'){ top = Math.max(quietThr * 1.8, 60); v = mE; thr = quietThr; }
+    else { top = 160; v = mE; thr = 0; }
+  } else return;
+  const el = S.view === 'motion' ? $('#meterM') : $('#meterB');
+  el.querySelector('i').style.width = clamp(v / top * 100, 0, 100) + '%';
+  const tb = el.querySelector('b'); tb.style.left = clamp(thr / top * 100, 0, 100) + '%'; tb.style.display = thr ? '' : 'none';
+  el.classList.toggle('over', !!thr && v > thr);
+}
+
+/* ---------- 统一动画循环 ---------- */
+let statsAt = 0;
+function frame(now){
+  requestAnimationFrame(frame);
+  if (document.hidden || now - FX.lastFrame < 32) return;       // ~30fps 封顶
+  FX.lastFrame = now;
+  if (S.view === 'motion' || S.view === 'music'){
+    if (!glfxDraw(now)){ if (S.view === 'motion') drawMotionCv(now); else drawBeat(now); }
+    meterDraw();
+  }
+  else if (S.view === 'set') drawWave(now);
+  if (now - statsAt > 150){ statsAt = now; if (S.view === 'motion') motionStats(); else if (S.view === 'music') beatStats(now); }
 }
 
 /* ================= 自检 ================= */
@@ -1473,20 +1946,20 @@ async function selfCheck(){
   const bluefy = /Bluefy/i.test(ua);
 
   // 1. 浏览器环境
-  if (inApp) add('bad', '当前在 App 内置浏览器里打开', '微信/QQ/钉钉等内置浏览器不支持网页蓝牙。点右上角「…」→ 用浏览器打开：' + (ios ? 'iPhone 请用 Bluefy。' : '安卓请用 Chrome。'));
+  if (inApp) add('bad', '当前在 App 内置浏览器里打开', '微信/QQ/钉钉等内置浏览器不支持网页蓝牙。点右上角「…」→ 用浏览器打开：' + (ios ? 'iPhone 请用 Bluefy。' : '安卓用支持网页蓝牙的浏览器，比如 Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器。'));
   if (!window.isSecureContext) add('bad', '页面不是 HTTPS', '网页蓝牙只能在 HTTPS 下使用，请用 https://luke7628.github.io/DG/ 打开。');
   if (!navigator.bluetooth){
     if (ios) add('bad', '此浏览器不支持网页蓝牙', 'iPhone 的 Safari / Chrome 都不支持。请安装并用 Bluefy 浏览器打开本页。');
-    else if (android) add('bad', '此浏览器不支持网页蓝牙', '请用 Chrome（版本 56+）打开；三星浏览器、小米/华为自带浏览器、Firefox 都不支持。');
-    else add('bad', '此浏览器不支持网页蓝牙', '请用 Chrome / Edge 打开。');
-  } else add('ok', '浏览器支持网页蓝牙' + (bluefy ? '（Bluefy）' : android ? '（安卓 Chrome）' : ''));
+    else if (android) add('bad', '此浏览器不支持网页蓝牙', '换一个支持网页蓝牙的浏览器打开本页，比如 Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器（应用商店能装到哪个用哪个）。QQ 浏览器、Firefox、多数手机自带浏览器不支持。');
+    else add('bad', '此浏览器不支持网页蓝牙', '请用 Chrome / Edge / Opera 打开。');
+  } else add('ok', '浏览器支持网页蓝牙' + (bluefy ? '（Bluefy）' : android ? '（安卓）' : ''));
 
   // 2. 蓝牙开关
   if (navigator.bluetooth && navigator.bluetooth.getAvailability){
     try {
       const av = await navigator.bluetooth.getAvailability();
       if (av) add('ok', '手机蓝牙可用');
-      else add('bad', '手机蓝牙不可用（可能没打开）', '打开系统蓝牙' + (ios ? '；并在 设置 → Bluefy 里允许蓝牙。' : '；如已打开，检查 Chrome 是否有「附近的设备」权限。'));
+      else add('bad', '手机蓝牙不可用（可能没打开）', '打开系统蓝牙' + (ios ? '；并在 设置 → Bluefy 里允许蓝牙。' : '；如已打开，检查浏览器是否有「附近的设备」权限。'));
     } catch(e){ add('warn', '无法读取蓝牙开关状态', '请手动确认系统蓝牙已打开。'); }
   } else if (navigator.bluetooth){
     add('warn', '无法自动检测蓝牙开关', '请手动确认系统蓝牙已打开' + (ios ? '，并在 设置 → Bluefy 里允许蓝牙' : '') + '。');
@@ -1496,8 +1969,13 @@ async function selfCheck(){
   if (android){
     let geo = '';
     try { geo = (await navigator.permissions.query({name: 'geolocation'})).state; } catch(e){}
-    add('warn', '安卓需要「位置信息」开关打开' + (geo ? `（Chrome 定位权限：${geo === 'granted' ? '已允许' : geo === 'denied' ? '已拒绝' : '未决定'}）` : ''),
-      '安卓 11 及以下搜索蓝牙设备必须打开系统「位置信息」并允许 Chrome 定位；安卓 12+ 需要在 设置 → 应用 → Chrome → 权限 里允许「附近的设备」。' + (geo === 'denied' ? ' 当前定位权限被拒绝，请到设置里改为允许。' : ''));
+    add(geo === 'denied' ? 'bad' : 'warn', '安卓：列表里搜不到小狼时逐条检查' + (geo ? `（浏览器定位：${geo === 'granted' ? '已允许' : geo === 'denied' ? '已拒绝' : '未决定'}）` : ''),
+      '① 下拉通知栏，打开「位置信息 / 定位」总开关（一加、OPPO、小米等很多机型关了定位就搜不到蓝牙设备，哪怕是安卓 12+）。'
+      + '② 系统设置 → 应用 → 你正在用的浏览器 → 权限：「附近的设备」和「位置信息」都选允许。'
+      + '③ 郊狼同一时间只能被一台设备连着：iPhone / 官方 App 先断开，或者把它们的蓝牙关掉。'
+      + '④ 郊狼短按开机，等指示灯亮后再点「召唤小狼」，选择列表要等 3~5 秒才会刷出来。'
+      + '⑤ 还是没有？点下面「显示所有蓝牙设备」，看看列表里有没有 47L 开头或没名字的设备。');
+    R.push({lv: 'warn', t: '__showall__', fx: ''});
   }
 
   // 4. 设备
@@ -1514,11 +1992,11 @@ async function selfCheck(){
   if (lastConnErr){
     const m = lastConnErr.msg || '';
     let fx = '';
-    if (/cancel/i.test(m)) fx = '上次是在选择列表里取消了。如果列表里没有设备，见上面「郊狼未连接」的检查项。';
+    if (/cancel/i.test(m)) fx = '上次在选择列表里取消了。如果是因为列表里根本没有小狼，按下面的清单逐条检查。';
     else if (/timeout|超时/i.test(m)) fx = '连接超时：设备没开机、不在附近，或被其他手机占用。';
     else if (/GATT|Network|disconnect/i.test(m)) fx = '蓝牙连接被中断：关掉其他手机/官方 App 的连接，重启郊狼后重试。';
     else if (/Security|permission|denied/i.test(m)) fx = '权限被拒：检查浏览器的蓝牙 / 附近设备权限。';
-    else if (/Unsupported|not supported/i.test(m)) fx = '浏览器不支持该操作，请换 Bluefy（iPhone）或 Chrome（安卓）。';
+    else if (/Unsupported|not supported/i.test(m)) fx = '浏览器不支持该操作，iPhone 请换 Bluefy；安卓换 Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器 中的一个。';
     add('bad', `上次连接失败：${lastConnErr.step}`, (m ? '错误：' + m + '。' : '') + fx);
   }
   if (connected){
@@ -1533,7 +2011,7 @@ async function selfCheck(){
     else add('ok', `陀螺仪正常（${evHz} Hz）`);
   }
   if (S.mode === 'music'){
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) add('bad', '此浏览器不能使用麦克风', ios ? '在 设置 → Bluefy 里打开麦克风权限。' : '请用 Chrome。');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) add('bad', '此浏览器不能使用麦克风', ios ? '在 设置 → Bluefy 里打开麦克风权限。' : '在系统设置里给当前浏览器开麦克风权限，或换一个浏览器。');
     else if (!micOn) add('warn', '麦克风还没启用', '轻点屏幕任意处会自动启动，并在弹窗里点允许。');
     else if (micDead()) add('bad', '麦克风被系统中断', '轻点屏幕任意位置即可恢复；不行就刷新页面。');
     else add('ok', '麦克风正常');
@@ -1554,8 +2032,12 @@ async function runSelfCheck(auto){
   const ic = {ok: '✅', warn: '⚠️', bad: '❌'};
   const order = {bad: 0, warn: 1, ok: 2};
   R.sort((a, b) => order[a.lv] - order[b.lv]);
-  $('#chkList').innerHTML = R.map(r => `<div class="ck ${r.lv}"><span class="ic">${ic[r.lv]}</span><div><b>${r.t}</b>${r.fx ? `<div class="fx">${r.fx}</div>` : ''}</div></div>`).join('');
-  chkText = R.map(r => `${ic[r.lv]} ${r.t}${r.fx ? '：' + r.fx : ''}`).join('\n') + '\n\n' + navigator.userAgent;
+  $('#chkList').innerHTML = R.map(r => r.t === '__showall__'
+    ? `<div class="ck"><span class="ic">📡</span><div style="flex:1"><button id="showAllBtn" class="wide">显示所有蓝牙设备再找一次</button><div class="fx">不按名字过滤，列出附近全部蓝牙设备；选 47L121 开头（或唯一一个没名字的）那个。</div></div></div>`
+    : `<div class="ck ${r.lv}"><span class="ic">${ic[r.lv]}</span><div><b>${r.t}</b>${r.fx ? `<div class="fx">${r.fx}</div>` : ''}</div></div>`).join('');
+  const sab = $('#showAllBtn');
+  if (sab) sab.onclick = () => { $('#chkMask').classList.add('hidden'); showAllNext = true; connect(); };
+  chkText = R.filter(r => r.t !== '__showall__').map(r => `${ic[r.lv]} ${r.t}${r.fx ? '：' + r.fx : ''}`).join('\n') + '\n\n' + navigator.userAgent;
   $('#chkMask').classList.remove('hidden');
   const bad = R.filter(r => r.lv === 'bad').length;
   log(`自检：${bad} 个问题，${R.filter(r => r.lv === 'warn').length} 个提醒`);
@@ -1655,9 +2137,16 @@ function stopAll(){
 /* ================= UI 绑定 ================= */
 function setP(r){ r.style.setProperty('--p', ((r.value - r.min) / ((r.max - r.min) || 1) * 100) + '%'); }
 
+// 浏览器刷新/返回时会“恢复”表单控件的旧状态，导致开关显示和实际设置不一致 → 统一登记，加载完再同步一次
+const syncers = [];
+function syncControls(){ syncers.forEach(f => f()); }
+window.addEventListener('load', () => setTimeout(syncControls, 0));
+window.addEventListener('pageshow', () => setTimeout(syncControls, 0));
 function bindRange(id, key, fmt, onChange){
   const r = $('#'+id), lab = $('#'+id+'V');
-  r.value = S[key]; setP(r); if (lab) lab.textContent = fmt ? fmt(S[key]) : S[key];
+  r.autocomplete = 'off';
+  const sync = () => { r.value = S[key]; setP(r); if (lab) lab.textContent = fmt ? fmt(S[key]) : S[key]; };
+  sync(); syncers.push(sync);
   r.addEventListener('input', () => {
     S[key] = +r.value; setP(r); if (lab) lab.textContent = fmt ? fmt(S[key]) : S[key];
     save(); onChange && onChange();
@@ -1670,7 +2159,9 @@ function bindSeg(id, key, onChange){
   paint();
 }
 function bindCheck(id, key, onChange){
-  const c = $('#'+id); c.checked = !!S[key];
+  const c = $('#'+id); c.autocomplete = 'off';
+  const sync = () => { c.checked = !!S[key]; };
+  sync(); syncers.push(sync);
   c.addEventListener('change', () => { S[key] = c.checked; save(); onChange && onChange(); });
 }
 
@@ -1706,6 +2197,28 @@ bindCheck('chA', 'chA', onChannel('A')); bindCheck('chB', 'chB', onChannel('B'))
 
 
 bindCheck('escOn', 'escOn', () => { escReset(); });
+let paintFxSeg = null;
+(() => {
+  const seg = $('#fxSeg');
+  seg.innerHTML = GLFX_STYLES.map((n, i) => `<button data-v="${i}">${n}</button>`).join('');
+  paintFxSeg = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.v === GLFX.cur));
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    S.fxStyle = +b.dataset.v; GLFX.cur = S.fxStyle; GLFX.nextSwap = performance.now() + S.fxEvery * 1000;
+    save(); paintFxSeg(); toast('视觉换成「' + GLFX_STYLES[S.fxStyle] + '」' + (S.fxAuto ? '（随机轮播还开着）' : ''));
+  });
+  paintFxSeg();
+})();
+bindCheck('fxOn', 'fxOn', () => glfxMount(S.view));
+bindCheck('fxAuto', 'fxAuto', () => { GLFX.nextSwap = performance.now() + S.fxEvery * 1000; if (!S.fxAuto){ S.fxStyle = GLFX.cur; save(); } });
+bindRange('fxEvery', 'fxEvery', null, () => { GLFX.nextSwap = performance.now() + S.fxEvery * 1000; });
+bindRange('escAddMin', 'escAddMin');
+bindRange('escAddMax', 'escAddMax');
+bindRange('escPct', 'escPct');
+bindRange('escRecent', 'escRecent', null, escReset);
+bindRange('escBase', 'escBase', null, escReset);
+bindRange('escGap', 'escGap');
+bindRange('escMax', 'escMax', null, () => { if (escStack.length > S.escMax){ escStack.length = S.escMax; strengthDirty = true; pendingSerial = 0; } });
 bindCheck('rjOn', 'rjOn', () => { rjStop(); if (S.rjOn && !connected) toast('随机惊喜已准备，等小狼来了、开关打开才会开始'); });
 bindRange('rjGapMin', 'rjGapMin', null, () => { rjNext = 0; });
 bindRange('rjGapMax', 'rjGapMax', null, () => { rjNext = 0; });
@@ -1772,6 +2285,7 @@ document.addEventListener('pointerdown', () => ensureInputs(true), true);
 // 底部标签：晃动 / 节拍 = 切换触发方式并显示对应页面；设置 = 只切换页面，不改触发方式
 function applyView(fromClick){
   if (S.view !== 'set') S.view = S.mode;
+  glfxMount(S.view);
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('on', el.dataset.p.split(' ').includes(S.view)));
   document.querySelectorAll('#tabBar button').forEach(b => {
     b.classList.toggle('on', b.dataset.t === S.view);
@@ -1786,8 +2300,28 @@ $('#tabBar').addEventListener('click', e => {
   else { if (t !== S.mode){ S.mode = t; combo = 0; escReset(); toast(t === 'music' ? '换成听声音 🎵' : '换成摇一摇 📳'); } S.view = t; }
   save(); applyView(true); window.scrollTo(0, 0);
 });
+glfxInit();
 applyView(false);
 updateArm();
+// 加料快捷入口 → 跳到设置页对应卡片并闪一下
+const PRESET_NAME = {constant:'一直狠', ramp:'慢慢加', pulse:'一顿一顿', sine:'一呼一吸', random:'猜不到'};
+function renderQuick(){
+  const set = (id, txt, on) => { const el = $('#' + id); el.textContent = txt; el.parentElement.classList.toggle('on', on); };
+  set('qWave', PRESET_NAME[S.preset] || S.preset, true);
+  set('qCombo', S.comboOn ? '开' : '关', S.comboOn);
+  set('qEsc', !S.escOn ? '关' : escAdd() ? '+' + escAdd() : '开', S.escOn);
+  set('qRj', S.rjOn ? '开' : '关', S.rjOn);
+}
+setInterval(renderQuick, 400); renderQuick();
+document.querySelectorAll('.qbtn').forEach(b => b.onclick = () => {
+  S.view = 'set'; save(); applyView(false);
+  const card = $('#' + b.dataset.go);
+  setTimeout(() => {
+    const y = card.getBoundingClientRect().top + window.scrollY - 70;
+    window.scrollTo(0, Math.max(0, y));
+    card.classList.remove('hl'); void card.offsetWidth; card.classList.add('hl');
+  }, 0);
+});
 // 打开页面总是从顶端开始（不恢复上次滚动位置）
 try { history.scrollRestoration = 'manual'; } catch(e){}
 window.scrollTo(0, 0);
@@ -1829,7 +2363,7 @@ setInterval(() => {
 window.addEventListener('resize', drawWave);
 renderStrength();
 buildWave();
-requestAnimationFrame(drawMotion);
+requestAnimationFrame(frame);
 setConn(0, '未连接');
 setTimeout(autoConnect, 300);
 $('#buildV').textContent = '版本 ' + BUILD;
