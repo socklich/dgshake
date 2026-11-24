@@ -141,6 +141,16 @@ body.hints #hintBtn{background:var(--acc)}
 .tap.hit{background:radial-gradient(circle at 50% 40%,rgba(255,95,162,.85),rgba(169,139,255,.4))}
 .combo{margin-top:6px}
 .cx{font-size:34px;min-width:72px}
+.connb{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;font-size:13px;font-weight:600;white-space:nowrap}
+.connb.s0{background:linear-gradient(135deg,rgba(169,139,255,.85),rgba(95,200,255,.75));border-color:rgba(255,255,255,.3)}
+.connb.s1{background:rgba(255,184,78,.18);border-color:rgba(255,184,78,.45)}
+.connb.s2{background:rgba(78,224,160,.14);border-color:rgba(78,224,160,.45)}
+.connb #batPill{font-weight:500;color:var(--dim)}
+.stp{display:flex;align-items:center;gap:6px;margin-top:4px}
+.stp button{flex:none;width:44px;height:44px;padding:0;font-size:22px;border-radius:14px;user-select:none;-webkit-user-select:none;touch-action:none}
+.stp .big{flex:1;text-align:center}
+.ch .hd{margin-bottom:2px}
+.ch .act{text-align:center;margin-top:2px}
 </style>
 </head>
 <body>
@@ -150,13 +160,8 @@ body.hints #hintBtn{background:var(--acc)}
   <div class="tr">
     <div class="logo">⚡</div>
     <div class="t" style="flex:1"><h1>Shake Coyote</h1></div>
-    <span class="pill" id="batPill">🔋 --</span>
-    <span class="pill"><span id="connDot" class="dot"></span><span id="connTxt">未连接</span></span>
+    <button id="connBtn" class="connb s0"><span id="connDot" class="dot"></span><span id="connTxt">连接郊狼</span><span id="batPill" class="hidden"></span></button>
     <button id="hintBtn" title="显示/隐藏说明">ⓘ</button>
-  </div>
-  <div class="row" style="margin-top:8px">
-    <button id="connBtn" class="primary">连接郊狼</button>
-    <button id="discBtn" class="hidden">断开</button>
   </div>
   <div id="pickBox" class="hidden" style="margin-top:8px">
     <div class="note" style="margin:0 0 6px">发现多台已授权的郊狼，选一台连接：</div>
@@ -180,21 +185,17 @@ body.hints #hintBtn{background:var(--acc)}
 <!-- 强度 -->
 <section class="card glass">
   <h2>通道强度<span class="sp"></span><span style="text-transform:none;letter-spacing:0">0 – 200</span></h2>
-  <div class="hint">通道基础强度（设备上的强度数值）。波形里的“强度 %”是在这个基础上的百分比。关掉的通道完全不输出。</div>
+  <div class="hint">通道基础强度（设备上的强度数值）。点 ＋/− 调 1 档，按住连续调节、越按越快。波形里的“强度 %”是在这个基础上的百分比。关掉的通道完全不输出。</div>
   <div class="grid2">
     <div class="ch A">
       <div class="hd"><span class="nm">A</span><label class="sw"><input type="checkbox" id="chA"><span></span></label></div>
-      <div class="big" id="strAv">0<small>/ 200</small></div>
-      <div class="act">实际 <span id="actA">--</span></div>
-      <input type="range" id="strA" min="0" max="200" value="0">
-      <div class="pm"><button data-d="A-">−</button><button data-d="A+">＋</button></div>
+      <div class="stp"><button data-d="A-">−</button><div class="big" id="strAv">0</div><button data-d="A+">＋</button></div>
+      <div class="act">实际 <span id="actA">--</span> · 上限 <span id="limA">200</span></div>
     </div>
     <div class="ch B">
       <div class="hd"><span class="nm">B</span><label class="sw"><input type="checkbox" id="chB"><span></span></label></div>
-      <div class="big" id="strBv">0<small>/ 200</small></div>
-      <div class="act">实际 <span id="actB">--</span></div>
-      <input type="range" id="strB" min="0" max="200" value="0">
-      <div class="pm"><button data-d="B-">−</button><button data-d="B+">＋</button></div>
+      <div class="stp"><button data-d="B-">−</button><div class="big" id="strBv">0</div><button data-d="B+">＋</button></div>
+      <div class="act">实际 <span id="actB">--</span> · 上限 <span id="limB">200</span></div>
     </div>
   </div>
   <details>
@@ -375,11 +376,13 @@ let reconnectTries = 0, userDisconnect = false;
 
 if (!navigator.bluetooth) $('#noBle').classList.remove('hidden');
 
+let connState = 0;
 function setConn(state, txt){
+  connState = state;
   $('#connDot').className = 'dot' + (state === 2 ? ' on' : state === 1 ? ' mid' : '');
-  $('#connTxt').textContent = txt;
-  $('#connBtn').classList.toggle('hidden', state === 2);
-  $('#discBtn').classList.toggle('hidden', state !== 2);
+  $('#connTxt').textContent = state === 0 && (txt === '未连接' || !txt) ? '连接郊狼' : txt;
+  $('#connBtn').className = 'connb s' + state;
+  $('#batPill').classList.toggle('hidden', state !== 2 || !$('#batPill').textContent);
 }
 
 const NAME_PREFIX = '47L121';
@@ -503,7 +506,7 @@ async function initBattery(server){
   try{
     const bs = await server.getPrimaryService(BAT_SVC);
     const bc = await bs.getCharacteristic(CH_BAT);
-    const show = v => $('#batPill').textContent = '🔋 ' + v.getUint8(0) + '%';
+    const show = v => { const el = $('#batPill'); el.textContent = '· 🔋' + v.getUint8(0) + '%'; el.classList.toggle('hidden', !connected); };
     show(await bc.readValue());
     try{
       bc.addEventListener('characteristicvaluechanged', e => show(e.target.value));
@@ -595,11 +598,10 @@ let strengthDirty = false, pendingSerial = 0, pendingAt = 0, serialCtr = 0;
 
 function renderStrength(){
   for (const c of ['A','B']){
-    const soft = S['soft'+c], r = $('#str'+c);
+    const soft = S['soft'+c];
     S['str'+c] = clamp(S['str'+c], 0, soft);
-    r.max = 200; r.value = S['str'+c];
-    setP(r);
-    $('#str'+c+'v').innerHTML = S['str'+c] + `<small>/ ${soft < 200 ? '上限 ' + soft : 200}</small>`;
+    $('#str'+c+'v').textContent = S['str'+c];
+    $('#lim'+c).textContent = soft;
   }
 }
 function setStrength(c, v){
@@ -1068,16 +1070,26 @@ function bindCheck(id, key, onChange){
   c.addEventListener('change', () => { S[key] = c.checked; save(); onChange && onChange(); });
 }
 
-$('#connBtn').onclick = connect;
+$('#connBtn').onclick = () => {
+  if (connState === 2){ if (confirm('断开郊狼？')) disconnect(); return; }
+  connect();
+};
 bindCheck('autoConn', 'autoConn', () => { if (S.autoConn) autoConnect(); else stopAutoRetry(); });
-$('#discBtn').onclick = disconnect;
 $('#sensorBtn').onclick = enableSensor;
 
-$('#strA').addEventListener('input', e => setStrength('A', +e.target.value));
-$('#strB').addEventListener('input', e => setStrength('B', +e.target.value));
-document.querySelectorAll('.pm button').forEach(b => b.onclick = () => {
-  const c = b.dataset.d[0], d = b.dataset.d[1] === '+' ? 1 : -1;
-  setStrength(c, S['str'+c] + d);
+// 强度步进：点一下 ±1；按住 0.35s 后连续调节，越按越快（±1 → ±5）
+document.querySelectorAll('.stp button').forEach(b => {
+  const c = b.dataset.d[0], dir = b.dataset.d[1] === '+' ? 1 : -1;
+  let t = 0, n = 0;
+  const stop = () => { clearTimeout(t); t = 0; };
+  const rep = () => { n++; setStrength(c, S['str'+c] + dir * (n > 15 ? 5 : 1)); t = setTimeout(rep, n > 6 ? 60 : 110); };
+  b.addEventListener('pointerdown', e => {
+    e.preventDefault(); stop(); n = 0;
+    setStrength(c, S['str'+c] + dir);
+    t = setTimeout(rep, 350);
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev => b.addEventListener(ev, stop));
+  b.addEventListener('contextmenu', e => e.preventDefault());
 });
 bindCheck('chA', 'chA'); bindCheck('chB', 'chB');
 
