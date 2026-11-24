@@ -118,6 +118,13 @@ details[open] summary::before{content:"▾ "}
     <button id="discBtn" class="hidden">断开</button>
   </div>
   <div class="note" id="devName">搜索名称前缀 47L121</div>
+  <details id="diagBox">
+    <summary>诊断</summary>
+    <div class="seg" id="wmSeg" style="margin-top:10px">
+      <button data-v="auto">写入：自动</button><button data-v="resp">有响应</button><button data-v="noresp">无响应</button>
+    </div>
+    <div id="diagTxt" style="font:11px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);margin-top:8px;word-break:break-all"></div>
+  </details>
 </section>
 
 <!-- 强度 -->
@@ -287,8 +294,9 @@ async function openGatt(){
   await nChar.startNotifications();
   step = 'BF';
   connected = true; reconnectTries = 0;
+  diag.mode = ''; pickWrite();
   setConn(2, '已连接');
-  log('已连接 ' + device.name);
+  log(`已连接 ${device.name} · 150A 属性[${diag.props}] · 写入方式 ${diag.mode}`);
   await writeBF();
   // 连接后以绝对值同步一次强度
   strengthDirty = true; pendingSerial = 0;
@@ -327,11 +335,30 @@ function disconnect(){
   setTimeout(() => { if (device && device.gatt.connected) device.gatt.disconnect(); }, 250);
 }
 
+// 写入方式：iOS 对不支持 writeWithoutResponse 的特征会静默丢弃数据，所以按特征属性选择
+let writeMode = 'auto'; // 'auto' | 'resp' | 'noresp'
+const diag = {tx:0, err:0, lastErr:'', last:'', mode:'', props:''};
+function pickWrite(){
+  const p = wChar.properties || {};
+  diag.props = ['write','writeWithoutResponse','notify'].filter(k => p[k]).join(',') || '未知';
+  let m = writeMode;
+  if (m === 'auto') m = (p.write || !p.writeWithoutResponse) ? 'resp' : 'noresp';
+  diag.mode = m;
+  return m;
+}
+function withTimeout(p, ms){
+  return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('写入超时')), ms))]);
+}
 async function bleWrite(bytes){
   if (!wChar) return;
   const buf = new Uint8Array(bytes);
-  if (wChar.writeValueWithoutResponse) return wChar.writeValueWithoutResponse(buf);
-  return wChar.writeValue(buf);
+  const m = diag.mode || pickWrite();
+  let p;
+  if (m === 'noresp' && wChar.writeValueWithoutResponse) p = wChar.writeValueWithoutResponse(buf);
+  else if (wChar.writeValueWithResponse) p = wChar.writeValueWithResponse(buf);
+  else p = wChar.writeValue(buf);
+  await withTimeout(p, 400);
+  diag.tx++;
 }
 
 async function writeBF(){
@@ -437,7 +464,7 @@ function tick(){
   const b = new Uint8Array(20);
   b[0] = 0xB0;
   // 强度：仅在变化时用绝对模式 (11) 下发，带序号等待 B1
-  if (pendingSerial && now - pendingAt > 1000) pendingSerial = 0; // 超时
+  if (pendingSerial && now - pendingAt > 1000){ pendingSerial = 0; strengthDirty = true; } // 超时未收到 B1 → 重发
   if (strengthDirty && !pendingSerial){
     serialCtr = (serialCtr % 15) + 1;
     pendingSerial = serialCtr; pendingAt = now; strengthDirty = false;
@@ -457,8 +484,13 @@ function tick(){
   fill(4, S.chA);
   fill(12, S.chB);
 
+  diag.last = Array.from(b, x => x.toString(16).padStart(2,'0')).join(' ');
   writing = true;
-  bleWrite(b).catch(e => log('写入失败: ' + e.message)).finally(() => writing = false);
+  bleWrite(b).catch(e => {
+    diag.err++;
+    if (e.message !== diag.lastErr) log('写入失败: ' + e.message);
+    diag.lastErr = e.message;
+  }).finally(() => writing = false);
   outGlow(active);
 }
 
@@ -674,6 +706,30 @@ hb.addEventListener('pointerdown', holdOn);
 ['pointerup','pointercancel','pointerleave'].forEach(ev => hb.addEventListener(ev, holdOff));
 hb.addEventListener('contextmenu', e => e.preventDefault());
 $('#stopBtn').onclick = stopAll;
+
+// 诊断面板
+const wmSeg = $('#wmSeg');
+const paintWm = () => wmSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === writeMode));
+wmSeg.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  writeMode = b.dataset.v; paintWm();
+  if (wChar){ diag.mode = ''; pickWrite(); log('写入方式 → ' + diag.mode); }
+});
+paintWm();
+setInterval(() => {
+  const hints = [];
+  if (!connected) hints.push('未连接');
+  if (!S.chA && !S.chB) hints.push('⚠ A/B 通道都关着');
+  if (S.chA && S.strA === 0) hints.push('⚠ A 强度为 0，不会有输出');
+  if (S.chB && S.strB === 0) hints.push('⚠ B 强度为 0，不会有输出');
+  if (connected && actA === null) hints.push('⚠ 设备还没回传 B1（强度可能没设上）');
+  $('#diagTxt').innerHTML =
+    `150A 属性: ${diag.props || '-'} · 写入: ${diag.mode || '-'}<br>` +
+    `已发送 ${diag.tx} 帧 · 失败 ${diag.err}${diag.lastErr ? '（' + diag.lastErr + '）' : ''}<br>` +
+    `设定 A${S.strA}/B${S.strB} · 设备实际 A${actA ?? '-'}/B${actB ?? '-'}<br>` +
+    `最近帧: ${diag.last || '-'}` +
+    (hints.length ? `<br><span style="color:var(--warn)">${hints.join('<br>')}</span>` : '');
+}, 300);
 
 window.addEventListener('resize', drawWave);
 renderStrength();
