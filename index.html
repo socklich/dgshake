@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-003620';
+const BUILD = '20261125-004759';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -256,6 +256,14 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 .big{position:relative}
 .big .sub2{display:block;height:12px;margin-top:1px;font-size:10.5px;line-height:12px;font-weight:600;color:var(--dim);white-space:nowrap;text-align:center}
 .tmp{margin:0 2px}.tmp.cmb{font-weight:500;opacity:.85}
+.songrow{display:flex;align-items:center;gap:8px;margin-top:6px}
+.songpick{display:inline-flex;align-items:center;padding:7px 12px;border-radius:12px;font-size:13px;font-weight:600;background:linear-gradient(135deg,rgba(169,139,255,.8),rgba(255,95,162,.7));border:1px solid rgba(255,255,255,.25);cursor:pointer}
+.songbox{display:flex;align-items:center;gap:8px;margin-top:6px;padding:6px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.songname{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.songprog{height:3px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:4px;overflow:hidden}
+.songprog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5fc8ff,#ff5fa2)}
+#quickCard.dim{opacity:.45}
+.tk3{position:relative;height:12px;display:block}.tk3 span{position:absolute;left:0;transform:none}.tk3 span:nth-child(2){transform:translateX(-50%)}
 </style>
 </head>
 <body>
@@ -309,7 +317,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
     <div class="cap">上下晃动＝上下甩 / 转动手机 · 前后晃＝直线晃动或拍打 · 都算＝哪个猛用哪个</div>
     <div class="hint">上下晃动读的是陀螺仪的旋转速度（手机上下甩、翻转都算）；前后晃读的是加速度（拍桌子、敲手机也算）。不确定就选「都算」。</div>
     <label class="f"><div class="lb"><span>敏感门槛<small class="sd">越低越容易挨电</small></span><b id="thrV">200</b></div><input type="range" id="thr" min="20" max="1000" step="5"><div class="hint">图里的曲线冲过黄色虚线，就电一下。门槛太低会连呼吸都算，太高就得使劲甩。</div></label>
-    <label class="f"><div class="lb"><span>每下电多久 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstV">75</b></div><input type="range" id="burst" min="25" max="3000" step="25"><div class="hint">每晃一下，电击持续多长时间（播放下面「手感」的开头这么长一段）。想要一下一下清清楚楚，就别长过两次晃动的间隔。</div></label>
+    <label class="f"><div class="lb"><span>每下电多久 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstV">75</b></div><input type="range" id="burst" min="0" max="1000" step="1"><div class="ticks tk3"><span>20</span><span style="left:75%">200</span><span style="right:0;left:auto">1000 ms</span></div><div class="hint">每晃一下，电击持续多长时间（播放下面「手感」的开头这么长一段）。想要一下一下清清楚楚，就别长过两次晃动的间隔。</div></label>
     <details>
       <summary>进阶手法 <small class="sd">防手抖 / 冷却 / 连发</small></summary>
       <label class="f"><div class="lb"><span>防手抖<small class="sd">大＝稳但迟钝</small></span><b id="smoothV">0.1</b></div><input type="range" id="smooth" min="0" max="0.95" step="0.05"><div class="hint">把细小的抖动抹平。调大不容易误伤，但反应会慢半拍；想跟快节奏就保持在 0.2 以下。</div></label>
@@ -329,6 +337,19 @@ label.f .lb{white-space:nowrap;overflow:hidden}
     <div class="cap">音乐节奏＝放首歌，跟着拍子一下一下来 · 别出声＝不许出声，一出声就挨电</div>
     <div class="hint">音乐节奏会听几秒算出 BPM，然后预判下一拍、提前出手，准准地踩在拍子上，偶尔漏听也不会断。别出声会先安静地听一会儿记住环境噪音，之后谁发出比这明显大的声音（说话、喘息、叫出声），就电一下；一直出声就隔一会儿再电一下，直到安静下来。</div>
     <div class="bp" data-b="auto">
+      <div class="songrow">
+        <label class="songpick"><input type="file" id="songFile" accept="audio/*" hidden>🎵 放手机里的歌</label>
+        <span class="sd" style="flex:1;text-align:right">不放就用麦克风听</span>
+      </div>
+      <div id="songBox" class="songbox hidden">
+        <button id="songPlay" class="roundb">▶︎</button>
+        <div style="flex:1;min-width:0"><div id="songName" class="songname">—</div><div class="songprog"><i id="songBar"></i></div></div>
+        <span class="sd" id="songSrcTag"></span>
+      </div>
+      <div class="cap">网页没法听到别的 App 放的歌；想要最准，就在这里选一首手机里的歌由网页来放（直接分析，不经过麦克风）。</div>
+      <label class="f"><div class="lb"><span>敏感度<small class="sd">高＝节奏不明显也跟着电</small></span><b id="musSensV">5</b></div><input type="range" id="musSens" min="1" max="10" step="1"><div class="hint">越高越容易出手：前奏、鼓点不清楚的歌也会跟；越低越挑剔，只在节奏很明确时才电。</div></label>
+      <div class="cap" id="musAutoInfo">每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。</div>
+      <div class="tog"><span>叠加加料<small class="sd">越挨越重 / 越激动 / 随机惊喜</small></span><label class="sw"><input type="checkbox" id="musicExtras"><span></span></label></div>
       <div class="seg" id="multSeg" style="margin-top:6px"><button data-v="0.5">两拍一下</button><button data-v="1">一拍一下</button><button data-v="2">半拍一下</button></div>
       <div class="cap">多久来一下；节奏听成快一倍或慢一倍时，也用这里纠正</div>
       <label class="f"><div class="lb"><span>抢拍 (ms)<small class="sd">觉得慢半拍就调大</small></span><b id="leadV">120</b></div><input type="range" id="lead" min="0" max="400" step="10"><div class="hint">从手机发出指令到小狼真正放电要 0.1–0.2 秒，所以要提前这么多出手，电击才正好砸在鼓点上。电得比鼓点晚 → 调大；早了 → 调小。</div></label>
@@ -339,8 +360,9 @@ label.f .lb{white-space:nowrap;overflow:hidden}
         <label class="f"><div class="lb"><span>连电间隔 (ms)<small class="sd">一直出声多久电一次</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">还在出声的话，每隔这么久再电一下，直到安静。</div></label>
       </div>
       <button id="quietRelearn" class="wide" style="margin-top:6px">🤫 重新记住安静的样子</button>
+        <label class="f"><div class="lb"><span>每下电多久 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="0" max="1000" step="1"><div class="ticks tk3"><span>20</span><span style="left:75%">200</span><span style="right:0;left:auto">1000 ms</span></div><div class="hint">出声时每下电多久。</div></label>
     </div>
-    <label class="f"><div class="lb"><span>每拍电多久 (ms)<small class="sd">短＝点一下 长＝压一拍</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="25" max="3000" step="25"><div class="hint">每个拍点电多长时间。120 BPM 一拍是 500ms，想拍拍分明就别超过 300。</div></label>
+
 </section>
 
 
@@ -349,7 +371,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 
 <!-- 加料快捷入口：点一下跳到设置里对应的位置 -->
 <section class="card glass page" data-p="motion music" id="quickCard">
-  <h2>加料<small class="sd">点一下去设置里调</small></h2>
+  <h2>加料<small class="sd" id="quickNote">点一下去设置里调</small></h2>
   <div class="qgrid">
     <button class="qbtn" data-go="waveCard"><i>💗</i><span>手感</span><b id="qWave">猜不到</b></button>
     <button class="qbtn" data-go="comboCard"><i>🔥</i><span>越挨越重</span><b id="qCombo">开</b></button>
@@ -369,12 +391,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   <div class="cap">一直狠＝全程满力 · 慢慢加＝由轻到重 · 一顿一顿＝一开一停 · 一呼一吸＝起起伏伏 · 猜不到＝每次都不一样</div>
   <canvas id="waveCv" height="46" style="margin-top:8px"></canvas>
   <label class="f"><div class="lb"><span>颗粒感<small class="sd">小＝酥麻 大＝一下下敲</small></span><b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲之间的间隔。左半段 10–200ms 细细调（越小越密越麻），右半段 200–1000ms 是一下一下的敲打感。</div></label>
-  <div class="grid2">
-    <label class="f"><div class="lb"><span>最轻 %<small class="sd">低谷</small></span><b id="minIV">0</b></div><input type="range" id="minI" min="0" max="100"><div class="hint">波形最轻的时候用几成力。</div></label>
-    <label class="f"><div class="lb"><span>最重 %<small class="sd">高峰</small></span><b id="maxIV">100</b></div><input type="range" id="maxI" min="0" max="100"><div class="hint">波形最重的时候用几成力。</div></label>
-  </div>
-  <div class="grp">
-    <div class="grph">更多 <small class="sd">一轮多长</small></div>
+  <div class="grp"><div class="grph">更多 <small class="sd">一轮多长</small></div>
     <label class="f"><div class="lb"><span>一轮多长 (ms)<small class="sd">完整走一遍</small></span><b id="cycV">500</b></div><input type="range" id="cyc" min="100" max="3000" step="25"><div class="hint">完整的形状走一遍要多久。每次电击只播放开头那一段（长度由“每下电多久”决定）。</div></label>
   </div>
 </section>
@@ -510,7 +527,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   comboOn:true, comboStart:30, comboSteps:8, comboWin:600,
   autoConn:true, lastDev:'', bfOn:false,
   fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
-  escOn:true, escAddMin:5, escAddMax:10, escPct:25, escRecent:5, escBase:10, escGap:6, escMax:8,
+  escOn:true, musicExtras:false, musSens:5, escAddMin:5, escAddMax:10, escPct:25, escRecent:5, escBase:10, escGap:6, escMax:8,
   rjOn:true, rjType:'jolt', rjGapMin:3, rjGapMax:10, rjAddMin:5, rjAddMax:15, rjDurMin:0.3, rjDurMax:1.5,
   band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'random', pf:20, cyc:500, minI:0, maxI:100};
@@ -537,7 +554,8 @@ if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.sof
 if ((S.ver|0) < 9){ S.preset = 'random'; }
 if ((S.ver|0) < 10){ S.rjOn = true; }
 S.ver = 10;
-S.fxOn = true;   // 视觉效果固定开启（只有极光流带一种）
+S.fxOn = true;
+S.minI = 0; S.maxI = 100;   // 最轻/最重 已移除，固定全范围   // 视觉效果固定开启（只有极光流带一种）
 S.bfOn = false; S.softA = 200; S.softB = 200; // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 save(); // 迁移结果立即落盘
@@ -926,16 +944,43 @@ function schedule(){
 }
 
 // 把一段波形写进时间槽（与已有内容取最大值）
-function placeBurst(atTime, durMs, g){
+function placeItems(atTime, items, g){
   const phase = clamp(Math.floor((atTime - lastTickT) / 25), 0, 3);
   const start = nextSlot + phase;
-  const n = Math.max(1, Math.round(durMs / 25));
-  if (S.preset === 'random') buildWave();
-  for (let i=0; i<n; i++){
-    const [f, I] = wave[i % wave.length];
+  for (let i=0; i<items.length; i++){
+    const [f, I] = items[i];
     const v = clamp(Math.round(I * g), 0, 100), k = start + i;
     if (!slotMap.has(k) || slotMap.get(k) < v){ slotMap.set(k, v); slotFreq.set(k, f); }
   }
+}
+function placeBurst(atTime, durMs, g){
+  const n = Math.max(1, Math.round(durMs / 25));
+  if (S.preset === 'random') buildWave();
+  const items = []; for (let i=0; i<n; i++) items.push(wave[i % wave.length]);
+  placeItems(atTime, items, g);
+}
+// 音乐节奏模式：按当前音乐自动生成这一拍的波形
+//  · 时长 = 拍长的 40%（60–320ms），快歌短促、慢歌饱满
+//  · 颗粒 = 由音色明亮度（频谱重心）和速度决定：明亮/快 → 细密酥麻，低沉/慢 → 粗重敲击
+//  · 形状 = 鼓点一样“先猛后衰”，重拍（起音更强）更重
+let musCentroid = 1500, musAccent = 1;
+const MUS = {dur: 0, pf: 0};
+function musicBurst(now){
+  const iv = beatInterval() || 500;
+  const dur = clamp(iv * 0.4, 60, 320);
+  const bright = clamp((musCentroid - 600) / 3400, 0, 1);          // 0 低沉 … 1 明亮
+  const fast = clamp((60000 / iv - 70) / 90, 0, 1);                 // 0 慢 … 1 快
+  const pf = Math.round(70 - 55 * (0.6 * bright + 0.4 * fast));      // 15–70ms
+  const fb = encFreq(pf), n = Math.max(2, Math.round(dur / 25));
+  const acc = clamp(musAccent, 0.55, 1);
+  const items = [];
+  for (let i = 0; i < n; i++){
+    const decay = Math.pow(1 - i / n, 1.4);
+    items.push([fb, Math.round(100 * acc * (0.35 + 0.65 * decay))]);
+  }
+  MUS.dur = Math.round(n * 25); MUS.pf = pf;
+  placeItems(now, items, 1);
+  return MUS.dur;
 }
 
 function tick(){
@@ -1062,8 +1107,10 @@ function comboLevel(now){ // 计入衰减后的当前连击级数
   if (!combo) return 0;
   return Math.max(0, combo - Math.floor((now - comboLast) / S.comboWin));
 }
+// 音乐节奏模式下默认“纯净”：不叠加 越挨越重 / 越激动越重 / 随机惊喜（可在节拍页打开）
+function extrasOn(){ return !(S.mode === 'music' && S.band === 'auto' && !S.musicExtras); }
 function comboGainOf(c){
-  if (!S.comboOn || c <= 0) return 1;
+  if (!S.comboOn || c <= 0 || !extrasOn()) return 1;
   const s0 = S.comboStart / 100;
   return s0 + (1 - s0) * Math.min(1, (c - 1) / Math.max(1, S.comboSteps - 1));
 }
@@ -1077,8 +1124,9 @@ function trigger(level, now, src){
   else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) toast('想电一下，但力度是 0 —— 先用 ＋ 加点');
   combo = comboLevel(now) + 1; comboLast = now;
   gain = comboGainOf(combo);
-  const dur = S.mode === 'music' ? S.burstMu : S.burst;
-  placeBurst(now, dur, gain);
+  let dur;
+  if (src === 'music' && S.band === 'auto') dur = musicBurst(now);
+  else { dur = S.mode === 'music' ? S.burstMu : S.burst; placeBurst(now, dur, gain); }
   renderCombo(true);
   burstUntil = Math.max(burstUntil, now + dur);
   trigCount++; $('#trigCnt').textContent = trigCount;
@@ -1118,7 +1166,7 @@ function effStr(c){
   const add = base > 0 ? rjAdd + escAdd() : 0;
   return clamp(base + add, 0, Math.min(200, S['soft'+c]));
 }
-function rjRunning(){ return S.rjOn && connected && armed; }
+function rjRunning(){ return S.rjOn && connected && armed && extrasOn(); }
 function rjStop(){
   if (rjAdd){ rjAdd = 0; strengthDirty = true; }
   rjUntil = 0; rjNext = 0; rjKind = '';
@@ -1189,7 +1237,7 @@ function escMean(from, to){ // 相对“现在”的样本区间 [from, to)，�
 }
 function escTick(){
   const now = performance.now();
-  if (!S.escOn || !armed){ escReset(); escShow(); return; }
+  if (!S.escOn || !armed || !extrasOn()){ escReset(); escShow(); return; }
   escBuf[escI] = escSignal(); escI = (escI + 1) % ESC_N; escCount = Math.min(ESC_N, escCount + 1);
   const R = S.escRecent * 10, B = S.escBase * 10;
   if (escCount < R + B || now - escLastEval < 1000){ escShow(); return; }
@@ -1231,20 +1279,65 @@ setInterval(escTick, 100);
 
 /* ================= 音乐节拍 ================= */
 let micOn = false, actx = null, analyser = null, fbuf = null, micStream = null, beatTimer = 0;
+let micSrc = null, songEl = null, songSrc = null, songOn = false;
 let mAvg = 0, mPrev = 0, mE = 0, beatLast = 0, beatCount = 0, bpm = 0;
 const beatTimes = [];
 const MH = 160, mh = new Float32Array(MH), mhT = new Float32Array(MH), mhB = new Uint8Array(MH); let mhI = 0;
 
 function stopMic(){
-  clearInterval(beatTimer); beatTimer = 0;
   try { micStream && micStream.getTracks().forEach(t => t.stop()); } catch(e){}
-  try { actx && actx.close(); } catch(e){}
-  micStream = null; actx = null; analyser = null; micOn = false; prevSpec = null;
+  try { if (micSrc) micSrc.disconnect(); } catch(e){}
+  micStream = null; micSrc = null; micOn = songOn; prevSpec = null;
 }
 function micDead(){
-  if (!micOn) return false;
+  if (!micOn || songOn) return false;
   const tr = micStream && micStream.getAudioTracks()[0];
   return !tr || tr.readyState === 'ended' || tr.muted || !actx || actx.state === 'closed' || actx.state === 'interrupted';
+}
+// 音频分析管线（麦克风和本地歌曲共用）
+async function ensureAudio(){
+  if (!actx){
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = actx.createAnalyser();
+    analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0;
+    fbuf = new Uint8Array(analyser.frequencyBinCount);
+  }
+  if (actx.state === 'suspended') await actx.resume();
+  if (!beatTimer) beatTimer = setInterval(beatStep, 10);
+}
+// 放手机里的歌：网页自己播放并直接分析音频，比麦克风准、锁定更快；暂停/放完自动回到麦克风
+async function playSong(file){
+  await ensureAudio();
+  if (!songEl){
+    songEl = new Audio(); songEl.preload = 'auto'; songEl.playsInline = true; songEl.setAttribute('playsinline', '');
+    songSrc = actx.createMediaElementSource(songEl);
+    songSrc.connect(actx.destination);
+    songEl.addEventListener('play', () => setSongOn(true));
+    songEl.addEventListener('pause', () => setSongOn(false));
+    songEl.addEventListener('ended', () => setSongOn(false));
+    songEl.addEventListener('timeupdate', renderSong);
+  }
+  if (songEl.src) URL.revokeObjectURL(songEl.src);
+  songEl.src = URL.createObjectURL(file);
+  $('#songName').textContent = file.name.replace(/\.[^.]+$/, '');
+  try { await songEl.play(); } catch(e){ toast('播放失败：' + e.message); }
+}
+function setSongOn(on){
+  songOn = on;
+  try { if (micSrc) micSrc.disconnect(); } catch(e){}
+  try { songSrc.disconnect(analyser); } catch(e){}
+  if (on) songSrc.connect(analyser); else if (micSrc) micSrc.connect(analyser);
+  // 换音源：清空节奏记录，重新快速锁定
+  envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0;
+  micOn = !!(micSrc || songOn);
+  renderSong();
+}
+function renderSong(){
+  const box = $('#songBox'); if (!box) return;
+  box.classList.toggle('hidden', !songEl || !songEl.src);
+  $('#songPlay').textContent = songOn ? '⏸' : '▶︎';
+  $('#songSrcTag').textContent = songOn ? '正在听：这首歌' : (micSrc ? '正在听：麦克风' : '暂停中');
+  if (songEl && songEl.duration) $('#songBar').style.width = (songEl.currentTime / songEl.duration * 100) + '%';
 }
 async function enableMic(){
   keepAwake();
@@ -1253,14 +1346,10 @@ async function enableMic(){
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('此浏览器不支持麦克风访问');
     const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
     micStream = stream;
-    actx = new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') await actx.resume();
-    analyser = actx.createAnalyser();
-    analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0;
-    actx.createMediaStreamSource(stream).connect(analyser);
-    fbuf = new Uint8Array(analyser.frequencyBinCount);
+    await ensureAudio();
+    micSrc = actx.createMediaStreamSource(stream);
+    if (!songOn) micSrc.connect(analyser);
     micOn = true;
-    clearInterval(beatTimer); beatTimer = setInterval(beatStep, 10);
     log('麦克风已启用 ' + actx.sampleRate + 'Hz');
   }catch(e){ log('麦克风失败: ' + e.message); toast('手机不让听声音，点 🩺 看看怎么开权限'); }
 }
@@ -1290,6 +1379,9 @@ function beatStep(){
   }
   prevSpec.set(fbuf);
   mE = lvl / (i1 - i0 + 1);
+  // 频谱重心（音色明亮度），慢慢平滑
+  let num = 0, den = 0; for (let i = i0; i <= i1; i += 2){ const m = fbuf[i]; num += m * i * binHz; den += m; }
+  if (den > 0) musCentroid += (num / den - musCentroid) * 0.02;
   autoFeed(flux, now);
 }
 
@@ -1407,11 +1499,14 @@ function beatInterval(){ return tempoP / (+S.mult || 1); }
 function autoBeatTick(now){
   if (!tempoP || !nextBeatAt) return;
   const iv = beatInterval();
-  const ok = tempoConf >= 0.22 && mE > 6;    // 没有明显节奏或静音时不输出
+  // 敏感度 1–10：越高越容易出手（节奏把握门槛 0.37 → 0.05，静音门槛 9 → 3）
+  const ok = tempoConf >= 0.405 - S.musSens * 0.035 && mE > 9.6 - S.musSens * 0.66;
   let fireAt = nextBeatAt - S.lead;
   let guard = 0;
   while (now >= fireAt && guard++ < 8){
     if (now - fireAt < 120 && ok){
+      let rec = 0; for (let k = 1; k <= Math.min(envCount, Math.round(iv / HOP)); k++) rec = Math.max(rec, envBuf[(envI - k + ENV_N) % ENV_N]);
+      musAccent = 0.55 + 0.45 * clamp(rec / Math.max(1, envPeak), 0, 1);
       beatCount++; beatPendingMark = 1; fxBeat(1);
       if (armed && S.mode === 'music') trigger(1, now, 'music');
     }
@@ -2001,6 +2096,7 @@ async function resumeByGesture(){
   }
   if (micOn){
     if (micDead()){ log('麦克风已被系统中断，重新启用'); stopMic(); await enableMic(); }
+    if (actx && actx.state !== 'running') actx.resume().catch(() => {});
     else if (actx.state !== 'running') actx.resume().catch(() => {});
   }
   log('已恢复：屏幕常亮' + (sensorOn ? ' / 陀螺仪' : '') + (micOn ? ' / 麦克风' : ''));
@@ -2036,6 +2132,7 @@ window.addEventListener('load', () => setTimeout(syncControls, 0));
 window.addEventListener('pageshow', () => setTimeout(syncControls, 0));
 function bindRange(id, key, fmt, onChange){
   const r = $('#'+id), lab = $('#'+id+'V');
+  if (!r){ log('缺少控件 ' + id); return; }
   r.autocomplete = 'off';
   const sync = () => { r.value = S[key]; setP(r); if (lab) lab.textContent = fmt ? fmt(S[key]) : S[key]; };
   sync(); syncers.push(sync);
@@ -2051,7 +2148,8 @@ function bindSeg(id, key, onChange){
   paint();
 }
 function bindCheck(id, key, onChange){
-  const c = $('#'+id); c.autocomplete = 'off';
+  const c = $('#'+id);
+  if (!c){ log('缺少控件 ' + id); return; } c.autocomplete = 'off';
   const sync = () => { c.checked = !!S[key]; };
   sync(); syncers.push(sync);
   c.addEventListener('change', () => { S[key] = c.checked; save(); onChange && onChange(); });
@@ -2116,8 +2214,16 @@ $('#chkCopy').onclick = async () => {
 bindSeg('srcSeg', 'src');
 bindRange('thr', 'thr');
 bindRange('smooth', 'smooth', v => v.toFixed(2));
-bindRange('burst', 'burst');
-bindRange('burstMu', 'burstMu');
+// 每下电多久：20–1000ms，左边 3/4 细调 20–200，右边 1/4 是 200–1000
+const bPos2ms = p => p <= 750 ? Math.round(20 + p / 750 * 180) : Math.round(200 + (p - 750) / 250 * 800);
+const bMs2pos = m => m <= 200 ? (m - 20) / 180 * 750 : 750 + (m - 200) / 800 * 250;
+for (const key of ['burst', 'burstMu']){
+  S[key] = clamp(S[key], 20, 1000);
+  const r = $('#' + key), lab = $('#' + key + 'V');
+  const sync = () => { r.value = bMs2pos(S[key]); setP(r); lab.textContent = S[key]; };
+  sync(); syncers.push(sync);
+  r.addEventListener('input', () => { S[key] = bPos2ms(+r.value); setP(r); lab.textContent = S[key]; save(); });
+}
 bindRange('cool', 'cool');
 bindRange('rearm', 'rearm', v => v.toFixed(2));
 bindCheck('comboOn', 'comboOn', () => { renderCombo(false); });
@@ -2129,6 +2235,14 @@ bindSeg('bandSeg', 'band', () => { escReset(); mAvg = 0; quietBase = 0; mhT.fill
 $('#quietRelearn').onclick = () => { quietBase = 0; toast('安静 2 秒，让我记住现在的环境声 🤫'); };
 applyBand();
 bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
+bindRange('musSens', 'musSens');
+bindCheck('musicExtras', 'musicExtras', () => { escReset(); rjStop(); });
+$('#songFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) playSong(f); e.target.value = ''; });
+$('#songPlay').onclick = () => { if (!songEl) return; if (songEl.paused) songEl.play(); else songEl.pause(); };
+setInterval(() => {
+  const el = $('#musAutoInfo'); if (!el || S.band !== 'auto') return;
+  el.textContent = MUS.dur ? `自动波形：每拍 ${MUS.dur}ms · 颗粒 ${MUS.pf}ms（${MUS.pf < 30 ? '细密酥麻' : MUS.pf < 50 ? '中等' : '粗重敲击'}）· 重拍更重` : '每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。';
+}, 500);
 bindRange('lead', 'lead');
 bindRange('sens', 'sens', v => v.toFixed(2));
 bindRange('beatGap', 'beatGap');
@@ -2144,8 +2258,6 @@ const ms2pos = m => m <= 200 ? (m - 10) / 190 * 500 : 500 + (m - 200) / 800 * 50
   r.addEventListener('input', () => { S.pf = pos2ms(+r.value); show(); save(); buildWave(); });
 })();
 bindRange('cyc', 'cyc', null, buildWave);
-bindRange('minI', 'minI', null, buildWave);
-bindRange('maxI', 'maxI', null, buildWave);
 
 // 触发方式切换（在点击手势里直接申请陀螺仪/麦克风权限）
 // 自动启动输入：安卓/电脑无需授权，直接开；iOS 必须由一次点击触发 → 在第一次点屏幕任意处时启动
@@ -2185,11 +2297,13 @@ updateArm();
 // 加料快捷入口 → 跳到设置页对应卡片并闪一下
 const PRESET_NAME = {constant:'一直狠', ramp:'慢慢加', pulse:'一顿一顿', sine:'一呼一吸', random:'猜不到'};
 function renderQuick(){
+  $('#quickCard').classList.toggle('dim', !extrasOn());
   const set = (id, txt, on) => { const el = $('#' + id); el.textContent = txt; el.parentElement.classList.toggle('on', on); };
   set('qWave', PRESET_NAME[S.preset] || S.preset, true);
   set('qCombo', S.comboOn ? '开' : '关', S.comboOn);
   set('qEsc', !S.escOn ? '关' : escAdd() ? '+' + escAdd() : '开', S.escOn);
   set('qRj', S.rjOn ? '开' : '关', S.rjOn);
+  $('#quickNote').textContent = extrasOn() ? '点一下去设置里调' : '音乐节奏模式下暂停（节拍页可打开）';
 }
 setInterval(renderQuick, 400); renderQuick();
 document.querySelectorAll('.qbtn').forEach(b => b.onclick = () => {
@@ -2239,7 +2353,7 @@ setInterval(() => {
     (hints.length ? `<br><span style="color:var(--warn)">${hints.join('<br>')}</span>` : '');
 }, 300);
 
-window.addEventListener('resize', drawWave);
+window.addEventListener('resize', () => drawWave());
 renderStrength();
 buildWave();
 requestAnimationFrame(frame);
