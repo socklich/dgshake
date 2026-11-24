@@ -334,13 +334,13 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* ================= 设置 ================= */
 const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
-  src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:5, mode:'motion',
+  src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:6, mode:'motion',
   comboOn:false, comboStart:30, comboSteps:8, comboWin:600,
   autoConn:true, lastDev:'',
   band:'bass', sens:1.5, beatGap:200,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
-let savedVer = 5; // 没有存档 = 新用户，直接用默认值
+let savedVer = 6; // 没有存档 = 新用户，直接用默认值
 try {
   const raw = JSON.parse(localStorage.getItem('coyoteShake') || 'null');
   if (raw){ savedVer = raw.ver | 0; Object.assign(S, raw); } // 版本号以存档为准，不能被 DEF 覆盖
@@ -351,8 +351,11 @@ if ((S.ver|0) < 2){ Object.assign(S, {smooth:0.1, burst:50, cool:60, rearm:0.6})
 if (S.preset === 'tickle') S.preset = 'random';
 if ((S.ver|0) < 3){ Object.assign(S, {softA:200, softB:200}); }
 if ((S.ver|0) < 4){ if (S.burst < 75) S.burst = 75; }
-if ((S.ver|0) < 5){ delete S.mapI; delete S.vib; delete S.motionTrig; delete S.musicTrig; S.mode = S.mode || 'motion'; S.ver = 5; } // 旧设置迁移到跟手参数
+if ((S.ver|0) < 5){ delete S.mapI; delete S.vib; delete S.motionTrig; delete S.musicTrig; S.mode = S.mode || 'motion'; S.ver = 5; }
+// v6：早期存档的软上限 30 可能被错误标成新版本而没迁移 —— 按数值修正（30 是第一版的默认值）
+if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.softB = 200; S.ver = 6; } // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
+save(); // 迁移结果立即落盘
 
 const $ = s => document.querySelector(s);
 const logEl = $('#log');
