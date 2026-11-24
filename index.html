@@ -128,6 +128,11 @@ details[open] summary::before{content:"▾ "}
     <button id="discBtn" class="hidden">断开</button>
   </div>
   <div class="note" id="devName">搜索名称前缀 47L121</div>
+  <div id="pickBox" class="hidden" style="margin-top:10px">
+    <div class="hint" style="margin-bottom:6px">发现多台已授权的郊狼，选一台连接：</div>
+    <div class="seg" id="pickList"></div>
+  </div>
+  <div class="tog"><span>自动连接<div class="hint">打开页面时自动连接之前授权过的郊狼（只有一台时）；断线后自动重连</div></span><label class="sw"><input type="checkbox" id="autoConn"><span></span></label></div>
   <details id="diagBox">
     <summary>诊断</summary>
     <div class="seg" id="wmSeg" style="margin-top:10px">
@@ -274,6 +279,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
   src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, mapI:false, vib:false, ver:4,
   motionTrig:true, comboOn:false, comboStart:30, comboSteps:8, comboWin:600,
+  autoConn:true, lastDev:'',
   musicTrig:true, band:'bass', sens:1.5, beatGap:200,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
@@ -319,25 +325,96 @@ function setConn(state, txt){
   $('#discBtn').classList.toggle('hidden', state !== 2);
 }
 
+const NAME_PREFIX = '47L121';
+let autoTimer = 0, autoTries = 0;
+
 async function connect(){
   if (!navigator.bluetooth) return alert('此浏览器不支持 Web Bluetooth，请用 Bluefy 打开。');
   keepAwake();
+  stopAutoRetry();
   try{
     setConn(1, '搜索中…');
     step = 'requestDevice';
-    device = await navigator.bluetooth.requestDevice({
-      filters:[{namePrefix:'47L121'}],
+    const d = await navigator.bluetooth.requestDevice({
+      filters:[{namePrefix:NAME_PREFIX}],
       optionalServices:[SVC, BAT_SVC]
     });
-    device.addEventListener('gattserverdisconnected', onDisconnected);
-    userDisconnect = false;
-    $('#devName').textContent = '设备：' + (device.name || device.id);
-    await openGatt();
+    await useDevice(d);
   }catch(e){
     setConn(0, '未连接');
     log(`连接失败 @${step}: ${e.name} ${e.message}`);
     if (e.name !== 'NotFoundError') alert(`连接失败（${step}）：${e.message}`);
   }
+}
+
+// 绑定一个设备对象并连接
+async function useDevice(d){
+  if (device && device !== d && device.gatt && device.gatt.connected){ userDisconnect = true; device.gatt.disconnect(); }
+  device = d;
+  if (!d._hooked){ d.addEventListener('gattserverdisconnected', onDisconnected); d._hooked = true; }
+  userDisconnect = false;
+  $('#pickBox').classList.add('hidden');
+  $('#devName').textContent = '设备：' + (d.name || d.id);
+  await openGatt();
+  S.lastDev = d.id; save();
+}
+
+function gattTimeout(p, ms){
+  return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('连接超时（设备可能没开机或不在附近）')), ms))]);
+}
+
+// 自动连接：用 getDevices() 取之前授权过的设备，只有一台符合时直接连；多台时让用户选
+async function autoConnect(){
+  if (!S.autoConn || connected || !navigator.bluetooth) return;
+  if (typeof navigator.bluetooth.getDevices !== 'function'){
+    log('自动连接：此浏览器不支持 getDevices()，请手动点「连接郊狼」');
+    return;
+  }
+  let list;
+  try { list = await navigator.bluetooth.getDevices(); }
+  catch(e){ log('自动连接：读取已授权设备失败 ' + e.message); return; }
+  const m = list.filter(d => (d.name || '').startsWith(NAME_PREFIX));
+  if (!m.length){ log('自动连接：还没有授权过的郊狼，先手动连接一次'); return; }
+  if (m.length > 1){ showPicker(m); return; }
+  log('自动连接：找到 ' + (m[0].name || m[0].id));
+  autoTries = 0;
+  tryAuto(m[0]);
+}
+
+async function tryAuto(d){
+  if (connected || !S.autoConn) return;
+  autoTries++;
+  try{
+    setConn(1, autoTries > 1 ? `等待设备… (${autoTries})` : '自动连接中…');
+    // 支持的话先等设备广播（设备不在范围时 connect 可能卡住）
+    if (d.watchAdvertisements && !d.watchingAdvertisements){
+      try { await d.watchAdvertisements(); } catch(e){}
+    }
+    await gattTimeout(useDevice(d), 8000);
+    if (d.unwatchAdvertisements) try { d.unwatchAdvertisements(); } catch(e){}
+    toast('已自动连接 ' + (d.name || ''));
+  }catch(e){
+    if (connected) return;
+    try { d.gatt.disconnect(); } catch(_){}
+    if (autoTries === 1) log('自动连接未成功：' + e.message + '，继续在后台重试');
+    if (autoTries < 40){ setConn(1, `等待设备… (${autoTries})`); autoTimer = setTimeout(() => tryAuto(d), 3000); }
+    else { setConn(0, '未连接'); log('自动连接放弃，请手动连接'); }
+  }
+}
+function stopAutoRetry(){ clearTimeout(autoTimer); autoTimer = 0; autoTries = 99; }
+
+function showPicker(list){
+  const box = $('#pickBox'), el = $('#pickList');
+  el.innerHTML = '';
+  list.forEach(d => {
+    const b = document.createElement('button');
+    b.textContent = (d.name || '郊狼') + (d.id === S.lastDev ? ' · 上次' : '') + ' · ' + String(d.id).slice(-4);
+    b.onclick = () => { stopAutoRetry(); autoTries = 0; tryAuto(d); };
+    el.appendChild(b);
+  });
+  box.classList.remove('hidden');
+  setConn(0, '请选择设备');
+  log('自动连接：发现 ' + list.length + ' 台已授权的郊狼，请选择');
 }
 
 async function openGatt(){
@@ -379,19 +456,32 @@ async function initBattery(server){
 }
 
 function onDisconnected(){
+  const was = connected;
+  if (!was && reconnectTries === 0) return; // 连接中途失败（不是掉线），交给调用方处理
   connected = false; wChar = null; txQueue.length = 0; slotMap.clear(); slotFreq.clear();
   setArm(false); holding = false; burstUntil = 0;
   setConn(0, '已断开');
   log('设备断开');
-  if (!userDisconnect && device && reconnectTries < 3){
+  const maxTries = S.autoConn ? 20 : 3;
+  if (!userDisconnect && device && reconnectTries < maxTries){
     reconnectTries++;
-    setConn(1, `重连 ${reconnectTries}/3…`);
-    setTimeout(() => openGatt().catch(e => { log('重连失败: ' + e.message); onDisconnected(); }), 800);
+    setConn(1, `重连 ${reconnectTries}/${maxTries}…`);
+    const delay = Math.min(5000, 800 * reconnectTries); // 逐步拉长间隔
+    setTimeout(() => {
+      if (connected || userDisconnect) return;
+      gattTimeout(openGatt(), 8000).catch(e => {
+        log('重连失败: ' + e.message);
+        try { device.gatt.disconnect(); } catch(_){}
+        onDisconnected();
+      });
+    }, delay);
+  } else if (!userDisconnect && device){
+    setConn(0, '已断开'); toast('重连失败，请手动连接');
   }
 }
 
 function disconnect(){
-  userDisconnect = true;
+  userDisconnect = true; stopAutoRetry();
   stopAll();
   setTimeout(() => { if (device && device.gatt.connected) device.gatt.disconnect(); }, 250);
 }
@@ -924,6 +1014,7 @@ function bindCheck(id, key, onChange){
 }
 
 $('#connBtn').onclick = connect;
+bindCheck('autoConn', 'autoConn', () => { if (S.autoConn) autoConnect(); else stopAutoRetry(); });
 $('#discBtn').onclick = disconnect;
 $('#sensorBtn').onclick = enableSensor;
 
@@ -1024,6 +1115,7 @@ renderStrength();
 buildWave();
 requestAnimationFrame(drawMotion);
 setConn(0, '未连接');
+setTimeout(autoConnect, 300);
 </script>
 </body>
 </html>
