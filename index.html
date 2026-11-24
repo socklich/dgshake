@@ -137,8 +137,6 @@ body.hints #hintBtn{background:var(--acc)}
 .mode button{font-size:14px;padding:9px 6px;font-weight:600}
 .minis{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--dim)}
 .minis .sw{transform:scale(.8);transform-origin:right center}
-.tap{width:100%;height:120px;margin-top:8px;font-size:20px;font-weight:700;border-radius:18px;background:radial-gradient(circle at 50% 40%,rgba(255,95,162,.35),rgba(169,139,255,.18));user-select:none;-webkit-user-select:none;touch-action:none}
-.tap.hit{background:radial-gradient(circle at 50% 40%,rgba(255,95,162,.85),rgba(169,139,255,.4))}
 .combo{margin-top:6px}
 .cx{font-size:34px;min-width:72px}
 .connb{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;font-size:13px;font-weight:600;white-space:nowrap}
@@ -162,6 +160,40 @@ body.hints #hintBtn{background:var(--acc)}
 .ck .fx{color:var(--dim);font-size:12.5px;margin-top:2px;line-height:1.5}
 .ck.bad b{color:var(--bad)} .ck.warn b{color:var(--warn)}
 .top .tr{gap:7px}.top .t{min-width:0;overflow:hidden}.top h1{overflow:hidden;text-overflow:ellipsis}
+/* ---- 更紧凑 ---- */
+body{padding:calc(env(safe-area-inset-top) + 6px) 8px calc(env(safe-area-inset-bottom) + 80px)}
+.card{padding:9px 11px;margin-bottom:7px;border-radius:18px}
+.top{padding:8px 10px;margin-bottom:7px}
+h2{margin:0 0 5px;font-size:11.5px;letter-spacing:.8px}
+.minis{margin-top:5px}
+.grid2{gap:7px}
+.ch{padding:7px 8px;border-radius:14px}
+.big{font-size:26px}
+.stp{margin-top:2px;gap:4px}
+.stp button{width:38px;height:38px;font-size:20px;border-radius:12px}
+.act{font-size:11px;margin-top:1px}
+label.f{margin:3px 0 0}
+label.f .lb{font-size:12px}
+input[type=range]{height:24px}
+input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-7px}
+.seg{gap:5px}
+.seg button{padding:6px 6px;font-size:12.5px}
+.mode button{padding:7px 6px;font-size:13.5px}
+.tog{margin-top:5px;font-size:13.5px}
+.sw{width:44px;height:26px}
+.sw span:after{width:20px;height:20px}
+.sw input:checked+span:after{transform:translateX(18px)}
+details{margin-top:5px}
+summary{font-size:12.5px}
+.stats{margin-top:4px;font-size:12px}
+.sub{margin-top:7px;padding-top:6px}
+.combo{margin-top:2px;gap:10px}
+.cx{font-size:28px;min-width:60px}
+.cbar{height:9px}
+.dock{padding:6px;gap:6px;bottom:calc(env(safe-area-inset-bottom) + 6px);left:8px;right:8px;border-radius:18px}
+.dock button{padding:11px 6px;font-size:15px;border-radius:13px}
+button{padding:8px 11px}
+#sensorBtn,#micBtn{padding:8px}
 </style>
 </head>
 <body>
@@ -230,13 +262,13 @@ body.hints #hintBtn{background:var(--acc)}
 <section class="card glass" id="trigCard">
   <h2>触发方式<span class="sp"></span><span class="pill">触发 <b id="trigCnt" style="margin-left:4px">0</b></span></h2>
   <div class="seg mode" id="modeSeg">
-    <button data-v="motion">📳 晃动</button><button data-v="music">🎵 节拍</button><button data-v="tap">👆 点按</button>
+    <button data-v="motion">📳 晃动</button><button data-v="music">🎵 节拍</button>
   </div>
-  <div class="hint">一次只用一种触发方式，切换即生效。晃动/节拍需要点底部「启用触发」后才会输出；点按模式直接点下面的大按钮。</div>
+  <div class="hint">一次只用一种触发方式，切换即生效。点底部「启用触发」后才会输出。</div>
 
   <div class="mp" data-m="motion">
     <button id="sensorBtn" class="primary wide" style="margin-top:8px">启用陀螺仪</button>
-    <canvas id="motionCv" height="110" style="margin-top:8px"></canvas>
+    <canvas id="motionCv" height="84" style="margin-top:8px"></canvas>
     <div class="stats"><span>当前 <b id="magV">0</b></span><span>峰值 <b id="peakV">0</b></span><span>阈值 <b id="thrV2">0</b></span><span><b id="hzV">0</b> Hz</span></div>
     <div class="seg" id="srcSeg" style="margin-top:8px">
       <button data-v="rot">旋转</button><button data-v="acc">加速度</button><button data-v="both">两者</button>
@@ -253,7 +285,7 @@ body.hints #hintBtn{background:var(--acc)}
 
   <div class="mp" data-m="music">
     <button id="micBtn" class="primary wide" style="margin-top:8px">启用麦克风</button>
-    <canvas id="beatCv" height="70" style="margin-top:8px"></canvas>
+    <canvas id="beatCv" height="56" style="margin-top:8px"></canvas>
     <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">触发线</span> <b id="beThrV">0</b></span><span>节拍 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
     <div class="hint">用麦克风听音乐。建议用另一台设备或音箱外放，手机自己放歌可能被系统打断。</div>
     <div class="seg" id="bandSeg" style="margin-top:8px"><button data-v="auto">🎼 自动节拍</button><button data-v="bass">🥁 鼓点跟随</button></div>
@@ -271,10 +303,6 @@ body.hints #hintBtn{background:var(--acc)}
     </div>
   </div>
 
-  <div class="mp" data-m="tap">
-    <button id="tapPad" class="tap">点 我</button>
-    <div class="hint">每点一下触发一次，可以连点打节奏；连击升级同样生效。不需要「启用触发」。</div>
-  </div>
 
   <label class="f"><div class="lb">每次输出时长 (ms)<b id="burstV">75</b></div><input type="range" id="burst" min="25" max="3000" step="25"><div class="hint">每触发一次（晃一下 / 一个拍点 / 点一下），电击持续多长时间，播放的是下面「波形」的开头这么长一段。越长越明显；但要小于两次触发的间隔，否则会连成一片（如 120 BPM 每拍 500ms，建议 ≤ 300）。三种触发方式共用。</div></label>
 
@@ -300,7 +328,7 @@ body.hints #hintBtn{background:var(--acc)}
   <div class="seg" id="presetSeg">
     <button data-v="constant">恒定</button><button data-v="ramp">渐强</button><button data-v="pulse">脉冲</button><button data-v="sine">呼吸</button><button data-v="random">🎲 随机</button>
   </div>
-  <canvas id="waveCv" height="60" style="margin-top:8px"></canvas>
+  <canvas id="waveCv" height="46" style="margin-top:8px"></canvas>
   <label class="f"><div class="lb">脉冲频率<b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲间隔。越小越密越“麻”，越大越像一下下“敲击”。左半 10–200ms 细调，右半 200–1000ms。</div></label>
   <div class="grid2">
     <label class="f"><div class="lb">最小强度 %<b id="minIV">0</b></div><input type="range" id="minI" min="0" max="100"><div class="hint">波形最低点。</div></label>
@@ -315,7 +343,7 @@ body.hints #hintBtn{background:var(--acc)}
 <!-- 随机抖动 -->
 <section class="card glass" id="rjCard">
   <h2>🎲 随机抖动<span class="sp"></span><span class="pill" id="rjStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="rjOn"><span></span></label></h2>
-  <div class="hint">打开后，每隔一段随机时间自动来一次“意外”。只在「启用触发」打开（或点按模式）且已连接时运行；只作用于强度大于 0 的通道，且不会超过软上限。</div>
+  <div class="hint">打开后，每隔一段随机时间自动来一次“意外”。只在「启用触发」打开且已连接时运行；只作用于强度大于 0 的通道，且不会超过软上限。</div>
   <div class="seg" id="rjTypeSeg">
     <button data-v="jolt">⚡ 突袭电击</button><button data-v="boost">📈 强度增强</button><button data-v="both">🎰 随机二选一</button>
   </div>
@@ -341,7 +369,7 @@ body.hints #hintBtn{background:var(--acc)}
   <details style="margin-top:0">
     <summary>说明 &amp; 日志</summary>
     <div class="note">
-      1. 连接郊狼 → 调好 A/B 强度 → 选触发方式 → 点「启用触发」（点按模式直接点）。<br>
+      1. 连接郊狼 → 调好 A/B 强度 → 选触发方式 → 点「启用触发」。<br>
       2. 页面切到后台会自动解除触发，请保持页面在前台、屏幕常亮。<br>
       3. 「按住」手动测试波形；「停止」立即归零强度并解除触发。<br>
       4. 从低强度开始，避免电极跨越心脏区域。
@@ -406,6 +434,7 @@ S.ver = savedVer;
 S.strA = 0; S.strB = 0; // 安全：每次打开强度归零
 if ((S.ver|0) < 2){ Object.assign(S, {smooth:0.1, burst:50, cool:60, rearm:0.6}); }
 if (S.preset === 'tickle') S.preset = 'random';
+if (S.mode !== 'motion' && S.mode !== 'music') S.mode = 'motion';
 if ((S.ver|0) < 3){ Object.assign(S, {softA:200, softB:200}); }
 if ((S.ver|0) < 4){ if (S.burst < 75) S.burst = 75; }
 if ((S.ver|0) < 5){ delete S.mapI; delete S.vib; delete S.motionTrig; delete S.musicTrig; S.mode = S.mode || 'motion'; S.ver = 5; }
@@ -962,7 +991,7 @@ function effStr(c){
   const add = base > 0 ? rjAdd : 0;
   return clamp(base + add, 0, Math.min(200, S['soft'+c]));
 }
-function rjRunning(){ return S.rjOn && connected && (armed || S.mode === 'tap'); }
+function rjRunning(){ return S.rjOn && connected && armed; }
 function rjStop(){
   if (rjAdd){ rjAdd = 0; strengthDirty = true; }
   rjUntil = 0; rjNext = 0; rjKind = '';
@@ -1000,7 +1029,7 @@ function rjShow(now){
   const el = $('#rjStat');
   if (!S.rjOn) el.textContent = '关';
   else if (!connected) el.textContent = '等待连接';
-  else if (!(armed || S.mode === 'tap')) el.textContent = '等待启用触发';
+  else if (!armed) el.textContent = '等待启用触发';
   else if (rjUntil) el.textContent = (rjKind === 'jolt' ? '⚡ 突袭 +' : '📈 增强 +') + rjAdd + ' · ' + Math.max(0, (rjUntil - now) / 1000).toFixed(1) + 's';
   else if (rjNext) el.textContent = '下次 ' + Math.max(0, (rjNext - now) / 1000).toFixed(1) + 's';
   else el.textContent = '就绪';
@@ -1372,7 +1401,7 @@ async function selfCheck(){
   }
   if (!S.chA && !S.chB) add('warn', 'A/B 通道都关着', '打开至少一个通道的开关。');
   else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) add('warn', '打开的通道强度都是 0', '用 ＋ 把强度调上去，否则不会有感觉。');
-  if (S.mode !== 'tap' && !armed) add('warn', '「启用触发」没打开', '点底部「启用触发」后，晃动/节拍才会输出。');
+  if (!armed) add('warn', '「启用触发」没打开', '点底部「启用触发」后，晃动/节拍才会输出。');
 
   // 6. 屏幕常亮
   if (!('wakeLock' in navigator)) add('warn', '浏览器不支持屏幕常亮', '请在系统设置里把自动锁屏改长，锁屏后会断开。');
@@ -1590,20 +1619,10 @@ function applyMode(fromClick){
     if (S.mode === 'music' && !micOn) enableMic();
     combo = 0;
   }
-  $('#armBtn').classList.toggle('hidden', S.mode === 'tap');
-  if (S.mode === 'tap') setArm(false);
 }
 bindSeg('modeSeg', 'mode', () => applyMode(true));
 applyMode(false);
 
-// 点按触发
-const tp = $('#tapPad');
-tp.addEventListener('pointerdown', e => {
-  e.preventDefault(); keepAwake();
-  trigger(1, performance.now(), 'tap');
-  tp.classList.add('hit'); setTimeout(() => tp.classList.remove('hit'), 90);
-});
-tp.addEventListener('contextmenu', e => e.preventDefault());
 
 // 说明开关
 try { if (localStorage.getItem('coyoteHints') === '1') document.body.classList.add('hints'); } catch(e){}
