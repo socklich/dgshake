@@ -94,6 +94,8 @@ details[open] summary::before{content:"▾ "}
 #stopBtn{flex:1;background:linear-gradient(135deg,#ff4d5e,#c4113a);border-color:rgba(255,255,255,.3)}
 .flash{animation:fl .35s ease-out}
 @keyframes fl{from{box-shadow:0 0 0 0 rgba(255,95,162,.9), 0 10px 40px rgba(0,0,0,.35)}to{box-shadow:0 0 0 18px rgba(255,95,162,0), 0 10px 40px rgba(0,0,0,.35)}}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translate(-50%,-140%);z-index:20;padding:11px 16px;border-radius:14px;font-size:14px;font-weight:600;background:rgba(255,184,78,.92);color:#1a1208;box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .25s;max-width:90vw;text-align:center}
+.toast.show{transform:translate(-50%,0)}
 #log{font:11px/1.45 ui-monospace,Menlo,monospace;color:var(--dim);max-height:120px;overflow:auto;white-space:pre-wrap;margin-top:8px}
 .hidden{display:none!important}
 </style>
@@ -175,7 +177,7 @@ details[open] summary::before{content:"▾ "}
   <div class="hint">信号来源：旋转＝手腕甩动/转动（陀螺仪 °/s）；加速度＝直线晃动、敲击；两者＝取较大值。</div>
   <label class="f"><div class="lb">触发阈值<b id="thrV">200</b></div><input type="range" id="thr" min="20" max="1000" step="5"><div class="hint">曲线越过这条虚线就触发一次。数值越小越灵敏，太小会误触发。</div></label>
   <label class="f"><div class="lb">平滑<b id="smoothV">0.3</b></div><input type="range" id="smooth" min="0" max="0.95" step="0.05"><div class="hint">过滤手抖噪声。越大曲线越平滑，但反应越慢；想跟快节奏晃动请保持在 0.2 以下。</div></label>
-  <label class="f"><div class="lb">每次输出时长 (ms)<b id="burstV">50</b></div><input type="range" id="burst" min="25" max="3000" step="25"><div class="hint">每次触发输出多久（25ms 一格）。要跟 10 次/秒 的晃动，需小于 100ms。</div></label>
+  <label class="f"><div class="lb">每次输出时长 (ms)<b id="burstV">75</b></div><input type="range" id="burst" min="25" max="3000" step="25"><div class="hint">每次触发输出多久（25ms 一格）。要跟 10 次/秒 的晃动，需小于 100ms。</div></label>
   <label class="f"><div class="lb">最小间隔 (ms)<b id="coolV">60</b></div><input type="range" id="cool" min="0" max="1000" step="10"><div class="hint">两次触发之间至少隔多久，防止一下晃动触发多次。</div></label>
   <label class="f"><div class="lb">回落比例<b id="rearmV">0.60</b></div><input type="range" id="rearm" min="0.2" max="0.95" step="0.05"><div class="hint">信号从峰值回落到这个比例以下，才允许下一次触发。连续猛晃时调高（如 0.8）更容易逐峰触发；误触发多就调低。</div></label>
   <div class="tog"><span>晃动越猛 → 输出越强<div class="hint">按晃动幅度把波形强度缩放到 30%–100%</div></span><label class="sw"><input type="checkbox" id="mapI"><span></span></label></div>
@@ -207,6 +209,7 @@ details[open] summary::before{content:"▾ "}
   <div id="log"></div>
 </section>
 
+<div id="toast" class="toast"></div>
 <nav class="dock glass">
   <button id="armBtn">启用触发</button>
   <button id="holdBtn">按住</button>
@@ -236,18 +239,28 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* ================= 设置 ================= */
 const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
-  src:'rot', thr:250, smooth:0.1, burst:50, cool:60, rearm:0.6, mapI:false, vib:false, ver:3,
+  src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, mapI:false, vib:false, ver:4,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
 try { Object.assign(S, JSON.parse(localStorage.getItem('coyoteShake') || '{}')); } catch(e){}
 S.strA = 0; S.strB = 0; // 安全：每次打开强度归零
 if ((S.ver|0) < 2){ Object.assign(S, {smooth:0.1, burst:50, cool:60, rearm:0.6}); }
 if (S.preset === 'tickle') S.preset = 'random';
-if ((S.ver|0) < 3){ Object.assign(S, {softA:200, softB:200, ver:3}); } // 旧设置迁移到跟手参数
+if ((S.ver|0) < 3){ Object.assign(S, {softA:200, softB:200}); }
+if ((S.ver|0) < 4){ if (S.burst < 75) S.burst = 75; S.ver = 4; } // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 
 const $ = s => document.querySelector(s);
 const logEl = $('#log');
+let toastT = 0, toastLast = '', toastAt = 0;
+function toast(msg){
+  const now = Date.now();
+  if (msg === toastLast && now - toastAt < 4000) return;
+  toastLast = msg; toastAt = now;
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+  log('提示: ' + msg);
+}
 function log(msg){
   const t = new Date().toTimeString().slice(0,8);
   logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent.slice(0, 3000);
@@ -497,7 +510,10 @@ function schedule(){
   loopN++;
   let target = loopT0 + loopN*TICK, now = performance.now();
   if (now - target > 3*TICK){ loopT0 = now; loopN = 0; target = now; } // 卡顿后重置，不补发
-  setTimeout(() => { tick(); schedule(); }, Math.max(0, target - now));
+  setTimeout(() => {
+    try { tick(); } catch(e){ log('tick 错误: ' + e.message); }
+    schedule();
+  }, Math.max(0, target - now));
 }
 
 // 把一段波形写进时间槽（与已有内容取最大值）
@@ -628,6 +644,9 @@ function onMotion(e){
 
 function trigger(mag, now){
   now = now || performance.now();
+  if (!connected) toast('触发了，但设备未连接');
+  else if (!S.chA && !S.chB) toast('触发了，但 A/B 通道都关着');
+  else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) toast('触发了，但通道强度为 0 —— 先把强度调上去');
   coolUntil = now + S.cool;
   gain = S.mapI ? clamp((mag || 0) / (S.thr * 2), 0.3, 1) : 1;
   placeBurst(now, S.burst, gain);
@@ -693,7 +712,7 @@ function drawWave(){
 }
 
 /* ================= 屏幕常亮 ================= */
-let wakeLock = null, noSleepVid = null;
+let wakeLock = null, noSleepVid = null, disarmedByHide = false;
 async function keepAwake(){
   try{
     if ('wakeLock' in navigator){
@@ -716,8 +735,12 @@ async function keepAwake(){
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden){
+    if (armed) disarmedByHide = true;
     setArm(false); holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear();
-  } else if (connected || sensorOn) keepAwake();
+  } else {
+    if (connected || sensorOn) keepAwake();
+    if (disarmedByHide){ disarmedByHide = false; setTimeout(() => toast('页面切到过后台，已自动解除触发，需要重新点「启用触发」'), 300); }
+  }
 });
 
 /* ================= 控制 ================= */
@@ -801,9 +824,13 @@ $('#armBtn').onclick = () => {
   if (!sensorOn){ enableSensor(); }
   if (!connected) log('提示：尚未连接设备');
   setArm(!armed); keepAwake();
+  if (armed && connected && (!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) toast('已启用，但通道强度为 0，晃动不会有输出');
 };
 const hb = $('#holdBtn');
-const holdOn = e => { e.preventDefault(); holding = true; gain = 1; if (S.preset === 'random') buildWave(); };
+const holdOn = e => { e.preventDefault(); holding = true;
+  if (!connected) toast('设备未连接');
+  else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) toast('通道强度为 0 —— 先把强度调上去');
+  gain = 1; if (S.preset === 'random') buildWave(); };
 const holdOff = () => { holding = false; };
 hb.addEventListener('pointerdown', holdOn);
 ['pointerup','pointercancel','pointerleave'].forEach(ev => hb.addEventListener(ev, holdOff));
