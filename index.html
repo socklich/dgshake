@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261124-235139';
+const BUILD = '20261124-235356';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -352,8 +352,11 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   </details>
 </section>
 
+
+
+<!-- ===== 设置页 ===== -->
 <!-- 随机惊喜 -->
-<section class="card glass page" data-p="motion music" id="rjCard">
+<section class="card glass page" data-p="set" id="rjCard">
   <h2>🎲 随机惊喜<small class="sd">冷不丁加重电一下</small><span class="sp"></span><span class="pill" id="rjStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="rjOn"><span></span></label></h2>
   <div class="hint">打开后，每隔一段猜不到的时间自动来一次“惊喜”：冷不丁加重力度电一下，这段时间里原本的每一下也跟着变重，结束后恢复。只在小狼在线、通道打开时才会来；力度为 0 的那一路不会被偷袭，也不会超过封顶。</div>
   <div class="grid2">
@@ -371,7 +374,6 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   <div class="hint">三组都是「最少～最多」之间每次随机取：等多久、加多少力（直接加在力度数值上）、持续多久。</div>
 </section>
 
-<!-- ===== 设置页 ===== -->
 <section class="card glass page" data-p="set">
   <h2>🐺 小狼<small class="sd">连接和底层参数，一般不用动</small></h2>
   <div class="minis" style="margin-top:0"><span id="devName" style="flex:1">找名字 47L121 开头的小狼</span>自动召唤<small class="sd" style="margin-right:4px">开页就连</small><label class="sw"><input type="checkbox" id="autoConn"><span></span></label></div>
@@ -431,7 +433,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 <nav class="tabs glass" id="tabBar">
   <button data-t="motion"><i>📳</i><span>摇一摇</span></button>
   <button data-t="music"><i>🎵</i><span>听声音</span></button>
-  <button data-t="set"><i>🐺</i><span>小狼</span></button>
+  <button data-t="set"><i>⚙️</i><span>设置</span></button>
 </nav>
 
 <script>
@@ -1732,10 +1734,13 @@ $('#tabBar').addEventListener('click', e => {
   const t = b.dataset.t;
   if (t === 'set') S.view = 'set';
   else { if (t !== S.mode){ S.mode = t; combo = 0; toast(t === 'music' ? '换成听声音 🎵' : '换成摇一摇 📳'); } S.view = t; }
-  save(); applyView(true); window.scrollTo({top: 0, behavior: 'smooth'});
+  save(); applyView(true); window.scrollTo(0, 0);
 });
 applyView(false);
 updateArm();
+// 打开页面总是从顶端开始（不恢复上次滚动位置）
+try { history.scrollRestoration = 'manual'; } catch(e){}
+window.scrollTo(0, 0);
 
 
 // 说明开关
