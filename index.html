@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261124-234813';
+const BUILD = '20261124-235139';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -280,10 +280,10 @@ label.f .lb{white-space:nowrap;overflow:hidden}
     <canvas id="motionCv" height="84" style="margin-top:6px"></canvas>
     <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span>门槛 <b id="thrV2">0</b></span><span><b id="hzV">0</b> Hz</span></div>
     <div class="seg" id="srcSeg" style="margin-top:8px">
-      <button data-v="rot">甩手腕</button><button data-v="acc">前后晃</button><button data-v="both">都算</button>
+      <button data-v="rot">上下晃动</button><button data-v="acc">前后晃</button><button data-v="both">都算</button>
     </div>
-    <div class="cap">甩手腕＝转动手机 · 前后晃＝直线晃动或拍打 · 都算＝哪个猛用哪个</div>
-    <div class="hint">甩手腕读的是陀螺仪的旋转速度；前后晃读的是加速度（拍桌子、敲手机也算）。不确定就选「都算」。</div>
+    <div class="cap">上下晃动＝上下甩 / 转动手机 · 前后晃＝直线晃动或拍打 · 都算＝哪个猛用哪个</div>
+    <div class="hint">上下晃动读的是陀螺仪的旋转速度（手机上下甩、翻转都算）；前后晃读的是加速度（拍桌子、敲手机也算）。不确定就选「都算」。</div>
     <label class="f"><div class="lb"><span>敏感门槛<small class="sd">越低越容易挨电</small></span><b id="thrV">200</b></div><input type="range" id="thr" min="20" max="1000" step="5"><div class="hint">图里的曲线冲过黄色虚线，就电一下。门槛太低会连呼吸都算，太高就得使劲甩。</div></label>
     <label class="f"><div class="lb"><span>每下电多久 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstV">75</b></div><input type="range" id="burst" min="25" max="3000" step="25"><div class="hint">每晃一下，电击持续多长时间（播放下面「手感」的开头这么长一段）。想要一下一下清清楚楚，就别长过两次晃动的间隔。</div></label>
     <details>
@@ -296,23 +296,24 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 
 <!-- ===== 节拍页 ===== -->
 <section class="card glass page" data-p="music" id="musicCard">
-  <h2>🎵 踩节拍<small class="sd">跟着音乐，一拍一下</small></h2>
+  <h2>🎵 听声音<small class="sd">跟着音乐来，或者不许出声</small></h2>
     <canvas id="beatCv" height="56" style="margin-top:6px"></canvas>
     <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">门槛</span> <b id="beThrV">0</b></span><span>拍数 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
     <div class="hint">用麦克风听歌。最好用另一台手机或音箱放歌，同一台手机边放边听可能会被系统打断。</div>
-    <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 自动踩拍</button><button data-v="bass">🥁 跟着鼓点</button></div>
-    <div class="cap">自动踩拍＝先听出节奏再准时下手，稳 · 跟着鼓点＝听到底鼓才电，直接但会慢半拍</div>
-    <div class="hint">自动踩拍会听几秒算出 BPM，然后预判下一拍、提前出手，所以能准准地踩在拍子上，偶尔漏听也不会断；跟着鼓点只认低音鼓，听到一下电一下。</div>
+    <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 音乐节奏</button><button data-v="quiet">🤫 别出声</button></div>
+    <div class="cap">音乐节奏＝放首歌，跟着拍子一下一下来 · 别出声＝不许出声，一出声就挨电</div>
+    <div class="hint">音乐节奏会听几秒算出 BPM，然后预判下一拍、提前出手，准准地踩在拍子上，偶尔漏听也不会断。别出声会先安静地听一会儿记住环境噪音，之后谁发出比这明显大的声音（说话、喘息、叫出声），就电一下；一直出声就隔一会儿再电一下，直到安静下来。</div>
     <div class="bp" data-b="auto">
       <div class="seg" id="multSeg" style="margin-top:6px"><button data-v="0.5">两拍一下</button><button data-v="1">一拍一下</button><button data-v="2">半拍一下</button></div>
       <div class="cap">多久来一下；节奏听成快一倍或慢一倍时，也用这里纠正</div>
       <label class="f"><div class="lb"><span>抢拍 (ms)<small class="sd">觉得慢半拍就调大</small></span><b id="leadV">120</b></div><input type="range" id="lead" min="0" max="400" step="10"><div class="hint">从手机发出指令到小狼真正放电要 0.1–0.2 秒，所以要提前这么多出手，电击才正好砸在鼓点上。电得比鼓点晚 → 调大；早了 → 调小。</div></label>
     </div>
-    <div class="bp" data-b="bass">
+    <div class="bp" data-b="quiet">
       <div class="grid2">
-        <label class="f"><div class="lb"><span>耳朵灵敏<small class="sd">小＝更灵</small></span><b id="sensV">1.50</b></div><input type="range" id="sens" min="1.1" max="3" step="0.05"><div class="hint">鼓声比平时响几倍才算一拍。越小越一点就着。</div></label>
-        <label class="f"><div class="lb"><span>冷却<small class="sd">防一拍两电</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">毫秒。防止一个鼓点被当成两下。</div></label>
+        <label class="f"><div class="lb"><span>耳朵灵敏<small class="sd">小＝一点声就电</small></span><b id="sensV">1.50</b></div><input type="range" id="sens" min="1.1" max="3" step="0.05"><div class="hint">比安静时响几倍算“出声”。1.2 连喘气都算，2 以上要说话才算。</div></label>
+        <label class="f"><div class="lb"><span>连电间隔 (ms)<small class="sd">一直出声多久电一次</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">还在出声的话，每隔这么久再电一下，直到安静。</div></label>
       </div>
+      <button id="quietRelearn" class="wide" style="margin-top:6px">🤫 重新记住安静的样子</button>
     </div>
     <label class="f"><div class="lb"><span>每拍电多久 (ms)<small class="sd">短＝点一下 长＝压一拍</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="25" max="3000" step="25"><div class="hint">每个拍点电多长时间。120 BPM 一拍是 500ms，想拍拍分明就别超过 300。</div></label>
 </section>
@@ -353,12 +354,8 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 
 <!-- 随机惊喜 -->
 <section class="card glass page" data-p="motion music" id="rjCard">
-  <h2>🎲 随机惊喜<small class="sd">不知道什么时候来</small><span class="sp"></span><span class="pill" id="rjStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="rjOn"><span></span></label></h2>
-  <div class="hint">打开后，每隔一段猜不到的时间自动来一次“惊喜”。只在小狼在线、通道打开时才会来；力度为 0 的那一路不会被偷袭，也不会超过封顶。</div>
-  <div class="seg" id="rjTypeSeg">
-    <button data-v="jolt">⚡ 偷袭</button><button data-v="boost">📈 偷偷加码</button><button data-v="both">🎰 看心情</button>
-  </div>
-  <div class="cap">偷袭＝冷不丁直接电一下 · 偷偷加码＝一阵子里每下都更重 · 看心情＝两种随机来</div>
+  <h2>🎲 随机惊喜<small class="sd">冷不丁加重电一下</small><span class="sp"></span><span class="pill" id="rjStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="rjOn"><span></span></label></h2>
+  <div class="hint">打开后，每隔一段猜不到的时间自动来一次“惊喜”：冷不丁加重力度电一下，这段时间里原本的每一下也跟着变重，结束后恢复。只在小狼在线、通道打开时才会来；力度为 0 的那一路不会被偷袭，也不会超过封顶。</div>
   <div class="grid2">
     <label class="f"><div class="lb"><span>最快 (s)<small class="sd">多久来一次</small></span><b id="rjGapMinV">3</b></div><input type="range" id="rjGapMin" min="1" max="120" step="1"></label>
     <label class="f"><div class="lb"><span>最慢 (s)<small class="sd">多久来一次</small></span><b id="rjGapMaxV">10</b></div><input type="range" id="rjGapMax" min="1" max="120" step="1"></label>
@@ -409,7 +406,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   <h2>📖 玩法 &amp; 日志<small class="sd" id="buildV"></small></h2>
   <div class="note" style="margin-top:0">
     1. 右上角「召唤小狼」连上设备。<br>
-    2. 底部选玩法：「摇一摇」晃手机电，「踩节拍」跟着音乐电。<br>
+    2. 底部选玩法：「摇一摇」晃手机电；「听声音」跟着音乐电，或者玩「别出声」——一出声就挨电。<br>
     3. 先把 A/B 力度调到低档，再打开开关——开关一开就开始；全关＝立刻停。<br>
     4. 想加点料：打开「越挨越重」「随机惊喜」，在「手感」里换口味。<br>
     5. 切出页面会自动暂停，回来接着玩；没反应就点右上角 🩺。
@@ -433,7 +430,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 </div>
 <nav class="tabs glass" id="tabBar">
   <button data-t="motion"><i>📳</i><span>摇一摇</span></button>
-  <button data-t="music"><i>🎵</i><span>踩节拍</span></button>
+  <button data-t="music"><i>🎵</i><span>听声音</span></button>
   <button data-t="set"><i>🐺</i><span>小狼</span></button>
 </nav>
 
@@ -464,7 +461,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   comboOn:true, comboStart:30, comboSteps:8, comboWin:600,
   autoConn:true, lastDev:'', bfOn:false,
   rjOn:false, rjType:'jolt', rjGapMin:3, rjGapMax:10, rjAddMin:5, rjAddMax:15, rjDurMin:0.3, rjDurMax:1.5,
-  band:'auto', sens:1.5, beatGap:200, mult:'1', lead:120,
+  band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
 let savedVer = 8; // 没有存档 = 新用户，直接用默认值
@@ -482,6 +479,7 @@ if ((S.ver|0) < 4){ if (S.burst < 75) S.burst = 75; }
 if ((S.ver|0) < 5){ delete S.mapI; delete S.vib; delete S.motionTrig; delete S.musicTrig; S.mode = S.mode || 'motion'; S.ver = 5; }
 // v6：早期存档的软上限 30 可能被错误标成新版本而没迁移 —— 按数值修正（30 是第一版的默认值）
 if (S.band === 'full') S.band = 'auto';
+if (S.band === 'bass') S.band = 'quiet';
 if ((S.ver|0) < 7){ S.bfOn = false; }
 S.rjOn = false; // 安全：随机抖动每次打开页面默认关闭
 if ((S.ver|0) < 8){ S.comboOn = true; }
@@ -1062,7 +1060,7 @@ function rjTick(){
   } else if (!rjNext){
     rjNext = now + rndf(S.rjGapMin, S.rjGapMax) * 1000;
   } else if (now >= rjNext){
-    rjKind = S.rjType === 'both' ? (Math.random() < 0.5 ? 'jolt' : 'boost') : S.rjType;
+    rjKind = 'jolt';  // 偷袭 + 加码合一：加重力度并直接电一下
     rjAdd = Math.round(rndf(S.rjAddMin, S.rjAddMax));
     const dur = rndf(S.rjDurMin, S.rjDurMax) * 1000;
     rjUntil = now + dur; rjNext = 0; strengthDirty = true; pendingSerial = 0;
@@ -1086,7 +1084,7 @@ function rjShow(now){
   if (!S.rjOn) el.textContent = '关';
   else if (!connected) el.textContent = '等小狼来';
   else if (!armed) el.textContent = '等你开开关';
-  else if (rjUntil) el.textContent = (rjKind === 'jolt' ? '⚡ 偷袭 +' : '📈 加码 +') + rjAdd + ' · ' + Math.max(0, (rjUntil - now) / 1000).toFixed(1) + 's';
+  else if (rjUntil) el.textContent = '⚡ 惊喜 +' + rjAdd + ' · ' + Math.max(0, (rjUntil - now) / 1000).toFixed(1) + 's';
   else if (rjNext) el.textContent = '👀 ' + Math.max(0, (rjNext - now) / 1000).toFixed(1) + 's 后';
   else el.textContent = '蓄势中';
 }
@@ -1135,11 +1133,11 @@ function beatStep(){
   const now = performance.now();
   const binHz = actx.sampleRate / analyser.fftSize;
   const bin = f => clamp(Math.round(f / binHz), 1, fbuf.length - 1);
-  if (S.band === 'bass'){
-    // 鼓点跟随：低频能量超过 (近期平均 × 灵敏度) 且仍在上升 → 一拍
-    const i0 = bin(40), i1 = bin(160);
+  if (S.band === 'quiet'){
+    // 别出声：人声频段（150–4000Hz）的音量超过“安静基线 × 灵敏度” → 电
+    const i0 = bin(150), i1 = bin(4000);
     let sum = 0; for (let i = i0; i <= i1; i++) sum += fbuf[i];
-    beatFeed(sum / (i1 - i0 + 1), now);
+    quietFeed(sum / (i1 - i0 + 1), now);
     return;
   }
   // 自动节拍：频谱通量（各频点“变响”的总和）作为起音强度
@@ -1277,6 +1275,24 @@ function autoBeatTick(now){
   }
   bpm = Math.round(60000 / tempoP);
 }
+let quietBase = 0, quietLearnUntil = 0;
+function quietFeed(e, now){
+  mE = e;
+  if (!quietBase){ quietBase = e; quietLearnUntil = now + 2000; }     // 开始先听 2 秒学习环境噪音
+  const thrE = Math.max(quietBase * S.sens, quietBase + 8, 12);
+  const learning = now < quietLearnUntil;
+  // 只在安静时慢慢更新基线，出声时不更新（否则一直说话门槛会被抬高）
+  if (learning) quietBase += 0.1 * (e - quietBase);
+  else if (e < thrE) quietBase += 0.01 * (e - quietBase);
+  mAvg = quietBase;
+  let beat = 0;
+  if (!learning && e > thrE && now - beatLast >= S.beatGap){
+    beat = 1; beatLast = now; beatCount++;
+    if (armed && S.mode === 'music') trigger(1, now, 'music');
+  }
+  bpm = 0;
+  mh[mhI] = e; mhT[mhI] = thrE; mhB[mhI] = beat; mhI = (mhI + 1) % MH;
+}
 function beatFeed(e, now){
   mE = e;
   mAvg = mAvg ? mAvg + 0.03 * (e - mAvg) : e;      // ~0.5s 滑动平均
@@ -1313,11 +1329,11 @@ function drawBeat(){
     ctx.fillStyle = mhB[k] ? 'rgba(255,95,162,.95)' : 'rgba(169,139,255,.55)';
     ctx.fillRect(i * bw, y(v), Math.max(1, bw - 1), h - 4 - y(v));
   }
-  if (S.band === 'bass'){
+  if (S.band === 'quiet'){
     ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(255,184,78,.85)'; ctx.lineWidth = 1.3; ctx.beginPath();
     for (let i = 0; i < MH; i++){ const k = (mhI + i) % MH; if (i) ctx.lineTo(i * bw, y(mhT[k])); else ctx.moveTo(0, y(mhT[k])); }
     ctx.stroke(); ctx.setLineDash([]);
-    $('#beThrL').textContent = '门槛'; $('#beThrV').textContent = Math.round(Math.max(mAvg * S.sens, 15));
+    $('#beThrL').textContent = performance.now() < quietLearnUntil ? '记忆安静中' : '门槛'; $('#beThrV').textContent = Math.round(Math.max(quietBase * S.sens, quietBase + 8, 12));
   } else {
     $('#beThrL').textContent = '把握';
     $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '分析中';
@@ -1639,7 +1655,6 @@ for (const k of ['softA','softB','fbA','fbB','ibA','ibB']){
 bindCheck('bfOn', 'bfOn', () => { if (S.bfOn && connected) writeBF(); });
 $('#bfBtn').onclick = () => { if (!connected) return toast('小狼还没来'); writeBF(); toast('已经写进小狼了'); };
 bindCheck('rjOn', 'rjOn', () => { rjStop(); if (S.rjOn && !connected) toast('随机惊喜已准备，等小狼来了、开关打开才会开始'); });
-bindSeg('rjTypeSeg', 'rjType');
 bindRange('rjGapMin', 'rjGapMin', null, () => { rjNext = 0; });
 bindRange('rjGapMax', 'rjGapMax', null, () => { rjNext = 0; });
 bindRange('rjAddMin', 'rjAddMin');
@@ -1666,7 +1681,8 @@ bindRange('comboStart', 'comboStart');
 bindRange('comboSteps', 'comboSteps');
 bindRange('comboWin', 'comboWin');
 const applyBand = () => document.querySelectorAll('.bp').forEach(el => el.classList.toggle('on', el.dataset.b === S.band));
-bindSeg('bandSeg', 'band', () => { mAvg = 0; mhT.fill(0); applyBand(); });
+bindSeg('bandSeg', 'band', () => { mAvg = 0; quietBase = 0; mhT.fill(0); applyBand(); });
+$('#quietRelearn').onclick = () => { quietBase = 0; toast('安静 2 秒，让我记住现在的环境声 🤫'); };
 applyBand();
 bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
 bindRange('lead', 'lead');
@@ -1715,7 +1731,7 @@ $('#tabBar').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const t = b.dataset.t;
   if (t === 'set') S.view = 'set';
-  else { if (t !== S.mode){ S.mode = t; combo = 0; toast(t === 'music' ? '换成踩节拍 🎵' : '换成摇一摇 📳'); } S.view = t; }
+  else { if (t !== S.mode){ S.mode = t; combo = 0; toast(t === 'music' ? '换成听声音 🎵' : '换成摇一摇 📳'); } S.view = t; }
   save(); applyView(true); window.scrollTo({top: 0, behavior: 'smooth'});
 });
 applyView(false);
