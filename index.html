@@ -7,6 +7,26 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Shake · Coyote 3.0</title>
+<meta http-equiv="Cache-Control" content="no-cache">
+<script>
+// 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
+// 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
+const BUILD = '20261124-234106';
+(function(){
+  if (location.protocol !== 'https:') return;
+  window.checkUpdate = function(auto){
+    return fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(r => r.json()).then(j => {
+      if (!j.build || j.build === BUILD) return false;
+      let tried = ''; try { tried = sessionStorage.getItem('reloadFor') || ''; } catch(e){}
+      if (auto && tried === j.build) return false;        // 防止 CDN 还没更新时无限刷新
+      try { sessionStorage.setItem('reloadFor', j.build); } catch(e){}
+      location.replace(location.pathname + '?v=' + j.build + location.hash);
+      return true;
+    }).catch(() => false);
+  };
+  checkUpdate(true);
+})();
+</script>
 <style>
 :root{
   --bg:#07070f; --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.12);
@@ -380,7 +400,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 
 <section class="card glass">
   <details style="margin-top:0">
-    <summary>说明 &amp; 日志</summary>
+    <summary>说明 &amp; 日志 <small class="sd" id="buildV"></small></summary>
     <div class="note">
       1. 连接郊狼 → 调好 A/B 强度 → 选触发方式 → 点「启用触发」。<br>
       2. 页面切到后台会自动解除触发，请保持页面在前台、屏幕常亮。<br>
@@ -1488,6 +1508,7 @@ window.addEventListener('pageshow', e => { if (e.persisted) onForeground(); });
 // 回到前台：能自动恢复的立即恢复（蓝牙、发送循环）；需要用户手势的（麦克风、陀螺仪权限、屏幕常亮）等下一次点击
 let needGesture = false;
 function onForeground(){
+  if (!connected && !armed && window.checkUpdate) checkUpdate(true);
   txQueue.length = 0; slotMap.clear(); slotFreq.clear();
   // 蓝牙：iOS/安卓切后台常会断开，这里主动重连
   if (device && !userDisconnect){
@@ -1718,6 +1739,8 @@ buildWave();
 requestAnimationFrame(drawMotion);
 setConn(0, '未连接');
 setTimeout(autoConnect, 300);
+$('#buildV').textContent = '版本 ' + BUILD;
+log('页面版本 ' + BUILD);
 </script>
 </body>
 </html>
