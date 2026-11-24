@@ -166,14 +166,15 @@ details[open] summary::before{content:"▾ "}
   <h2>体感触发<span class="sp"></span><span class="pill">触发 <b id="trigCnt" style="margin-left:4px">0</b></span></h2>
   <button id="sensorBtn" class="primary wide">启用陀螺仪</button>
   <canvas id="motionCv" height="150" style="margin-top:12px"></canvas>
-  <div class="stats"><span>当前 <b id="magV">0</b></span><span>峰值 <b id="peakV">0</b></span><span>阈值 <b id="thrV2">0</b></span></div>
+  <div class="stats"><span>当前 <b id="magV">0</b></span><span>峰值 <b id="peakV">0</b></span><span>阈值 <b id="thrV2">0</b></span><span>采样 <b id="hzV">0</b> Hz</span></div>
   <div class="seg" id="srcSeg" style="margin-top:12px">
     <button data-v="rot">旋转</button><button data-v="acc">加速度</button><button data-v="both">两者</button>
   </div>
   <label class="f"><div class="lb">触发阈值<b id="thrV">200</b></div><input type="range" id="thr" min="20" max="1000" step="5"></label>
   <label class="f"><div class="lb">平滑<b id="smoothV">0.3</b></div><input type="range" id="smooth" min="0" max="0.95" step="0.05"></label>
-  <label class="f"><div class="lb">每次输出时长 (ms)<b id="burstV">600</b></div><input type="range" id="burst" min="100" max="3000" step="50"></label>
-  <label class="f"><div class="lb">最小间隔 (ms)<b id="coolV">300</b></div><input type="range" id="cool" min="0" max="3000" step="50"></label>
+  <label class="f"><div class="lb">每次输出时长 (ms)<b id="burstV">50</b></div><input type="range" id="burst" min="25" max="3000" step="25"></label>
+  <label class="f"><div class="lb">最小间隔 (ms)<b id="coolV">60</b></div><input type="range" id="cool" min="0" max="1000" step="10"></label>
+  <label class="f"><div class="lb">回落比例（峰值回落到多少可再次触发）<b id="rearmV">0.60</b></div><input type="range" id="rearm" min="0.2" max="0.95" step="0.05"></label>
   <div class="tog"><span>晃动越猛 → 输出越强</span><label class="sw"><input type="checkbox" id="mapI"><span></span></label></div>
   <div class="tog"><span>震动反馈（Android）</span><label class="sw"><input type="checkbox" id="vib"><span></span></label></div>
 </section>
@@ -231,11 +232,12 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* ================= 设置 ================= */
 const DEF = {softA:30, softB:30, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
-  src:'rot', thr:250, smooth:0.3, burst:600, cool:300, mapI:false, vib:false,
+  src:'rot', thr:250, smooth:0.1, burst:50, cool:60, rearm:0.6, mapI:false, vib:false, ver:2,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
 try { Object.assign(S, JSON.parse(localStorage.getItem('coyoteShake') || '{}')); } catch(e){}
 S.strA = 0; S.strB = 0; // 安全：每次打开强度归零
+if (S.ver !== 2){ Object.assign(S, {smooth:0.1, burst:50, cool:60, rearm:0.6, ver:2}); } // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 
 const $ = s => document.querySelector(s);
@@ -318,7 +320,7 @@ async function initBattery(server){
 }
 
 function onDisconnected(){
-  connected = false; wChar = null;
+  connected = false; wChar = null; txQueue.length = 0; slotMap.clear(); slotFreq.clear();
   setArm(false); holding = false; burstUntil = 0;
   setConn(0, '已断开');
   log('设备断开');
@@ -436,13 +438,20 @@ function nextItems(){ // 4 个 25ms 项
 }
 function buildWaveSilent(){ const p = wavePos; buildWave(); wavePos = p >= wave.length ? 0 : p; }
 
-/* ================= 100ms 发送循环 ================= */
+/* ================= 100ms 发送循环（25ms 时间槽调度） =================
+ * 每 100ms 发一帧 = 4 个 25ms 槽。触发事件按它在两帧之间的相位放进“下一帧”的对应槽，
+ * 这样输出节奏跟手（固定延迟约 100ms），而不是被量化到帧边界。 */
 let loopOn = false, loopT0 = 0, loopN = 0;
 let burstUntil = 0, holding = false, armed = false, gain = 1;
+let nextSlot = 0, lastTickT = 0;           // nextSlot = 下一帧第一个槽的编号
+const slotMap = new Map();                 // 槽编号 -> 强度 0-100（频率字节另存）
+const slotFreq = new Map();
+const txQueue = [];                        // 待写帧，保证顺序、不丢帧
 
 function startLoop(){
   if (loopOn) return;
   loopOn = true; loopT0 = performance.now(); loopN = 0;
+  lastTickT = loopT0; nextSlot = 0; slotMap.clear(); slotFreq.clear();
   schedule();
 }
 function schedule(){
@@ -453,13 +462,31 @@ function schedule(){
   setTimeout(() => { tick(); schedule(); }, Math.max(0, target - now));
 }
 
+// 把一段波形写进时间槽（与已有内容取最大值）
+function placeBurst(atTime, durMs, g){
+  const phase = clamp(Math.floor((atTime - lastTickT) / 25), 0, 3);
+  const start = nextSlot + phase;
+  const n = Math.max(1, Math.round(durMs / 25));
+  if (S.preset === 'tickle') buildWave();
+  for (let i=0; i<n; i++){
+    const [f, I] = wave[i % wave.length];
+    const v = clamp(Math.round(I * g), 0, 100), k = start + i;
+    if (!slotMap.has(k) || slotMap.get(k) < v){ slotMap.set(k, v); slotFreq.set(k, f); }
+  }
+}
+
 function tick(){
-  if (!connected || !wChar){ return; }
-  if (writing) return; // 上次写入未完成，跳过
   const now = performance.now();
-  const active = holding || now < burstUntil;
-  const items = active ? nextItems() : null;
-  if (!active) wavePos = 0;
+  lastTickT = now;
+  if (!connected || !wChar){ nextSlot += 4; slotMap.clear(); slotFreq.clear(); return; }
+
+  // 按住：持续填充本帧
+  if (holding){
+    for (let i=0; i<4; i++){
+      if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'tickle') buildWave(); }
+      const [f, I] = wave[wavePos++]; slotMap.set(nextSlot+i, I); slotFreq.set(nextSlot+i, f);
+    }
+  } else wavePos = 0;
 
   const b = new Uint8Array(20);
   b[0] = 0xB0;
@@ -472,26 +499,40 @@ function tick(){
     b[2] = clamp(S.strA, 0, 200); b[3] = clamp(S.strB, 0, 200);
   } else { b[1] = 0; }
 
+  let active = false;
   const fill = (off, en) => {
     for (let i=0; i<4; i++){
+      const k = nextSlot + i;
       if (!en){ b[off+i] = 10; b[off+4+i] = 101; continue; } // 101 = 该通道本次不输出
-      if (items){
-        b[off+i] = items[i][0];
-        b[off+4+i] = clamp(Math.round(items[i][1] * gain), 0, 100);
-      } else { b[off+i] = 10; b[off+4+i] = 0; }
+      if (slotMap.has(k)){ b[off+i] = slotFreq.get(k); b[off+4+i] = slotMap.get(k); active = active || slotMap.get(k) > 0; }
+      else { b[off+i] = 10; b[off+4+i] = 0; }
     }
   };
   fill(4, S.chA);
   fill(12, S.chB);
+  for (let i=0; i<4; i++){ slotMap.delete(nextSlot+i); slotFreq.delete(nextSlot+i); }
+  nextSlot += 4;
 
   diag.last = Array.from(b, x => x.toString(16).padStart(2,'0')).join(' ');
-  writing = true;
-  bleWrite(b).catch(e => {
-    diag.err++;
-    if (e.message !== diag.lastErr) log('写入失败: ' + e.message);
-    diag.lastErr = e.message;
-  }).finally(() => writing = false);
+  txQueue.push(b);
+  if (txQueue.length > 3){ txQueue.shift(); diag.drop = (diag.drop||0) + 1; } // 积压过多才丢最旧
+  pump();
   outGlow(active);
+}
+
+async function pump(){
+  if (writing) return;
+  writing = true;
+  while (txQueue.length && wChar){
+    const fr = txQueue.shift();
+    try { await bleWrite(fr); }
+    catch(e){
+      diag.err++;
+      if (e.message !== diag.lastErr) log('写入失败: ' + e.message);
+      diag.lastErr = e.message;
+    }
+  }
+  writing = false;
 }
 
 let lastGlow = false;
@@ -501,8 +542,9 @@ function outGlow(on){
 }
 
 /* ================= 体感 ================= */
-let sensorOn = false, filt = 0, peak = 0, latched = false, coolUntil = 0, trigCount = 0, burstPeak = 0;
+let sensorOn = false, filt = 0, peak = 0, latched = false, coolUntil = 0, trigCount = 0, armPeak = 0, valley = 0;
 const hist = new Float32Array(240); let histI = 0; const histB = new Uint8Array(240);
+let evCount = 0, evT0 = 0, evHz = 0;
 
 async function enableSensor(){
   keepAwake();
@@ -519,34 +561,39 @@ async function enableSensor(){
 }
 
 function onMotion(e){
+  const now = performance.now();
+  // 采样率统计
+  evCount++; if (now - evT0 >= 1000){ evHz = Math.round(evCount * 1000 / (now - evT0)); evCount = 0; evT0 = now; }
+
   const r = e.rotationRate || {};
   const rot = Math.hypot(r.alpha||0, r.beta||0, r.gamma||0); // °/s
   const g = e.accelerationIncludingGravity || {};
   const acc = Math.abs(Math.hypot(g.x||0, g.y||0, g.z||0) - 9.81) * 40; // m/s² ×40 方便与 °/s 同刻度
   const raw = S.src === 'rot' ? rot : S.src === 'acc' ? acc : Math.max(rot, acc);
-  const k = 1 - S.smooth;
-  filt += k * (raw - filt);
-  const now = performance.now();
+  filt += (1 - S.smooth) * (raw - filt);
 
   hist[histI] = filt; histB[histI] = now < burstUntil ? 1 : 0; histI = (histI + 1) % hist.length;
   peak = Math.max(peak * 0.995, filt);
 
-  if (latched && filt < S.thr * 0.7) latched = false;
-  if (armed && !latched && filt > S.thr && now >= coolUntil){
-    latched = true; trigger(filt);
-  }
-  if (now < burstUntil && S.mapI){
-    burstPeak = Math.max(burstPeak, filt);
-    gain = clamp(burstPeak / (S.thr * 2), 0.3, 1);
+  // 峰值检测：越过阈值触发；之后跟踪本次峰值，
+  // 信号从峰值回落到 (回落比例) 以下，或低于阈值的 70%，即重新上膛 —— 连续快速晃动时每个峰都能触发
+  // 重新上膛后跟踪谷底，只有信号从谷底重新“升起来”（≥ 谷底/回落比例）才触发，避免同一个峰的下降沿重复触发
+  if (latched){
+    armPeak = Math.max(armPeak, filt);
+    if (filt < S.thr * 0.7 || filt < armPeak * S.rearm){ latched = false; valley = filt; }
+  } else valley = Math.min(valley, filt);
+  const risen = valley < S.thr * 0.7 || filt >= valley / S.rearm;
+  if (armed && !latched && filt > S.thr && risen && now >= coolUntil){
+    latched = true; armPeak = filt; trigger(filt, now);
   }
 }
 
-function trigger(mag){
-  const now = performance.now();
-  burstUntil = now + S.burst; coolUntil = now + S.cool;
-  burstPeak = mag || 0;
-  gain = S.mapI ? clamp(burstPeak / (S.thr * 2), 0.3, 1) : 1;
-  if (S.preset === 'tickle') buildWave();
+function trigger(mag, now){
+  now = now || performance.now();
+  coolUntil = now + S.cool;
+  gain = S.mapI ? clamp((mag || 0) / (S.thr * 2), 0.3, 1) : 1;
+  placeBurst(now, S.burst, gain);
+  burstUntil = Math.max(burstUntil, now + S.burst);
   trigCount++; $('#trigCnt').textContent = trigCount;
   const c = $('#motionCard'); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
   if (S.vib && navigator.vibrate) navigator.vibrate(30);
@@ -579,7 +626,7 @@ function drawMotion(){
   ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
   const fg = ctx.createLinearGradient(0,0,0,h); fg.addColorStop(0,'rgba(169,139,255,.28)'); fg.addColorStop(1,'rgba(169,139,255,0)');
   ctx.fillStyle = fg; ctx.fill();
-  $('#magV').textContent = Math.round(filt); $('#peakV').textContent = Math.round(peak); $('#thrV2').textContent = S.thr;
+  $('#magV').textContent = Math.round(filt); $('#peakV').textContent = Math.round(peak); $('#thrV2').textContent = S.thr; $('#hzV').textContent = evHz;
   requestAnimationFrame(drawMotion);
 }
 const wcv = $('#waveCv');
@@ -622,7 +669,7 @@ async function keepAwake(){
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden){
-    setArm(false); holding = false; burstUntil = 0;
+    setArm(false); holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear();
   } else if (connected || sensorOn) keepAwake();
 });
 
@@ -632,7 +679,7 @@ function setArm(on){
   const b = $('#armBtn'); b.classList.toggle('on', on); b.textContent = on ? '触发中 ●' : '启用触发';
 }
 function stopAll(){
-  setArm(false); holding = false; burstUntil = 0;
+  setArm(false); holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear();
   S.strA = 0; S.strB = 0; strengthDirty = true; pendingSerial = 0; renderStrength(); save();
   log('紧急停止：强度归零');
 }
@@ -685,6 +732,7 @@ bindRange('thr', 'thr');
 bindRange('smooth', 'smooth', v => v.toFixed(2));
 bindRange('burst', 'burst');
 bindRange('cool', 'cool');
+bindRange('rearm', 'rearm', v => v.toFixed(2));
 bindCheck('mapI', 'mapI', () => { if (!S.mapI) gain = 1; });
 bindCheck('vib', 'vib');
 
@@ -725,7 +773,7 @@ setInterval(() => {
   if (connected && actA === null) hints.push('⚠ 设备还没回传 B1（强度可能没设上）');
   $('#diagTxt').innerHTML =
     `150A 属性: ${diag.props || '-'} · 写入: ${diag.mode || '-'}<br>` +
-    `已发送 ${diag.tx} 帧 · 失败 ${diag.err}${diag.lastErr ? '（' + diag.lastErr + '）' : ''}<br>` +
+    `已发送 ${diag.tx} 帧 · 失败 ${diag.err} · 丢弃 ${diag.drop||0}${diag.lastErr ? '（' + diag.lastErr + '）' : ''}<br>` +
     `设定 A${S.strA}/B${S.strB} · 设备实际 A${actA ?? '-'}/B${actB ?? '-'}<br>` +
     `最近帧: ${diag.last || '-'}` +
     (hints.length ? `<br><span style="color:var(--warn)">${hints.join('<br>')}</span>` : '');
