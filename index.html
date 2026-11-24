@@ -151,6 +151,7 @@ body.hints #hintBtn{background:var(--acc)}
 .stp .big{flex:1;text-align:center}
 .ch .hd{margin-bottom:2px}
 .ch .act{text-align:center;margin-top:2px}
+.bp{display:none}.bp.on{display:block}
 </style>
 </head>
 <body>
@@ -240,13 +241,20 @@ body.hints #hintBtn{background:var(--acc)}
   <div class="mp" data-m="music">
     <button id="micBtn" class="primary wide" style="margin-top:8px">启用麦克风</button>
     <canvas id="beatCv" height="70" style="margin-top:8px"></canvas>
-    <div class="stats"><span>音量 <b id="beV">0</b></span><span>触发线 <b id="beThrV">0</b></span><span>节拍 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
-    <div class="hint">用麦克风听鼓点触发。建议用另一台设备或音箱外放，手机自己放歌可能被系统打断。</div>
-    <div class="seg" id="bandSeg" style="margin-top:8px"><button data-v="bass">低音鼓点</button><button data-v="full">全频</button></div>
-    <div class="hint">低音鼓点＝只听 40–160Hz（底鼓、贝斯），最稳；全频＝任何响声都算。</div>
-    <div class="grid2">
-      <label class="f"><div class="lb">灵敏度<b id="sensV">1.50</b></div><input type="range" id="sens" min="1.1" max="3" step="0.05"><div class="hint">超过平均音量的几倍算一拍，越小越灵敏。</div></label>
-      <label class="f"><div class="lb">最小间隔<b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">ms，防止一个鼓点触发多次。</div></label>
+    <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">触发线</span> <b id="beThrV">0</b></span><span>节拍 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
+    <div class="hint">用麦克风听音乐。建议用另一台设备或音箱外放，手机自己放歌可能被系统打断。</div>
+    <div class="seg" id="bandSeg" style="margin-top:8px"><button data-v="auto">🎼 自动节拍</button><button data-v="bass">🥁 鼓点跟随</button></div>
+    <div class="hint">自动节拍＝分析全曲的起音规律，自动算出 BPM 和拍点相位，按预测的节拍网格稳定输出（可以提前补偿延迟，正好落在拍子上）；鼓点跟随＝只听 40–160Hz 底鼓，听到才触发，反应直接但会慢半拍、会漏。</div>
+    <div class="bp" data-b="auto">
+      <div class="seg" id="multSeg" style="margin-top:8px"><button data-v="0.5">每 2 拍</button><button data-v="1">每拍</button><button data-v="2">每半拍</button></div>
+      <div class="hint">节奏倍率：BPM 识别成了一半/两倍时，也可以用这里纠正。</div>
+      <label class="f"><div class="lb">提前量 (ms)<b id="leadV">120</b></div><input type="range" id="lead" min="0" max="400" step="10"><div class="hint">提前多久发出，用来抵消蓝牙和设备的延迟，让电击正好落在拍子上。感觉慢半拍就调大。</div></label>
+    </div>
+    <div class="bp" data-b="bass">
+      <div class="grid2">
+        <label class="f"><div class="lb">灵敏度<b id="sensV">1.50</b></div><input type="range" id="sens" min="1.1" max="3" step="0.05"><div class="hint">超过平均音量的几倍算一拍，越小越灵敏。</div></label>
+        <label class="f"><div class="lb">最小间隔<b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">ms，防止一个鼓点触发多次。</div></label>
+      </div>
     </div>
   </div>
 
@@ -337,7 +345,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:6, mode:'motion',
   comboOn:false, comboStart:30, comboSteps:8, comboWin:600,
   autoConn:true, lastDev:'',
-  band:'bass', sens:1.5, beatGap:200,
+  band:'auto', sens:1.5, beatGap:200, mult:'1', lead:120,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
 let savedVer = 6; // 没有存档 = 新用户，直接用默认值
@@ -353,6 +361,7 @@ if ((S.ver|0) < 3){ Object.assign(S, {softA:200, softB:200}); }
 if ((S.ver|0) < 4){ if (S.burst < 75) S.burst = 75; }
 if ((S.ver|0) < 5){ delete S.mapI; delete S.vib; delete S.motionTrig; delete S.musicTrig; S.mode = S.mode || 'motion'; S.ver = 5; }
 // v6：早期存档的软上限 30 可能被错误标成新版本而没迁移 —— 按数值修正（30 是第一版的默认值）
+if (S.band === 'full') S.band = 'auto';
 if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.softB = 200; S.ver = 6; } // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 save(); // 迁移结果立即落盘
@@ -894,23 +903,160 @@ async function enableMic(){
     actx.createMediaStreamSource(stream).connect(analyser);
     fbuf = new Uint8Array(analyser.frequencyBinCount);
     micOn = true;
-    setInterval(beatStep, 16);
+    setInterval(beatStep, 10);
     $('#micBtn').classList.add('hidden');
     log('麦克风已启用 ' + actx.sampleRate + 'Hz');
   }catch(e){ log('麦克风失败: ' + e.message); alert('无法启用麦克风：' + e.message); }
 }
 
-// 节拍检测：频段平均能量超过 (近期平均 × 灵敏度) 且仍在上升 → 一拍
 function beatStep(){
   if (!analyser) return;
   if (actx.state === 'suspended') actx.resume().catch(() => {});
   analyser.getByteFrequencyData(fbuf);
+  const now = performance.now();
   const binHz = actx.sampleRate / analyser.fftSize;
-  const band = S.band === 'bass' ? [40, 160] : [40, 8000];
-  const i0 = Math.max(1, Math.floor(band[0] / binHz)), i1 = Math.min(fbuf.length - 1, Math.ceil(band[1] / binHz));
-  let sum = 0; for (let i = i0; i <= i1; i++) sum += fbuf[i];
-  const e = sum / (i1 - i0 + 1);
-  beatFeed(e, performance.now());
+  const bin = f => clamp(Math.round(f / binHz), 1, fbuf.length - 1);
+  if (S.band === 'bass'){
+    // 鼓点跟随：低频能量超过 (近期平均 × 灵敏度) 且仍在上升 → 一拍
+    const i0 = bin(40), i1 = bin(160);
+    let sum = 0; for (let i = i0; i <= i1; i++) sum += fbuf[i];
+    beatFeed(sum / (i1 - i0 + 1), now);
+    return;
+  }
+  // 自动节拍：频谱通量（各频点“变响”的总和）作为起音强度
+  const i0 = bin(30), i1 = bin(10000);
+  if (!prevSpec) prevSpec = new Uint8Array(fbuf.length);
+  let flux = 0, lvl = 0;
+  for (let i = i0; i <= i1; i++){
+    const d = fbuf[i] - prevSpec[i];
+    if (d > 0) flux += i < bin(200) ? d * 2 : d;   // 低频（鼓）加权
+    lvl += fbuf[i];
+  }
+  prevSpec.set(fbuf);
+  mE = lvl / (i1 - i0 + 1);
+  autoFeed(flux, now);
+}
+
+/* ================= 自动节拍：起音包络 → 自相关测速 → 梳状滤波定相 → 预测节拍网格 ================= */
+const HOP = 20, ENV_N = 400;                 // 20ms 一格，保留 8 秒
+const envBuf = new Float32Array(ENV_N); let envI = 0, envCount = 0, envT = 0;
+let prevSpec = null, hopNext = 0, hopMax = 0, envPeak = 1;
+let tempoP = 0, tempoConf = 0, candP = 0, candHits = 0, lastAnal = 0;
+let nextBeatAt = 0, beatPendingMark = 0;
+
+function autoFeed(flux, now){
+  hopMax = Math.max(hopMax, flux);
+  if (!hopNext) hopNext = now + HOP;
+  if (now >= hopNext){
+    pushEnv(hopMax, now); hopMax = 0;
+    hopNext += HOP; if (now - hopNext > 200) hopNext = now + HOP;
+  }
+  if (now - lastAnal > 500 && envCount >= 150){ lastAnal = now; analyzeTempo(now); }
+  autoBeatTick(now);
+}
+
+function pushEnv(v, now){
+  envBuf[envI] = v; envI = (envI + 1) % ENV_N; envCount = Math.min(ENV_N, envCount + 1); envT = now;
+  envPeak = Math.max(v, envPeak * 0.995);
+  mh[mhI] = clamp(v / envPeak * 255, 0, 255); mhT[mhI] = 0; mhB[mhI] = beatPendingMark; beatPendingMark = 0;
+  mhI = (mhI + 1) % MH;
+}
+
+function envArray(){ // 去趋势 + 半波整流 + 归一化，旧→新
+  const n = envCount, x = new Float32Array(n);
+  for (let i = 0; i < n; i++) x[i] = envBuf[(envI - n + i + ENV_N) % ENV_N];
+  const y = new Float32Array(n), W = 8;
+  let acc = 0;
+  for (let i = 0; i < n; i++){
+    acc += x[i]; if (i >= 2*W+1) acc -= x[i - 2*W - 1];
+    const c = i - W;                         // 以 c 为中心的滑动平均
+    if (c >= 0) y[c] = Math.max(0, x[c] - acc / Math.min(i + 1, 2*W + 1));
+  }
+  for (let c = Math.max(0, n - W); c < n; c++) y[c] = Math.max(0, x[c] - acc / (2*W + 1));
+  // 轻微模糊（核 1-2-3-2-1）：拍长不是 20ms 整数倍时，尖峰也能和自身对齐
+  const z = new Float32Array(n);
+  for (let i = 0; i < n; i++){
+    let acc2 = 3 * y[i], wsum = 3;
+    for (const [o, k] of [[1, 2], [2, 1]]){
+      if (i - o >= 0){ acc2 += k * y[i - o]; wsum += k; }
+      if (i + o < n){ acc2 += k * y[i + o]; wsum += k; }
+    }
+    z[i] = acc2 / wsum;
+  }
+  y.set(z);
+  // 去均值（否则全正信号的自相关处处都高）+ 归一化
+  let mu = 0; for (let i = 0; i < n; i++) mu += y[i]; mu /= n;
+  let m = 0; for (let i = 0; i < n; i++){ y[i] -= mu; m += y[i] * y[i]; }
+  m = Math.sqrt(m / n) || 1;
+  for (let i = 0; i < n; i++) y[i] /= m;
+  return y;
+}
+
+function analyzeTempo(now){
+  const x = envArray(), n = x.length;
+  const ac = L => { let s = 0; for (let i = L; i < n; i++) s += x[i] * x[i - L]; return s / (n - L); };
+  const ac0 = ac(0) || 1;
+  const Lmin = Math.floor(60000 / 200 / HOP), Lmax = Math.ceil(60000 / 50 / HOP); // 50–200 BPM
+  const A = new Float32Array(4 * Lmax + 2);
+  for (let L = Lmin; L <= Math.min(4 * Lmax + 1, n - 50); L++) A[L] = Math.max(0, ac(L));
+  const At = L => { const f = Math.floor(L), r = L - f; return (A[f] || 0) * (1 - r) + (A[f + 1] || 0) * r; };
+  // 以 0.25 格（5ms）为步长扫描候选拍长，用插值读取各谐波处的自相关
+  let Lf = 0, bestS = -1;
+  for (let L = Lmin; L <= Lmax; L += 0.25){
+    const bpmL = 60000 / (L * HOP);
+    const w = Math.exp(-0.5 * Math.pow(Math.log2(bpmL / 120) / 1.0, 2)); // 偏好 120 BPM 附近
+    // 梳状谐波和：真实拍长在 2L、3L、4L 处也都有峰
+    const sc = (At(L) + 0.75 * At(2 * L) + 0.5 * At(3 * L) + 0.5 * At(4 * L)) * w;
+    if (sc > bestS){ bestS = sc; Lf = L; }
+  }
+  if (!Lf) return;
+  const best = Math.round(Lf);
+  const P = Lf * HOP;
+  tempoConf = clamp(At(Lf) / ac0, 0, 1);
+  // 速度稳定：相近则平滑；倍/半速视为同一速度；明显不同要连续 3 次才切换
+  const near = (a, b) => Math.abs(a - b) / b < 0.06;
+  if (!tempoP || near(P, tempoP)) tempoP = tempoP ? tempoP * 0.8 + P * 0.2 : P;
+  else if (candP && near(P, candP)){ if (++candHits >= 3){ tempoP = P; candHits = 0; nextBeatAt = 0; } }
+  else { candP = P; candHits = 1; }
+  // 相位：在最近几拍上找梳状滤波得分最高的偏移
+  const p = tempoP / HOP;
+  let bestPh = 0, bestPs = -1;
+  for (let ph = 0; ph < p; ph++){
+    let s = 0;
+    for (let k = 0; k < 8; k++){
+      const idx = Math.round(n - 1 - ph - k * p);
+      if (idx < 1) break;
+      s += x[idx] + 0.5 * (x[idx - 1] + (x[idx + 1] || 0)) * 0.5;
+    }
+    if (s > bestPs){ bestPs = s; bestPh = ph; }
+  }
+  const lastBeat = envT - bestPh * HOP;
+  const predicted = lastBeat + tempoP * Math.ceil((now - lastBeat) / tempoP + 1e-6);
+  if (!nextBeatAt) nextBeatAt = predicted;
+  else {
+    const grid = Math.min(tempoP, beatInterval());
+    let err = (predicted - nextBeatAt) % grid;
+    if (err > grid / 2) err -= grid; if (err < -grid / 2) err += grid;
+    nextBeatAt += err * 0.5;                  // 平滑校正相位，不跳变
+  }
+}
+
+function beatInterval(){ return tempoP / (+S.mult || 1); }
+
+function autoBeatTick(now){
+  if (!tempoP || !nextBeatAt) return;
+  const iv = beatInterval();
+  const ok = tempoConf >= 0.3 && mE > 6;     // 没有明显节奏或静音时不输出
+  let fireAt = nextBeatAt - S.lead;
+  let guard = 0;
+  while (now >= fireAt && guard++ < 8){
+    if (now - fireAt < 120 && ok){
+      beatCount++; beatPendingMark = 1;
+      if (armed && S.mode === 'music') trigger(1, now, 'music');
+    }
+    nextBeatAt += iv; fireAt = nextBeatAt - S.lead;
+  }
+  bpm = Math.round(60000 / tempoP);
 }
 function beatFeed(e, now){
   mE = e;
@@ -942,11 +1088,17 @@ function drawBeat(){
     ctx.fillStyle = mhB[k] ? 'rgba(255,95,162,.95)' : 'rgba(169,139,255,.55)';
     ctx.fillRect(i * bw, y(v), Math.max(1, bw - 1), h - 4 - y(v));
   }
-  ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(255,184,78,.85)'; ctx.lineWidth = 1.3; ctx.beginPath();
-  for (let i = 0; i < MH; i++){ const k = (mhI + i) % MH; if (i) ctx.lineTo(i * bw, y(mhT[k])); else ctx.moveTo(0, y(mhT[k])); }
-  ctx.stroke(); ctx.setLineDash([]);
+  if (S.band === 'bass'){
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(255,184,78,.85)'; ctx.lineWidth = 1.3; ctx.beginPath();
+    for (let i = 0; i < MH; i++){ const k = (mhI + i) % MH; if (i) ctx.lineTo(i * bw, y(mhT[k])); else ctx.moveTo(0, y(mhT[k])); }
+    ctx.stroke(); ctx.setLineDash([]);
+    $('#beThrL').textContent = '触发线'; $('#beThrV').textContent = Math.round(Math.max(mAvg * S.sens, 15));
+  } else {
+    $('#beThrL').textContent = '稳定度';
+    $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '分析中';
+  }
   $('#beV').textContent = Math.round(mE); $('#beatCntV').textContent = beatCount;
-  $('#beThrV').textContent = Math.round(Math.max(mAvg * S.sens, 15)); $('#bpmV').textContent = bpm || '--';
+  $('#bpmV').textContent = bpm || '--';
 }
 
 /* ================= 画图 ================= */
@@ -1116,7 +1268,11 @@ bindRange('comboStart', 'comboStart');
 bindRange('comboSteps', 'comboSteps');
 bindRange('comboWin', 'comboWin');
 $('#micBtn').onclick = enableMic;
-bindSeg('bandSeg', 'band', () => { mAvg = 0; });
+const applyBand = () => document.querySelectorAll('.bp').forEach(el => el.classList.toggle('on', el.dataset.b === S.band));
+bindSeg('bandSeg', 'band', () => { mAvg = 0; mhT.fill(0); applyBand(); });
+applyBand();
+bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
+bindRange('lead', 'lead');
 bindRange('sens', 'sens', v => v.toFixed(2));
 bindRange('beatGap', 'beatGap');
 
