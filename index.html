@@ -204,8 +204,11 @@ details[open] summary::before{content:"▾ "}
 <script>
 "use strict";
 /* ================= 常量 / 协议 ================= */
-const SVC = 0x180C, CH_WRITE = 0x150A, CH_NOTIFY = 0x150B;
-const BAT_SVC = 0x180A, CH_BAT = 0x1500;
+// 使用完整 128-bit UUID 字符串（Bluefy 不能解析数字形式的 UUID）
+const uuid = h => `0000${h}-0000-1000-8000-00805f9b34fb`;
+const SVC = uuid('180c'), CH_WRITE = uuid('150a'), CH_NOTIFY = uuid('150b');
+const BAT_SVC = uuid('180a'), CH_BAT = uuid('1500');
+let step = '';
 const TICK = 100;
 
 // 频率编码：周期 ms (10-1000) -> 字节 (10-240)
@@ -253,6 +256,7 @@ async function connect(){
   keepAwake();
   try{
     setConn(1, '搜索中…');
+    step = 'requestDevice';
     device = await navigator.bluetooth.requestDevice({
       filters:[{namePrefix:'47L121'}],
       optionalServices:[SVC, BAT_SVC]
@@ -263,18 +267,25 @@ async function connect(){
     await openGatt();
   }catch(e){
     setConn(0, '未连接');
-    log('连接失败: ' + e.message);
+    log(`连接失败 @${step}: ${e.name} ${e.message}`);
+    if (e.name !== 'NotFoundError') alert(`连接失败（${step}）：${e.message}`);
   }
 }
 
 async function openGatt(){
   setConn(1, '连接中…');
+  step = 'gatt.connect';
   const server = await device.gatt.connect();
+  step = 'getPrimaryService 180C';
   const svc = await server.getPrimaryService(SVC);
+  step = 'getCharacteristic 150A';
   wChar = await svc.getCharacteristic(CH_WRITE);
+  step = 'getCharacteristic 150B';
   const nChar = await svc.getCharacteristic(CH_NOTIFY);
   nChar.addEventListener('characteristicvaluechanged', onNotify);
+  step = 'startNotifications';
   await nChar.startNotifications();
+  step = 'BF';
   connected = true; reconnectTries = 0;
   setConn(2, '已连接');
   log('已连接 ' + device.name);
