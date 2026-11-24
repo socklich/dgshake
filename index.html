@@ -96,6 +96,13 @@ details[open] summary::before{content:"▾ "}
 @keyframes fl{from{box-shadow:0 0 0 0 rgba(255,95,162,.9), 0 10px 40px rgba(0,0,0,.35)}to{box-shadow:0 0 0 18px rgba(255,95,162,0), 0 10px 40px rgba(0,0,0,.35)}}
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translate(-50%,-140%);z-index:20;padding:11px 16px;border-radius:14px;font-size:14px;font-weight:600;background:rgba(255,184,78,.92);color:#1a1208;box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .25s;max-width:90vw;text-align:center}
 .toast.show{transform:translate(-50%,0)}
+.combo{display:flex;align-items:center;gap:14px;margin-top:12px}
+.cx{font-size:46px;font-weight:800;min-width:96px;font-variant-numeric:tabular-nums;line-height:1;background:linear-gradient(135deg,var(--b),var(--acc) 50%,var(--a));-webkit-background-clip:text;background-clip:text;color:transparent}
+.cx.pop{animation:pop .25s ease-out}
+@keyframes pop{from{transform:scale(1.35)}to{transform:scale(1)}}
+.cbar{flex:1;height:12px;border-radius:12px;background:rgba(255,255,255,.12);overflow:hidden}
+.cbar i{display:block;height:100%;width:0;border-radius:12px;background:linear-gradient(90deg,var(--b),var(--acc),var(--a));transition:width .15s}
+.cpct{font-size:13px;color:var(--dim);min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
 #log{font:11px/1.45 ui-monospace,Menlo,monospace;color:var(--dim);max-height:120px;overflow:auto;white-space:pre-wrap;margin-top:8px}
 .hidden{display:none!important}
 </style>
@@ -181,7 +188,32 @@ details[open] summary::before{content:"▾ "}
   <label class="f"><div class="lb">最小间隔 (ms)<b id="coolV">60</b></div><input type="range" id="cool" min="0" max="1000" step="10"><div class="hint">两次触发之间至少隔多久，防止一下晃动触发多次。</div></label>
   <label class="f"><div class="lb">回落比例<b id="rearmV">0.60</b></div><input type="range" id="rearm" min="0.2" max="0.95" step="0.05"><div class="hint">信号从峰值回落到这个比例以下，才允许下一次触发。连续猛晃时调高（如 0.8）更容易逐峰触发；误触发多就调低。</div></label>
   <div class="tog"><span>晃动越猛 → 输出越强<div class="hint">按晃动幅度把波形强度缩放到 30%–100%</div></span><label class="sw"><input type="checkbox" id="mapI"><span></span></label></div>
+  <div class="tog"><span>晃动触发<div class="hint">关掉后只用音乐节拍触发</div></span><label class="sw"><input type="checkbox" id="motionTrig"><span></span></label></div>
   <div class="tog"><span>震动反馈（Android）</span><label class="sw"><input type="checkbox" id="vib"><span></span></label></div>
+</section>
+
+<!-- 连击 -->
+<section class="card glass" id="comboCard">
+  <h2>连击升级<span class="sp"></span><label class="sw"><input type="checkbox" id="comboOn"><span></span></label></h2>
+  <div class="hint">连续触发（间隔小于「连击窗口」）时强度逐级升高；停下后每过一个窗口降一级。晃动和音乐节拍都算连击。</div>
+  <div class="combo"><div class="cx" id="comboX">×0</div><div class="cbar"><i id="comboBar"></i></div><div class="cpct" id="comboPct">--</div></div>
+  <label class="f"><div class="lb">起始强度 %<b id="comboStartV">30</b></div><input type="range" id="comboStart" min="5" max="100" step="5"><div class="hint">第 1 击的输出强度（占波形强度的百分比）。</div></label>
+  <label class="f"><div class="lb">升满所需连击数<b id="comboStepsV">8</b></div><input type="range" id="comboSteps" min="2" max="40" step="1"><div class="hint">连击到第几下时达到 100%。越大升得越慢。</div></label>
+  <label class="f"><div class="lb">连击窗口 (ms)<b id="comboWinV">600</b></div><input type="range" id="comboWin" min="150" max="3000" step="50"><div class="hint">两次触发间隔在这之内算连击；停下来后每过这么久降一级。</div></label>
+</section>
+
+<!-- 音乐 -->
+<section class="card glass" id="musicCard">
+  <h2>音乐节拍<span class="sp"></span><span class="pill">BPM <b id="bpmV" style="margin-left:4px">--</b></span></h2>
+  <div class="hint">用麦克风听音乐，检测到鼓点就触发一次，和晃动共用「启用触发」、波形、输出时长和连击。建议用另一台设备或音箱外放，手机自己放歌可能被系统打断。</div>
+  <button id="micBtn" class="primary wide" style="margin-top:10px">启用麦克风</button>
+  <canvas id="beatCv" height="90" style="margin-top:12px"></canvas>
+  <div class="stats"><span>音量 <b id="beV">0</b></span><span>节拍 <b id="beatCntV">0</b></span><span>触发线 <b id="beThrV">0</b></span></div>
+  <div class="tog"><span>音乐触发<div class="hint">关掉则只显示节拍、不输出</div></span><label class="sw"><input type="checkbox" id="musicTrig"><span></span></label></div>
+  <div class="seg" id="bandSeg" style="margin-top:12px"><button data-v="bass">低音鼓点</button><button data-v="full">全频</button></div>
+  <div class="hint">低音鼓点＝只听 40–160Hz（底鼓、贝斯），节奏最稳；全频＝任何响声都算。</div>
+  <label class="f"><div class="lb">节拍灵敏度<b id="sensV">1.50</b></div><input type="range" id="sens" min="1.1" max="3" step="0.05"><div class="hint">音量超过近期平均音量的多少倍算一拍。越小越灵敏，太小会乱跳。</div></label>
+  <label class="f"><div class="lb">最小节拍间隔 (ms)<b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">防止一个鼓点触发多次。200ms ≈ 最快 300 BPM。</div></label>
 </section>
 
 <!-- 波形 -->
@@ -203,8 +235,9 @@ details[open] summary::before{content:"▾ "}
   <div class="note">
     1. 用 Bluefy 打开 → 连接郊狼 → 启用陀螺仪 → 调好强度 → 点「启用触发」。<br>
     2. 页面切到后台会自动解除触发；保持屏幕常亮、页面在前台。<br>
-    3. 「按住」可手动测试波形；「停止」立即归零 A/B 强度并解除触发。<br>
-    4. 请从低强度开始，避免电极跨越心脏区域使用。
+    3. 也可以在「音乐节拍」里启用麦克风，跟着鼓点触发；「连击升级」让连续触发越来越强。<br>
+    4. 「按住」可手动测试波形；「停止」立即归零 A/B 强度并解除触发。<br>
+    5. 请从低强度开始，避免电极跨越心脏区域使用。
   </div>
   <div id="log"></div>
 </section>
@@ -240,6 +273,8 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
   src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, mapI:false, vib:false, ver:4,
+  motionTrig:true, comboOn:false, comboStart:30, comboSteps:8, comboWin:600,
+  musicTrig:true, band:'bass', sens:1.5, beatGap:200,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
 try { Object.assign(S, JSON.parse(localStorage.getItem('coyoteShake') || '{}')); } catch(e){}
@@ -638,27 +673,131 @@ function onMotion(e){
   } else valley = Math.min(valley, filt);
   const risen = valley < S.thr * 0.7 || filt >= valley / S.rearm;
   if (armed && !latched && filt > S.thr && risen && now >= coolUntil){
-    latched = true; armPeak = filt; trigger(filt, now);
+    latched = true; armPeak = filt; coolUntil = now + S.cool;
+    if (S.motionTrig) trigger(clamp(filt / (S.thr * 2), 0.3, 1), now, 'motion');
   }
 }
 
-function trigger(mag, now){
+/* ================= 连击 ================= */
+let combo = 0, comboLast = 0;
+function comboLevel(now){ // 计入衰减后的当前连击级数
+  if (!combo) return 0;
+  return Math.max(0, combo - Math.floor((now - comboLast) / S.comboWin));
+}
+function comboGainOf(c){
+  if (!S.comboOn || c <= 0) return 1;
+  const s0 = S.comboStart / 100;
+  return s0 + (1 - s0) * Math.min(1, (c - 1) / Math.max(1, S.comboSteps - 1));
+}
+
+// level: 0-1，供“晃动越猛→越强”使用；src: 'motion' | 'music'
+function trigger(level, now, src){
   now = now || performance.now();
+  if (level > 1) level = clamp(level / (S.thr * 2), 0.3, 1); // 兼容旧调用
   if (!connected) toast('触发了，但设备未连接');
   else if (!S.chA && !S.chB) toast('触发了，但 A/B 通道都关着');
   else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) toast('触发了，但通道强度为 0 —— 先把强度调上去');
-  coolUntil = now + S.cool;
-  gain = S.mapI ? clamp((mag || 0) / (S.thr * 2), 0.3, 1) : 1;
+  combo = comboLevel(now) + 1; comboLast = now;
+  gain = (S.mapI ? clamp(level || 0, 0.3, 1) : 1) * comboGainOf(combo);
   placeBurst(now, S.burst, gain);
+  renderCombo(true);
   burstUntil = Math.max(burstUntil, now + S.burst);
   trigCount++; $('#trigCnt').textContent = trigCount;
-  const c = $('#motionCard'); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+  const card = $(src === 'music' ? '#musicCard' : '#motionCard');
+  card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
   if (S.vib && navigator.vibrate) navigator.vibrate(30);
+}
+
+function renderCombo(pop){
+  const c = comboLevel(performance.now());
+  const x = $('#comboX');
+  x.textContent = '×' + c;
+  if (pop){ x.classList.remove('pop'); void x.offsetWidth; x.classList.add('pop'); }
+  const g = comboGainOf(c);
+  $('#comboBar').style.width = (S.comboOn ? (c ? g * 100 : 0) : Math.min(100, c * 10)) + '%';
+  $('#comboPct').textContent = S.comboOn ? (c ? Math.round(g * 100) + '%' : '--') : '关';
+}
+setInterval(() => renderCombo(false), 150);
+
+/* ================= 音乐节拍 ================= */
+let micOn = false, actx = null, analyser = null, fbuf = null;
+let mAvg = 0, mPrev = 0, mE = 0, beatLast = 0, beatCount = 0, bpm = 0;
+const beatTimes = [];
+const MH = 160, mh = new Float32Array(MH), mhT = new Float32Array(MH), mhB = new Uint8Array(MH); let mhI = 0;
+
+async function enableMic(){
+  keepAwake();
+  if (micOn) return;
+  try{
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('此浏览器不支持麦克风访问');
+    const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') await actx.resume();
+    analyser = actx.createAnalyser();
+    analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0;
+    actx.createMediaStreamSource(stream).connect(analyser);
+    fbuf = new Uint8Array(analyser.frequencyBinCount);
+    micOn = true;
+    setInterval(beatStep, 16);
+    $('#micBtn').textContent = '麦克风已启用 ✓'; $('#micBtn').classList.remove('primary');
+    log('麦克风已启用 ' + actx.sampleRate + 'Hz');
+  }catch(e){ log('麦克风失败: ' + e.message); alert('无法启用麦克风：' + e.message); }
+}
+
+// 节拍检测：频段平均能量超过 (近期平均 × 灵敏度) 且仍在上升 → 一拍
+function beatStep(){
+  if (!analyser) return;
+  if (actx.state === 'suspended') actx.resume().catch(() => {});
+  analyser.getByteFrequencyData(fbuf);
+  const binHz = actx.sampleRate / analyser.fftSize;
+  const band = S.band === 'bass' ? [40, 160] : [40, 8000];
+  const i0 = Math.max(1, Math.floor(band[0] / binHz)), i1 = Math.min(fbuf.length - 1, Math.ceil(band[1] / binHz));
+  let sum = 0; for (let i = i0; i <= i1; i++) sum += fbuf[i];
+  const e = sum / (i1 - i0 + 1);
+  beatFeed(e, performance.now());
+}
+function beatFeed(e, now){
+  mE = e;
+  mAvg = mAvg ? mAvg + 0.03 * (e - mAvg) : e;      // ~0.5s 滑动平均
+  const thrE = Math.max(mAvg * S.sens, 15);
+  let beat = 0;
+  if (e > thrE && e >= mPrev && now - beatLast >= S.beatGap){
+    beat = 1;
+    const dt = now - beatLast; beatLast = now; beatCount++;
+    if (dt > 240 && dt < 1500){ beatTimes.push(dt); if (beatTimes.length > 8) beatTimes.shift(); }
+    if (beatTimes.length >= 3){
+      const sorted = beatTimes.slice().sort((a, b) => a - b);
+      bpm = Math.round(60000 / sorted[sorted.length >> 1]);
+    }
+    if (armed && S.musicTrig) trigger(clamp(e / thrE - 0.4, 0.3, 1), now, 'music');
+  }
+  mPrev = e;
+  mh[mhI] = e; mhT[mhI] = thrE; mhB[mhI] = beat; mhI = (mhI + 1) % MH;
+}
+
+const bcv = $('#beatCv');
+function drawBeat(){
+  if (!micOn) return;
+  const [ctx, w, h] = fitCanvas(bcv);
+  ctx.clearRect(0, 0, w, h);
+  const y = v => h - 4 - (v / 255) * (h - 8), bw = w / MH;
+  for (let i = 0; i < MH; i++){
+    const k = (mhI + i) % MH, v = mh[k];
+    ctx.fillStyle = mhB[k] ? 'rgba(255,95,162,.95)' : 'rgba(169,139,255,.55)';
+    ctx.fillRect(i * bw, y(v), Math.max(1, bw - 1), h - 4 - y(v));
+  }
+  ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(255,184,78,.85)'; ctx.lineWidth = 1.3; ctx.beginPath();
+  for (let i = 0; i < MH; i++){ const k = (mhI + i) % MH; if (i) ctx.lineTo(i * bw, y(mhT[k])); else ctx.moveTo(0, y(mhT[k])); }
+  ctx.stroke(); ctx.setLineDash([]);
+  $('#beV').textContent = Math.round(mE); $('#beatCntV').textContent = beatCount;
+  $('#beThrV').textContent = Math.round(Math.max(mAvg * S.sens, 15)); $('#bpmV').textContent = bpm || '--';
 }
 
 /* ================= 画图 ================= */
 function fitCanvas(cv){
-  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = +cv.getAttribute('height');
+  // 逻辑高度只读一次并缓存（设置 cv.height 会改写 height 属性，高 DPR 屏上会越算越大）
+  if (!cv.dataset.h) cv.dataset.h = cv.getAttribute('height');
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = +cv.dataset.h;
   if (cv.width !== Math.round(w*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); cv.style.height = h + 'px'; }
   const ctx = cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
   return [ctx, w, h];
@@ -684,6 +823,7 @@ function drawMotion(){
   const fg = ctx.createLinearGradient(0,0,0,h); fg.addColorStop(0,'rgba(169,139,255,.28)'); fg.addColorStop(1,'rgba(169,139,255,0)');
   ctx.fillStyle = fg; ctx.fill();
   $('#magV').textContent = Math.round(filt); $('#peakV').textContent = Math.round(peak); $('#thrV2').textContent = S.thr; $('#hzV').textContent = evHz;
+  drawBeat();
   requestAnimationFrame(drawMotion);
 }
 const wcv = $('#waveCv');
@@ -749,6 +889,7 @@ function setArm(on){
   const b = $('#armBtn'); b.classList.toggle('on', on); b.textContent = on ? '触发中 ●' : '启用触发';
 }
 function stopAll(){
+  combo = 0;
   setArm(false); holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear();
   S.strA = 0; S.strB = 0; strengthDirty = true; pendingSerial = 0; renderStrength(); save();
   log('紧急停止：强度归零');
@@ -805,6 +946,16 @@ bindRange('cool', 'cool');
 bindRange('rearm', 'rearm', v => v.toFixed(2));
 bindCheck('mapI', 'mapI', () => { if (!S.mapI) gain = 1; });
 bindCheck('vib', 'vib');
+bindCheck('motionTrig', 'motionTrig');
+bindCheck('comboOn', 'comboOn', () => { renderCombo(false); });
+bindRange('comboStart', 'comboStart');
+bindRange('comboSteps', 'comboSteps');
+bindRange('comboWin', 'comboWin');
+$('#micBtn').onclick = enableMic;
+bindCheck('musicTrig', 'musicTrig');
+bindSeg('bandSeg', 'band', () => { mAvg = 0; });
+bindRange('sens', 'sens', v => v.toFixed(2));
+bindRange('beatGap', 'beatGap');
 
 bindSeg('presetSeg', 'preset', buildWave);
 // 脉冲频率：左半 0-500 → 10-200ms，右半 500-1000 → 200-1000ms
