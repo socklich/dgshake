@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#0b0b16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Shake · Coyote 3.0</title>
+<title>小狼调教台 · Coyote 3.0</title>
 <meta http-equiv="Cache-Control" content="no-cache">
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261124-234440';
+const BUILD = '20261124-234813';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -241,181 +241,181 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 <header class="top glass">
   <div class="tr">
     <div class="logo">⚡</div>
-    <div class="t" style="flex:1"><h1>Shake Coyote</h1></div>
-    <button id="connBtn" class="connb s0"><span id="connDot" class="dot"></span><span id="connTxt">连接郊狼</span><span id="batPill" class="hidden"></span></button>
-    <button id="chkBtn" class="roundb" title="自检">🩺</button>
-    <button id="hintBtn" title="显示/隐藏说明">ⓘ</button>
+    <div class="t" style="flex:1"><h1>小狼调教台</h1></div>
+    <button id="connBtn" class="connb s0"><span id="connDot" class="dot"></span><span id="connTxt">召唤小狼</span><span id="batPill" class="hidden"></span></button>
+    <button id="chkBtn" class="roundb" title="没反应？点我排查">🩺</button>
+    <button id="hintBtn" title="显示/隐藏详细玩法说明">ⓘ</button>
   </div>
   <div id="pickBox" class="hidden" style="margin-top:8px">
-    <div class="note" style="margin:0 0 6px">发现多台已授权的郊狼，选一台连接：</div>
+    <div class="note" style="margin:0 0 6px">好几只小狼都认识你，今天要哪一只？</div>
     <div class="seg" id="pickList"></div>
   </div>
 </header>
 
 <div id="noBle" class="card glass warnbox hidden">
-  ⚠️ 当前浏览器不支持 Web Bluetooth。iPhone 请使用 <b>Bluefy</b> 打开本页；Android 请使用 Chrome。
+  ⚠️ 这个浏览器叫不来小狼（不支持网页蓝牙）。iPhone 请用 <b>Bluefy</b> 打开；安卓请用 Chrome。
 </div>
 
-<!-- 强度（所有页面都显示） -->
+<!-- 力度（所有页面都显示） -->
 <section class="card glass" id="strCard">
-  <h2>通道<small class="sd">开关打开＝开始触发</small><span class="sp"></span><span class="pill armp" id="armPill">未触发</span><span class="pill">触发 <b id="trigCnt" style="margin-left:4px">0</b></span></h2>
-  <div class="hint">打开 A/B 通道开关，连接状态下就会自动开始触发；全部关掉＝停止。点 ＋/− 调 1 档，按住连续调节、越按越快。波形里的“强度 %”是在通道强度基础上的百分比。</div>
+  <h2>力度<small class="sd">开关一开就开始玩</small><span class="sp"></span><span class="pill armp" id="armPill">待命</span><span class="pill">已电 <b id="trigCnt" style="margin-left:4px">0</b> 下</span></h2>
+  <div class="hint">A、B 是小狼的两路电极。打开哪一路的开关，那一路就开始听你的指挥；两路都关＝立刻收手。点 ＋/− 一档一档加，按住不放会越加越快。下面「手感」里的百分比，都是在这里的力度上再打折扣。</div>
   <div class="grid2">
     <div class="ch A">
-      <div class="hd"><span class="nm">A</span><label class="sw"><input type="checkbox" id="chA"><span></span></label></div>
+      <div class="hd"><span class="nm">A 路</span><label class="sw"><input type="checkbox" id="chA"><span></span></label></div>
       <div class="stp"><button data-d="A-">−</button><div class="big" id="strAv">0</div><button data-d="A+">＋</button></div>
-      <div class="act">实际 <span id="actA">--</span> · 上限 <span id="limA">200</span></div>
+      <div class="act">此刻 <span id="actA">--</span> · 封顶 <span id="limA">200</span></div>
     </div>
     <div class="ch B">
-      <div class="hd"><span class="nm">B</span><label class="sw"><input type="checkbox" id="chB"><span></span></label></div>
+      <div class="hd"><span class="nm">B 路</span><label class="sw"><input type="checkbox" id="chB"><span></span></label></div>
       <div class="stp"><button data-d="B-">−</button><div class="big" id="strBv">0</div><button data-d="B+">＋</button></div>
-      <div class="act">实际 <span id="actB">--</span> · 上限 <span id="limB">200</span></div>
+      <div class="act">此刻 <span id="actB">--</span> · 封顶 <span id="limB">200</span></div>
     </div>
   </div>
 </section>
 
 <!-- ===== 晃动页 ===== -->
 <section class="card glass page" data-p="motion" id="motionCard">
-  <h2>📳 晃动触发<small class="sd">甩一下手机电一下</small></h2>
+  <h2>📳 摇一摇<small class="sd">手机一晃，那边就挨一下</small></h2>
     <canvas id="motionCv" height="84" style="margin-top:6px"></canvas>
-    <div class="stats"><span>当前 <b id="magV">0</b></span><span>峰值 <b id="peakV">0</b></span><span>阈值 <b id="thrV2">0</b></span><span><b id="hzV">0</b> Hz</span></div>
+    <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span>门槛 <b id="thrV2">0</b></span><span><b id="hzV">0</b> Hz</span></div>
     <div class="seg" id="srcSeg" style="margin-top:8px">
-      <button data-v="rot">旋转</button><button data-v="acc">加速度</button><button data-v="both">两者</button>
+      <button data-v="rot">甩手腕</button><button data-v="acc">前后晃</button><button data-v="both">都算</button>
     </div>
-    <div class="cap">旋转＝甩手腕 · 加速度＝直线晃/敲 · 两者＝取较大</div>
-    <div class="hint">旋转＝手腕甩动/转动（陀螺仪 °/s）；加速度＝直线晃动、敲击；两者＝取较大值。</div>
-    <label class="f"><div class="lb"><span>触发阈值<small class="sd">越小越灵敏</small></span><b id="thrV">200</b></div><input type="range" id="thr" min="20" max="1000" step="5"><div class="hint">曲线越过虚线就触发一次。越小越灵敏，太小会误触发。</div></label>
-        <label class="f"><div class="lb"><span>每次输出时长 (ms)<small class="sd">每次电多久</small></span><b id="burstV">75</b></div><input type="range" id="burst" min="25" max="3000" step="25"><div class="hint">每晃一下，电击持续多长时间，播放的是下面「波形」的开头这么长一段。越长越明显；但要小于两次触发的间隔，否则会连成一片（如 120 BPM 每拍 500ms，建议 ≤ 300）。晃动模式专用。</div></label>
+    <div class="cap">甩手腕＝转动手机 · 前后晃＝直线晃动或拍打 · 都算＝哪个猛用哪个</div>
+    <div class="hint">甩手腕读的是陀螺仪的旋转速度；前后晃读的是加速度（拍桌子、敲手机也算）。不确定就选「都算」。</div>
+    <label class="f"><div class="lb"><span>敏感门槛<small class="sd">越低越容易挨电</small></span><b id="thrV">200</b></div><input type="range" id="thr" min="20" max="1000" step="5"><div class="hint">图里的曲线冲过黄色虚线，就电一下。门槛太低会连呼吸都算，太高就得使劲甩。</div></label>
+    <label class="f"><div class="lb"><span>每下电多久 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstV">75</b></div><input type="range" id="burst" min="25" max="3000" step="25"><div class="hint">每晃一下，电击持续多长时间（播放下面「手感」的开头这么长一段）。想要一下一下清清楚楚，就别长过两次晃动的间隔。</div></label>
     <details>
-      <summary>高级 <small class="sd">平滑 / 间隔 / 回落</small></summary>
-      <label class="f"><div class="lb"><span>平滑<small class="sd">大=稳但慢</small></span><b id="smoothV">0.1</b></div><input type="range" id="smooth" min="0" max="0.95" step="0.05"><div class="hint">过滤手抖噪声。越大越平滑但反应越慢；跟快节奏请保持在 0.2 以下。</div></label>
-      <label class="f"><div class="lb"><span>最小间隔 (ms)<small class="sd">两次最短间隔</small></span><b id="coolV">60</b></div><input type="range" id="cool" min="0" max="1000" step="10"><div class="hint">两次触发之间至少隔多久。</div></label>
-      <label class="f"><div class="lb"><span>回落比例<small class="sd">大=易连续触发</small></span><b id="rearmV">0.60</b></div><input type="range" id="rearm" min="0.2" max="0.95" step="0.05"><div class="hint">信号从峰值回落到这个比例以下才允许下一次触发。猛晃漏触发就调高（0.8），误触发多就调低。</div></label>
+      <summary>进阶手法 <small class="sd">防手抖 / 冷却 / 连发</small></summary>
+      <label class="f"><div class="lb"><span>防手抖<small class="sd">大＝稳但迟钝</small></span><b id="smoothV">0.1</b></div><input type="range" id="smooth" min="0" max="0.95" step="0.05"><div class="hint">把细小的抖动抹平。调大不容易误伤，但反应会慢半拍；想跟快节奏就保持在 0.2 以下。</div></label>
+      <label class="f"><div class="lb"><span>冷却 (ms)<small class="sd">两下至少隔多久</small></span><b id="coolV">60</b></div><input type="range" id="cool" min="0" max="1000" step="10"><div class="hint">挨完一下，至少喘口气这么久才会有下一下。</div></label>
+      <label class="f"><div class="lb"><span>连发判定<small class="sd">大＝更容易连着挨</small></span><b id="rearmV">0.60</b></div><input type="range" id="rearm" min="0.2" max="0.95" step="0.05"><div class="hint">猛甩时如果几下只电了一下，就调大（0.8）；轻轻一晃却电好几下，就调小。</div></label>
     </details>
 </section>
 
 <!-- ===== 节拍页 ===== -->
 <section class="card glass page" data-p="music" id="musicCard">
-  <h2>🎵 节拍触发<small class="sd">听音乐跟着拍子电</small></h2>
+  <h2>🎵 踩节拍<small class="sd">跟着音乐，一拍一下</small></h2>
     <canvas id="beatCv" height="56" style="margin-top:6px"></canvas>
-    <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">触发线</span> <b id="beThrV">0</b></span><span>节拍 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
-    <div class="hint">用麦克风听音乐。建议用另一台设备或音箱外放，手机自己放歌可能被系统打断。</div>
-    <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 自动节拍</button><button data-v="bass">🥁 鼓点跟随</button></div>
-    <div class="cap">自动节拍＝识别 BPM 后按拍预测输出，稳；鼓点跟随＝听到底鼓才电，直接但会慢半拍</div>
-    <div class="hint">自动节拍＝分析全曲的起音规律，自动算出 BPM 和拍点相位，按预测的节拍网格稳定输出（可以提前补偿延迟，正好落在拍子上）；鼓点跟随＝只听 40–160Hz 底鼓，听到才触发，反应直接但会慢半拍、会漏。</div>
+    <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">门槛</span> <b id="beThrV">0</b></span><span>拍数 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
+    <div class="hint">用麦克风听歌。最好用另一台手机或音箱放歌，同一台手机边放边听可能会被系统打断。</div>
+    <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 自动踩拍</button><button data-v="bass">🥁 跟着鼓点</button></div>
+    <div class="cap">自动踩拍＝先听出节奏再准时下手，稳 · 跟着鼓点＝听到底鼓才电，直接但会慢半拍</div>
+    <div class="hint">自动踩拍会听几秒算出 BPM，然后预判下一拍、提前出手，所以能准准地踩在拍子上，偶尔漏听也不会断；跟着鼓点只认低音鼓，听到一下电一下。</div>
     <div class="bp" data-b="auto">
-      <div class="seg" id="multSeg" style="margin-top:6px"><button data-v="0.5">每 2 拍</button><button data-v="1">每拍</button><button data-v="2">每半拍</button></div>
-      <div class="cap">多久电一次；BPM 识别成一半/两倍时用它纠正</div>
-      <div class="hint">节奏倍率：BPM 识别成了一半/两倍时，也可以用这里纠正。</div>
-      <label class="f"><div class="lb"><span>提前量 (ms)<small class="sd">抵消蓝牙延迟</small></span><b id="leadV">120</b></div><input type="range" id="lead" min="0" max="400" step="10"><div class="hint">自动节拍是“预测”下一拍什么时候来，然后提前这么多毫秒把指令发出去。因为从手机发出到设备真正放电有约 100–200ms 延迟（蓝牙 + 设备缓冲），提前发才能正好在鼓点上电到。感觉电击比鼓点慢 → 调大；比鼓点早 → 调小。</div></label>
+      <div class="seg" id="multSeg" style="margin-top:6px"><button data-v="0.5">两拍一下</button><button data-v="1">一拍一下</button><button data-v="2">半拍一下</button></div>
+      <div class="cap">多久来一下；节奏听成快一倍或慢一倍时，也用这里纠正</div>
+      <label class="f"><div class="lb"><span>抢拍 (ms)<small class="sd">觉得慢半拍就调大</small></span><b id="leadV">120</b></div><input type="range" id="lead" min="0" max="400" step="10"><div class="hint">从手机发出指令到小狼真正放电要 0.1–0.2 秒，所以要提前这么多出手，电击才正好砸在鼓点上。电得比鼓点晚 → 调大；早了 → 调小。</div></label>
     </div>
     <div class="bp" data-b="bass">
       <div class="grid2">
-        <label class="f"><div class="lb"><span>灵敏度<small class="sd">小=更灵敏</small></span><b id="sensV">1.50</b></div><input type="range" id="sens" min="1.1" max="3" step="0.05"><div class="hint">超过平均音量的几倍算一拍，越小越灵敏。</div></label>
-        <label class="f"><div class="lb"><span>最小间隔<small class="sd">防重复</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">ms，防止一个鼓点触发多次。</div></label>
+        <label class="f"><div class="lb"><span>耳朵灵敏<small class="sd">小＝更灵</small></span><b id="sensV">1.50</b></div><input type="range" id="sens" min="1.1" max="3" step="0.05"><div class="hint">鼓声比平时响几倍才算一拍。越小越一点就着。</div></label>
+        <label class="f"><div class="lb"><span>冷却<small class="sd">防一拍两电</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">毫秒。防止一个鼓点被当成两下。</div></label>
       </div>
     </div>
-    <label class="f"><div class="lb"><span>每次输出时长 (ms)<small class="sd">每次电多久</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="25" max="3000" step="25"><div class="hint">每个拍点，电击持续多长时间，播放的是下面「波形」的开头这么长一段。越长越明显；但要小于两次触发的间隔，否则会连成一片（如 120 BPM 每拍 500ms，建议 ≤ 300）。节拍模式专用。</div></label>
+    <label class="f"><div class="lb"><span>每拍电多久 (ms)<small class="sd">短＝点一下 长＝压一拍</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="25" max="3000" step="25"><div class="hint">每个拍点电多长时间。120 BPM 一拍是 500ms，想拍拍分明就别超过 300。</div></label>
 </section>
 
-<!-- ===== 两种模式共用：连击 / 波形 / 随机抖动 ===== -->
+<!-- ===== 两种玩法共用：越来越狠 / 手感 / 随机惊喜 ===== -->
 <section class="card glass page" data-p="motion music" id="comboCard">
-    <div class="tog" style="margin-top:0"><span>🔥 连击升级<small class="sd">连续触发越来越强</small> <small class="sd" id="comboMini"></small></span><label class="sw"><input type="checkbox" id="comboOn"><span></span></label></div>
-    <div class="hint">连续触发（间隔小于连击窗口）时强度逐级升高，停下后每过一个窗口降一级。</div>
+    <div class="tog" style="margin-top:0"><span>🔥 越挨越重<small class="sd">连着来，一下比一下狠</small> <small class="sd" id="comboMini"></small></span><label class="sw"><input type="checkbox" id="comboOn"><span></span></label></div>
+    <div class="hint">一下接一下不停时，力度逐级往上加；停下来喘口气，就一级一级退回去。</div>
     <details>
-      <summary>连击参数 <small class="sd">起始强度 / 升满 / 窗口</small></summary>
+      <summary>加码规则 <small class="sd">起手 / 几下到满 / 喘息</small></summary>
       <div class="grid2">
-        <label class="f"><div class="lb"><span>起始 %<small class="sd">第1击</small></span><b id="comboStartV">30</b></div><input type="range" id="comboStart" min="5" max="100" step="5"><div class="hint">第 1 击的强度百分比。</div></label>
-        <label class="f"><div class="lb"><span>升满连击数<small class="sd">第几下满</small></span><b id="comboStepsV">8</b></div><input type="range" id="comboSteps" min="2" max="40" step="1"><div class="hint">第几下到 100%。</div></label>
+        <label class="f"><div class="lb"><span>起手 %<small class="sd">第一下</small></span><b id="comboStartV">30</b></div><input type="range" id="comboStart" min="5" max="100" step="5"><div class="hint">第一下只给多少力。</div></label>
+        <label class="f"><div class="lb"><span>几下到满<small class="sd">加码速度</small></span><b id="comboStepsV">8</b></div><input type="range" id="comboSteps" min="2" max="40" step="1"><div class="hint">连着第几下用到全力。</div></label>
       </div>
-      <label class="f"><div class="lb"><span>连击窗口 (ms)<small class="sd">多久内算连击</small></span><b id="comboWinV">600</b></div><input type="range" id="comboWin" min="150" max="3000" step="50"><div class="hint">间隔在这之内算连击；停下后每过这么久降一级。</div></label>
+      <label class="f"><div class="lb"><span>喘息时间 (ms)<small class="sd">超过就开始退</small></span><b id="comboWinV">600</b></div><input type="range" id="comboWin" min="150" max="3000" step="50"><div class="hint">两下之间隔得比这短才算“连着”；停得比这久，每过这么久退一级。</div></label>
     </details>
 </section>
 
-<!-- 波形 -->
+<!-- 手感（波形） -->
 <section class="card glass page" data-p="motion music" id="waveCard">
-  <h2>波形</h2>
-  <div class="hint">每次触发播放的波形（每格 25ms）。恒定＝一直最大；渐强＝由小到大；脉冲＝前半开后半关；呼吸＝正弦起伏；随机＝每次触发都生成全新波形，再点一次可手动换。</div>
+  <h2>💗 手感<small class="sd">每一下是什么滋味</small></h2>
+  <div class="hint">每次电击的“形状”，每格 25ms。图上柱子越高越重，蓝线是颗粒感。</div>
   <div class="seg" id="presetSeg">
-    <button data-v="constant">恒定</button><button data-v="ramp">渐强</button><button data-v="pulse">脉冲</button><button data-v="sine">呼吸</button><button data-v="random">🎲 随机</button>
+    <button data-v="constant">一直狠</button><button data-v="ramp">慢慢加</button><button data-v="pulse">一顿一顿</button><button data-v="sine">一呼一吸</button><button data-v="random">🎲 猜不到</button>
   </div>
-  <div class="cap">每次触发播放的形状：恒定＝一直最强 · 渐强＝由弱到强 · 脉冲＝一开一关 · 呼吸＝起伏 · 随机＝每次都不同</div>
+  <div class="cap">一直狠＝全程满力 · 慢慢加＝由轻到重 · 一顿一顿＝一开一停 · 一呼一吸＝起起伏伏 · 猜不到＝每次都不一样</div>
   <canvas id="waveCv" height="46" style="margin-top:8px"></canvas>
-  <label class="f"><div class="lb"><span>脉冲频率<small class="sd">小=密麻 大=敲击</small></span><b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲间隔。越小越密越“麻”，越大越像一下下“敲击”。左半 10–200ms 细调，右半 200–1000ms。</div></label>
+  <label class="f"><div class="lb"><span>颗粒感<small class="sd">小＝酥麻 大＝一下下敲</small></span><b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲之间的间隔。左半段 10–200ms 细细调（越小越密越麻），右半段 200–1000ms 是一下一下的敲打感。</div></label>
   <div class="grid2">
-    <label class="f"><div class="lb"><span>最小强度 %<small class="sd">波形低点</small></span><b id="minIV">0</b></div><input type="range" id="minI" min="0" max="100"><div class="hint">波形最低点。</div></label>
-    <label class="f"><div class="lb"><span>最大强度 %<small class="sd">波形高点</small></span><b id="maxIV">100</b></div><input type="range" id="maxI" min="0" max="100"><div class="hint">波形最高点。</div></label>
+    <label class="f"><div class="lb"><span>最轻 %<small class="sd">低谷</small></span><b id="minIV">0</b></div><input type="range" id="minI" min="0" max="100"><div class="hint">波形最轻的时候用几成力。</div></label>
+    <label class="f"><div class="lb"><span>最重 %<small class="sd">高峰</small></span><b id="maxIV">100</b></div><input type="range" id="maxI" min="0" max="100"><div class="hint">波形最重的时候用几成力。</div></label>
   </div>
   <details>
-    <summary>更多 <small class="sd">波形周期</small></summary>
-    <label class="f"><div class="lb"><span>波形周期 (ms)<small class="sd">走完一遍</small></span><b id="cycV">500</b></div><input type="range" id="cyc" min="100" max="3000" step="25"><div class="hint">波形完整走一遍的时长（按住时循环）。触发时只播放开头“输出时长”那一段。</div></label>
+    <summary>更多 <small class="sd">一轮多长</small></summary>
+    <label class="f"><div class="lb"><span>一轮多长 (ms)<small class="sd">完整走一遍</small></span><b id="cycV">500</b></div><input type="range" id="cyc" min="100" max="3000" step="25"><div class="hint">完整的形状走一遍要多久。每次电击只播放开头那一段（长度由“每下电多久”决定）。</div></label>
   </details>
 </section>
 
-<!-- 随机抖动 -->
+<!-- 随机惊喜 -->
 <section class="card glass page" data-p="motion music" id="rjCard">
-  <h2>🎲 随机抖动<small class="sd">随机时间来点意外</small><span class="sp"></span><span class="pill" id="rjStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="rjOn"><span></span></label></h2>
-  <div class="hint">打开后，每隔一段随机时间自动来一次“意外”。只在通道打开且已连接时运行；只作用于强度大于 0 的通道，且不会超过软上限。</div>
+  <h2>🎲 随机惊喜<small class="sd">不知道什么时候来</small><span class="sp"></span><span class="pill" id="rjStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="rjOn"><span></span></label></h2>
+  <div class="hint">打开后，每隔一段猜不到的时间自动来一次“惊喜”。只在小狼在线、通道打开时才会来；力度为 0 的那一路不会被偷袭，也不会超过封顶。</div>
   <div class="seg" id="rjTypeSeg">
-    <button data-v="jolt">⚡ 突袭电击</button><button data-v="boost">📈 强度增强</button><button data-v="both">🎰 随机二选一</button>
+    <button data-v="jolt">⚡ 偷袭</button><button data-v="boost">📈 偷偷加码</button><button data-v="both">🎰 看心情</button>
   </div>
-  <div class="cap">突袭＝到点直接电一下 · 增强＝一段时间内强度变高，期间触发更强</div>
-  <div class="hint">突袭电击＝不用触发，直接按当前波形电一下（强度临时加高）；强度增强＝一段时间内通道强度临时调高，这期间的触发都会更强，结束后自动恢复。</div>
+  <div class="cap">偷袭＝冷不丁直接电一下 · 偷偷加码＝一阵子里每下都更重 · 看心情＝两种随机来</div>
   <div class="grid2">
-    <label class="f"><div class="lb"><span>间隔最短 (s)<small class="sd">随机等待</small></span><b id="rjGapMinV">3</b></div><input type="range" id="rjGapMin" min="1" max="120" step="1"></label>
-    <label class="f"><div class="lb"><span>间隔最长 (s)<small class="sd">随机等待</small></span><b id="rjGapMaxV">10</b></div><input type="range" id="rjGapMax" min="1" max="120" step="1"></label>
+    <label class="f"><div class="lb"><span>最快 (s)<small class="sd">多久来一次</small></span><b id="rjGapMinV">3</b></div><input type="range" id="rjGapMin" min="1" max="120" step="1"></label>
+    <label class="f"><div class="lb"><span>最慢 (s)<small class="sd">多久来一次</small></span><b id="rjGapMaxV">10</b></div><input type="range" id="rjGapMax" min="1" max="120" step="1"></label>
   </div>
-  <div class="hint">每次之间随机等待「最短～最长」秒。</div>
   <div class="grid2">
-    <label class="f"><div class="lb"><span>增强最少 +<small class="sd">临时加强</small></span><b id="rjAddMinV">5</b></div><input type="range" id="rjAddMin" min="0" max="60" step="1"></label>
-    <label class="f"><div class="lb"><span>增强最多 +<small class="sd">临时加强</small></span><b id="rjAddMaxV">15</b></div><input type="range" id="rjAddMax" min="0" max="60" step="1"></label>
+    <label class="f"><div class="lb"><span>最少加 +<small class="sd">临时加码</small></span><b id="rjAddMinV">5</b></div><input type="range" id="rjAddMin" min="0" max="60" step="1"></label>
+    <label class="f"><div class="lb"><span>最多加 +<small class="sd">临时加码</small></span><b id="rjAddMaxV">15</b></div><input type="range" id="rjAddMax" min="0" max="60" step="1"></label>
   </div>
-  <div class="hint">每次在通道强度基础上临时加多少（强度数值，不是百分比）。</div>
   <div class="grid2">
-    <label class="f"><div class="lb"><span>持续最短 (s)<small class="sd">每次多久</small></span><b id="rjDurMinV">0.3</b></div><input type="range" id="rjDurMin" min="0.1" max="10" step="0.1"></label>
-    <label class="f"><div class="lb"><span>持续最长 (s)<small class="sd">每次多久</small></span><b id="rjDurMaxV">1.5</b></div><input type="range" id="rjDurMax" min="0.1" max="10" step="0.1"></label>
+    <label class="f"><div class="lb"><span>最短 (s)<small class="sd">每次多久</small></span><b id="rjDurMinV">0.3</b></div><input type="range" id="rjDurMin" min="0.1" max="10" step="0.1"></label>
+    <label class="f"><div class="lb"><span>最长 (s)<small class="sd">每次多久</small></span><b id="rjDurMaxV">1.5</b></div><input type="range" id="rjDurMax" min="0.1" max="10" step="0.1"></label>
   </div>
-  <div class="hint">每次持续多久：突袭电击放电的时长 / 强度增强维持的时长。</div>
+  <div class="hint">三组都是「最少～最多」之间每次随机取：等多久、加多少力（直接加在力度数值上）、持续多久。</div>
 </section>
 
 <!-- ===== 设置页 ===== -->
 <section class="card glass page" data-p="set">
-  <h2>设备<small class="sd">连接与设备参数</small></h2>
-  <div class="minis" style="margin-top:0"><span id="devName" style="flex:1">名称前缀 47L121</span>自动连接<small class="sd" style="margin-right:4px">开页即连</small><label class="sw"><input type="checkbox" id="autoConn"><span></span></label></div>
-  <div class="hint">自动连接：打开页面时自动连上之前授权过的郊狼（只有一台时），断线后自动重连。</div>
+  <h2>🐺 小狼<small class="sd">连接和底层参数，一般不用动</small></h2>
+  <div class="minis" style="margin-top:0"><span id="devName" style="flex:1">找名字 47L121 开头的小狼</span>自动召唤<small class="sd" style="margin-right:4px">开页就连</small><label class="sw"><input type="checkbox" id="autoConn"><span></span></label></div>
+  <div class="hint">打开页面自动连上认识的那只小狼；掉线了也会自己追回来。</div>
   <div class="sub">
-    <div style="font-size:13px;font-weight:600">软上限 &amp; 平衡参数 <small class="sd">体感比官方弱时看这里</small></div>
+    <div style="font-size:13px;font-weight:600">封顶 &amp; 手感校准 <small class="sd">觉得比官方 App 弱就看这里</small></div>
     <div class="grid2" style="margin-top:6px">
-      <label class="f"><div class="lb">A 软上限<small class="sd">设备最大强度</small></div><input type="number" id="softA" min="0" max="200"></label>
-      <label class="f"><div class="lb">B 软上限<small class="sd">设备最大强度</small></div><input type="number" id="softB" min="0" max="200"></label>
-      <label class="f"><div class="lb">A 频率平衡<small class="sd">大=低频冲击强</small></div><input type="number" id="fbA" min="0" max="255"></label>
-      <label class="f"><div class="lb">B 频率平衡<small class="sd">大=低频冲击强</small></div><input type="number" id="fbB" min="0" max="255"></label>
-      <label class="f"><div class="lb">A 强度平衡<small class="sd">大=脉宽更强</small></div><input type="number" id="ibA" min="0" max="255"></label>
-      <label class="f"><div class="lb">B 强度平衡<small class="sd">大=脉宽更强</small></div><input type="number" id="ibB" min="0" max="255"></label>
+      <label class="f"><div class="lb">A 封顶<small class="sd">怎么加都不超过</small></div><input type="number" id="softA" min="0" max="200"></label>
+      <label class="f"><div class="lb">B 封顶<small class="sd">怎么加都不超过</small></div><input type="number" id="softB" min="0" max="200"></label>
+      <label class="f"><div class="lb">A 低频冲击<small class="sd">大＝更沉更冲</small></div><input type="number" id="fbA" min="0" max="255"></label>
+      <label class="f"><div class="lb">B 低频冲击<small class="sd">大＝更沉更冲</small></div><input type="number" id="fbB" min="0" max="255"></label>
+      <label class="f"><div class="lb">A 扎实度<small class="sd">大＝更扎实</small></div><input type="number" id="ibA" min="0" max="255"></label>
+      <label class="f"><div class="lb">B 扎实度<small class="sd">大＝更扎实</small></div><input type="number" id="ibB" min="0" max="255"></label>
     </div>
-    <div class="tog"><span>连接时写入设备<small class="sd">关=沿用官方 App 设置</small><div class="hint">关闭＝沿用官方 App 存在设备里的平衡参数和软上限（体感和官方一致）；打开＝每次连接用这里的数值覆盖。</div></span><label class="sw"><input type="checkbox" id="bfOn"><span></span></label></div>
-    <button id="bfBtn" class="wide" style="margin-top:8px">立即写入一次</button>
-    <div class="note">软上限＝设备端强度天花板（0–200）。频率平衡（0–255）：值越大，低频冲击感越强。强度平衡（0–255）：调节脉冲宽度，值越大，低频刺激越强——如果同样强度比官方 App 弱，多半是这个值写低了。</div>
+    <div class="tog"><span>连上就用这里的数值<small class="sd">关＝沿用官方 App 的</small><div class="hint">关着＝小狼保留官方 App 里调好的手感（推荐，体感和官方一样）；打开＝每次连上都用这里的数值覆盖。</div></span><label class="sw"><input type="checkbox" id="bfOn"><span></span></label></div>
+    <button id="bfBtn" class="wide" style="margin-top:8px">现在就写进小狼</button>
+    <div class="note">封顶＝小狼自己的力度天花板（0–200），网页再怎么加也越不过去。低频冲击（0–255）越大，慢节奏时越有冲击感；扎实度（0–255）控制每个脉冲有多“宽”，越大越扎实——同样数值比官方弱，多半是这个值偏低。</div>
   </div>
   <div class="sub">
   <details id="diagBox" style="margin-top:0">
-    <summary>诊断 <small class="sd">写入方式 / 收发数据</small></summary>
+    <summary>疑难杂症 <small class="sd">没反应时来这里看看</small></summary>
     <div class="seg" id="wmSeg" style="margin-top:8px">
-      <button data-v="auto">写入：自动</button><button data-v="resp">有响应</button><button data-v="noresp">无响应</button>
+      <button data-v="auto">发送：自动</button><button data-v="resp">稳妥模式</button><button data-v="noresp">快速模式</button>
     </div>
-    <div class="cap">一般保持自动；有输出问题时可以切换试试</div>
+    <div class="cap">一般放着「自动」就好；小狼连上了却毫无反应，再换着试试</div>
     <div id="diagTxt" style="font:11px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);margin-top:6px;word-break:break-all"></div>
   </details>
   </div>
 </section>
 
 <section class="card glass page" data-p="set">
-  <h2>说明 &amp; 日志<small class="sd" id="buildV"></small></h2>
+  <h2>📖 玩法 &amp; 日志<small class="sd" id="buildV"></small></h2>
   <div class="note" style="margin-top:0">
-    1. 右上角连接郊狼 → 底部选「晃动」或「节拍」→ 调好 A/B 强度 → 打开通道开关即开始触发。<br>
-    2. 关掉通道开关＝停止；切到后台会暂停输出，回到前台自动继续。<br>
-    3. 右上角 🩺 自检排查连接问题，ⓘ 显示详细说明。<br>
-    4. 从低强度开始，避免电极跨越心脏区域。
+    1. 右上角「召唤小狼」连上设备。<br>
+    2. 底部选玩法：「摇一摇」晃手机电，「踩节拍」跟着音乐电。<br>
+    3. 先把 A/B 力度调到低档，再打开开关——开关一开就开始；全关＝立刻停。<br>
+    4. 想加点料：打开「越挨越重」「随机惊喜」，在「手感」里换口味。<br>
+    5. 切出页面会自动暂停，回来接着玩；没反应就点右上角 🩺。
+  </div>
+  <div class="note" style="color:var(--warn)">
+    ⚠️ 安全第一：从低档慢慢往上加；电极别跨过心脏（不要一片在胸前一片在背后）；有心脏病、起搏器、癫痫或怀孕请勿使用。玩之前约好安全词，对方一说停，马上关掉通道。
   </div>
   <div id="log"></div>
 </section>
@@ -423,18 +423,18 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 <div id="toast" class="toast"></div>
 <div id="chkMask" class="mask hidden">
   <div class="card glass chkbox">
-    <h2>🩺 自检<span class="sp"></span><button id="chkClose" class="roundb">✕</button></h2>
+    <h2>🩺 小狼怎么没反应？<span class="sp"></span><button id="chkClose" class="roundb">✕</button></h2>
     <div id="chkList"></div>
     <div class="row" style="margin-top:10px">
-      <button id="chkRerun">重新检测</button>
-      <button id="chkCopy">复制结果</button>
+      <button id="chkRerun">再查一遍</button>
+      <button id="chkCopy">复制给开发者</button>
     </div>
   </div>
 </div>
 <nav class="tabs glass" id="tabBar">
-  <button data-t="motion"><i>📳</i><span>晃动</span></button>
-  <button data-t="music"><i>🎵</i><span>节拍</span></button>
-  <button data-t="set"><i>⚙️</i><span>设置</span></button>
+  <button data-t="motion"><i>📳</i><span>摇一摇</span></button>
+  <button data-t="music"><i>🎵</i><span>踩节拍</span></button>
+  <button data-t="set"><i>🐺</i><span>小狼</span></button>
 </nav>
 
 <script>
@@ -516,7 +516,7 @@ let connState = 0;
 function setConn(state, txt){
   connState = state;
   $('#connDot').className = 'dot' + (state === 2 ? ' on' : state === 1 ? ' mid' : '');
-  $('#connTxt').textContent = state === 0 && (txt === '未连接' || !txt) ? '连接郊狼' : txt;
+  $('#connTxt').textContent = state === 0 && (txt === '未连接' || !txt) ? '召唤小狼' : txt;
   $('#connBtn').className = 'connb s' + state;
   $('#batPill').classList.toggle('hidden', state !== 2 || !$('#batPill').textContent);
 }
@@ -530,7 +530,7 @@ async function connect(){
   keepAwake();
   stopAutoRetry();
   try{
-    setConn(1, '搜索中…');
+    setConn(1, '找小狼中…');
     step = 'requestDevice';
     const d = await navigator.bluetooth.requestDevice({
       filters:[{namePrefix:NAME_PREFIX}],
@@ -544,7 +544,7 @@ async function connect(){
     let tip = '';
     if (step === 'requestDevice' && /cancel/i.test(e.message)){
       tip = '';
-      toast(android ? '没搜到郊狼？检查蓝牙、位置信息是否打开，以及郊狼是否被其他手机连着' : '没搜到郊狼？确认已开机、没被其他手机或官方 App 连着');
+      toast(android ? '没找到小狼？看看蓝牙和位置信息开了没，它是不是正被别的手机牵着' : '没找到小狼？确认它醒着（开机），没被别的手机或官方 App 牵着');
     }
     else if (step === 'requestDevice') tip = android
       ? '\n\n安卓请检查：①用 Chrome 打开（不要用微信/QQ/系统浏览器）②手机蓝牙和「位置信息」都已打开 ③Chrome 已获得「附近的设备」/位置权限 ④郊狼没有同时连着 iPhone 或官方 App（它只能连一台，连着时搜不到）'
@@ -563,7 +563,7 @@ async function useDevice(d){
   if (!d._hooked){ d.addEventListener('gattserverdisconnected', onDisconnected); d._hooked = true; }
   userDisconnect = false;
   $('#pickBox').classList.add('hidden');
-  $('#devName').textContent = '设备：' + (d.name || d.id);
+  $('#devName').textContent = '今天这只：' + (d.name || d.id);
   await openGatt();
   S.lastDev = d.id; save();
 }
@@ -601,7 +601,7 @@ async function tryAuto(d){
     }
     await gattTimeout(useDevice(d), 8000);
     if (d.unwatchAdvertisements) try { d.unwatchAdvertisements(); } catch(e){}
-    toast('已自动连接 ' + (d.name || ''));
+    toast('小狼自己跑回来了 🐺');
   }catch(e){
     if (connected) return;
     try { d.gatt.disconnect(); } catch(_){}
@@ -622,12 +622,12 @@ function showPicker(list){
     el.appendChild(b);
   });
   box.classList.remove('hidden');
-  setConn(0, '请选择设备');
+  setConn(0, '选一只小狼');
   log('自动连接：发现 ' + list.length + ' 台已授权的郊狼，请选择');
 }
 
 async function openGatt(){
-  setConn(1, '连接中…');
+  setConn(1, '小狼赶来中…');
   step = 'gatt.connect';
   const server = await device.gatt.connect();
   step = 'getPrimaryService 180C';
@@ -642,7 +642,7 @@ async function openGatt(){
   step = 'BF';
   connected = true; reconnectTries = 0;
   diag.mode = ''; pickWrite();
-  setConn(2, '已连接');
+  setConn(2, '小狼在线');
   setTimeout(updateArm, 0);
   log(`已连接 ${device.name} · 150A 属性[${diag.props}] · 写入方式 ${diag.mode}`);
   if (S.bfOn) await writeBF();
@@ -690,7 +690,7 @@ function onDisconnected(){
       });
     }, delay);
   } else if (!userDisconnect && device){
-    setConn(0, '已断开'); toast('重连失败，请手动连接');
+    setConn(0, '小狼跑了'); toast('小狼跑了，点右上角再召唤一次');
   }
 }
 
@@ -953,7 +953,7 @@ async function enableSensor(){
     }
     if (!sensorOn){ window.addEventListener('devicemotion', onMotion); sensorOn = true; }
     log('陀螺仪已启用');
-  }catch(e){ log('陀螺仪失败: ' + e.message); toast('陀螺仪没有授权，点 🩺 自检查看怎么开'); }
+  }catch(e){ log('陀螺仪失败: ' + e.message); toast('手机不让读晃动，点 🩺 看看怎么开权限'); }
 }
 
 function onMotion(e){
@@ -1001,9 +1001,9 @@ function comboGainOf(c){
 function trigger(level, now, src){
   now = now || performance.now();
   if (level > 1) level = clamp(level / (S.thr * 2), 0.3, 1); // 兼容旧调用
-  if (!connected) toast('触发了，但设备未连接');
-  else if (!S.chA && !S.chB) toast('触发了，但 A/B 通道都关着');
-  else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) toast('触发了，但通道强度为 0 —— 先把强度调上去');
+  if (!connected) toast('想电一下，但小狼还没来');
+  else if (!S.chA && !S.chB) toast('想电一下，但 A/B 开关都关着');
+  else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) toast('想电一下，但力度是 0 —— 先用 ＋ 加点');
   combo = comboLevel(now) + 1; comboLast = now;
   gain = comboGainOf(combo);
   const dur = S.mode === 'music' ? S.burstMu : S.burst;
@@ -1084,11 +1084,11 @@ function rjTick(){
 function rjShow(now){
   const el = $('#rjStat');
   if (!S.rjOn) el.textContent = '关';
-  else if (!connected) el.textContent = '等待连接';
-  else if (!armed) el.textContent = '等待通道打开';
-  else if (rjUntil) el.textContent = (rjKind === 'jolt' ? '⚡ 突袭 +' : '📈 增强 +') + rjAdd + ' · ' + Math.max(0, (rjUntil - now) / 1000).toFixed(1) + 's';
-  else if (rjNext) el.textContent = '下次 ' + Math.max(0, (rjNext - now) / 1000).toFixed(1) + 's';
-  else el.textContent = '就绪';
+  else if (!connected) el.textContent = '等小狼来';
+  else if (!armed) el.textContent = '等你开开关';
+  else if (rjUntil) el.textContent = (rjKind === 'jolt' ? '⚡ 偷袭 +' : '📈 加码 +') + rjAdd + ' · ' + Math.max(0, (rjUntil - now) / 1000).toFixed(1) + 's';
+  else if (rjNext) el.textContent = '👀 ' + Math.max(0, (rjNext - now) / 1000).toFixed(1) + 's 后';
+  else el.textContent = '蓄势中';
 }
 setInterval(rjTick, 100);
 
@@ -1125,7 +1125,7 @@ async function enableMic(){
     micOn = true;
     clearInterval(beatTimer); beatTimer = setInterval(beatStep, 10);
     log('麦克风已启用 ' + actx.sampleRate + 'Hz');
-  }catch(e){ log('麦克风失败: ' + e.message); toast('麦克风没有授权，点 🩺 自检查看怎么开'); }
+  }catch(e){ log('麦克风失败: ' + e.message); toast('手机不让听声音，点 🩺 看看怎么开权限'); }
 }
 
 function beatStep(){
@@ -1304,7 +1304,7 @@ function drawIdle(cv, txt){
   ctx.fillText(txt, w / 2, h / 2 + 4); ctx.textAlign = 'left';
 }
 function drawBeat(){
-  if (!micOn){ if (S.mode === 'music') drawIdle(bcv, '👆 轻点屏幕任意处启动麦克风'); return; }
+  if (!micOn){ if (S.mode === 'music') drawIdle(bcv, '👆 轻点屏幕任意处，让我听听音乐'); return; }
   const [ctx, w, h] = fitCanvas(bcv);
   ctx.clearRect(0, 0, w, h);
   const y = v => h - 4 - (v / 255) * (h - 8), bw = w / MH;
@@ -1317,9 +1317,9 @@ function drawBeat(){
     ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(255,184,78,.85)'; ctx.lineWidth = 1.3; ctx.beginPath();
     for (let i = 0; i < MH; i++){ const k = (mhI + i) % MH; if (i) ctx.lineTo(i * bw, y(mhT[k])); else ctx.moveTo(0, y(mhT[k])); }
     ctx.stroke(); ctx.setLineDash([]);
-    $('#beThrL').textContent = '触发线'; $('#beThrV').textContent = Math.round(Math.max(mAvg * S.sens, 15));
+    $('#beThrL').textContent = '门槛'; $('#beThrV').textContent = Math.round(Math.max(mAvg * S.sens, 15));
   } else {
-    $('#beThrL').textContent = '稳定度';
+    $('#beThrL').textContent = '把握';
     $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '分析中';
   }
   $('#beV').textContent = Math.round(mE); $('#beatCntV').textContent = beatCount;
@@ -1337,7 +1337,7 @@ function fitCanvas(cv){
 }
 const mcv = $('#motionCv');
 function drawMotion(){
-  if (!sensorOn && S.mode === 'motion'){ drawIdle(mcv, '👆 轻点屏幕任意处启动陀螺仪'); drawBeat(); requestAnimationFrame(drawMotion); return; }
+  if (!sensorOn && S.mode === 'motion'){ drawIdle(mcv, '👆 轻点屏幕任意处，开始感应晃动'); drawBeat(); requestAnimationFrame(drawMotion); return; }
   const [ctx, w, h] = fitCanvas(mcv);
   ctx.clearRect(0,0,w,h);
   const n = hist.length, top = Math.max(S.thr * 1.6, peak * 1.1, 50);
@@ -1525,8 +1525,8 @@ function onForeground(){
     const gattUp = device.gatt && device.gatt.connected;
     if (connected && !gattUp){ log('回到前台：蓝牙已断开，重连中'); connected = false; wChar = null; }
     if (!connected){
-      reconnectTries = 0; setConn(1, '重连中…');
-      gattTimeout(openGatt(), 8000).catch(e => { log('前台重连失败: ' + e.message); setConn(0, '已断开'); toast('蓝牙重连失败，点右上角重新连接'); });
+      reconnectTries = 0; setConn(1, '追小狼中…');
+      gattTimeout(openGatt(), 8000).catch(e => { log('前台重连失败: ' + e.message); setConn(0, '小狼跑了'); toast('小狼没追回来，点右上角再召唤一次'); });
     }
   }
   if (connected && !loopOn) startLoop();
@@ -1534,8 +1534,8 @@ function onForeground(){
   needGesture = sensorOn || micOn || !!device || connected;
   const msgs = [];
   updateArm();
-  if (micDead()) msgs.push('轻点屏幕恢复麦克风');
-  setTimeout(() => toast('回到前台' + (msgs.length ? '：' + msgs.join('，') : '，轻点屏幕恢复全部功能')), 300);
+  if (micDead()) msgs.push('轻点屏幕让我重新听音乐');
+  setTimeout(() => toast('欢迎回来' + (msgs.length ? '：' + msgs.join('，') : '，轻点屏幕接着玩')), 300);
 }
 async function resumeByGesture(){
   if (!needGesture) return;
@@ -1563,7 +1563,7 @@ function updateArm(){
   armed = connected && (S.chA || S.chB) && !document.hidden;
   const el = $('#armPill');
   el.classList.toggle('on', armed);
-  el.textContent = armed ? '● 触发中' : !connected ? '未连接' : (S.chA || S.chB) ? '已暂停' : '通道已关';
+  el.textContent = armed ? '● 调教中' : !connected ? '小狼没来' : (S.chA || S.chB) ? '暂停中' : '休息中';
   if (!armed && was){ holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear(); }
   return armed;
 }
@@ -1598,7 +1598,7 @@ function bindCheck(id, key, onChange){
 }
 
 $('#connBtn').onclick = () => {
-  if (connState === 2){ if (confirm('断开郊狼？')) disconnect(); return; }
+  if (connState === 2){ if (confirm('让小狼先走（断开连接）？')) disconnect(); return; }
   connect();
 };
 bindCheck('autoConn', 'autoConn', () => { if (S.autoConn) autoConnect(); else stopAutoRetry(); });
@@ -1620,10 +1620,10 @@ document.querySelectorAll('.stp button').forEach(b => {
 const onChannel = c => () => {
   updateArm();
   if (S['ch'+c]){
-    if (!connected) toast(c + ' 通道已打开，连接设备后开始触发');
-    else if (S['str'+c] === 0) toast(c + ' 通道已打开，但强度为 0，用 ＋ 调上去');
-    else toast(c + ' 通道已打开，开始触发');
-  } else if (!S.chA && !S.chB) toast('通道全部关闭，已停止触发');
+    if (!connected) toast(c + ' 路就位，等小狼来了就开始');
+    else if (S['str'+c] === 0) toast(c + ' 路打开了，但力度是 0，用 ＋ 加点');
+    else toast(c + ' 路开始了，准备好哦 😈');
+  } else if (!S.chA && !S.chB) toast('全部收手，休息一下 💤');
 };
 bindCheck('chA', 'chA', onChannel('A')); bindCheck('chB', 'chB', onChannel('B'));
 
@@ -1637,8 +1637,8 @@ for (const k of ['softA','softB','fbA','fbB','ibA','ibB']){
 }
 
 bindCheck('bfOn', 'bfOn', () => { if (S.bfOn && connected) writeBF(); });
-$('#bfBtn').onclick = () => { if (!connected) return toast('未连接'); writeBF(); toast('已写入软上限和平衡参数'); };
-bindCheck('rjOn', 'rjOn', () => { rjStop(); if (S.rjOn && !connected) toast('随机抖动：连接设备并打开通道后才会运行'); });
+$('#bfBtn').onclick = () => { if (!connected) return toast('小狼还没来'); writeBF(); toast('已经写进小狼了'); };
+bindCheck('rjOn', 'rjOn', () => { rjStop(); if (S.rjOn && !connected) toast('随机惊喜已准备，等小狼来了、开关打开才会开始'); });
 bindSeg('rjTypeSeg', 'rjType');
 bindRange('rjGapMin', 'rjGapMin', null, () => { rjNext = 0; });
 bindRange('rjGapMax', 'rjGapMax', null, () => { rjNext = 0; });
@@ -1651,7 +1651,7 @@ $('#chkRerun').onclick = () => runSelfCheck(false);
 $('#chkClose').onclick = () => $('#chkMask').classList.add('hidden');
 $('#chkMask').addEventListener('click', e => { if (e.target.id === 'chkMask') $('#chkMask').classList.add('hidden'); });
 $('#chkCopy').onclick = async () => {
-  try { await navigator.clipboard.writeText(chkText); toast('已复制，可以直接发给我'); }
+  try { await navigator.clipboard.writeText(chkText); toast('已复制，直接发给开发者就好'); }
   catch(e){ toast('复制失败，请截图'); }
 };
 bindSeg('srcSeg', 'src');
@@ -1715,7 +1715,7 @@ $('#tabBar').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const t = b.dataset.t;
   if (t === 'set') S.view = 'set';
-  else { if (t !== S.mode){ S.mode = t; combo = 0; toast(t === 'music' ? '已切换到节拍触发' : '已切换到晃动触发'); } S.view = t; }
+  else { if (t !== S.mode){ S.mode = t; combo = 0; toast(t === 'music' ? '换成踩节拍 🎵' : '换成摇一摇 📳'); } S.view = t; }
   save(); applyView(true); window.scrollTo({top: 0, behavior: 'smooth'});
 });
 applyView(false);
