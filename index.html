@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-004759';
+const BUILD = '20261125-010119';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -386,9 +386,9 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   <h2>💗 手感<small class="sd">每一下是什么滋味</small></h2>
   <div class="hint">每次电击的“形状”，每格 25ms。图上柱子越高越重，蓝线是颗粒感。</div>
   <div class="seg" id="presetSeg">
-    <button data-v="constant">一直狠</button><button data-v="ramp">慢慢加</button><button data-v="pulse">一顿一顿</button><button data-v="sine">一呼一吸</button><button data-v="random">🎲 猜不到</button>
+    <button data-v="constant">一直狠</button><button data-v="ramp">慢慢加</button><button data-v="pulse">一顿一顿</button><button data-v="sine">一呼一吸</button><button data-v="random">🎲 猜不到</button><button data-v="o_breath">官方·呼吸</button><button data-v="o_tide">官方·潮汐</button>
   </div>
-  <div class="cap">一直狠＝全程满力 · 慢慢加＝由轻到重 · 一顿一顿＝一开一停 · 一呼一吸＝起起伏伏 · 猜不到＝每次都不一样</div>
+  <div class="cap">一直狠＝全程满力 · 慢慢加＝由轻到重 · 一顿一顿＝一开一停 · 一呼一吸＝起起伏伏 · 猜不到＝每次都不一样 · 官方＝和郊狼官方 App 内置的一模一样（每次触发接着上次的位置往下放）</div>
   <canvas id="waveCv" height="46" style="margin-top:8px"></canvas>
   <label class="f"><div class="lb"><span>颗粒感<small class="sd">小＝酥麻 大＝一下下敲</small></span><b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲之间的间隔。左半段 10–200ms 细细调（越小越密越麻），右半段 200–1000ms 是一下一下的敲打感。</div></label>
   <div class="grp"><div class="grph">更多 <small class="sd">一轮多长</small></div>
@@ -605,7 +605,7 @@ async function connect(){
     // 名称前缀或服务号任一匹配都显示（部分安卓机型广播包里不带完整名字）
     const d = await navigator.bluetooth.requestDevice(showAllNext
       ? {acceptAllDevices: true, optionalServices:[SVC, BAT_SVC]}
-      : {filters:[{namePrefix:NAME_PREFIX}, {namePrefix:'47L'}, {services:[SVC]}], optionalServices:[SVC, BAT_SVC]});
+      : {filters:[{namePrefix:NAME_PREFIX}, {services:[SVC]}], optionalServices:[SVC, BAT_SVC]});   // 不用 '47L'：无线传感器 47L120100 也是这个前缀
     showAllNext = false;
     await useDevice(d);
   }catch(e){
@@ -723,7 +723,7 @@ async function openGatt(){
   step = 'battery';
   await gattTimeout(initBattery(server), 3000).catch(() => {});
   // 连接后以绝对值同步一次强度
-  strengthDirty = true; pendingSerial = 0;
+  strengthDirty = true; pendingSerial = 0; sentStr.A = sentStr.B = -1; devCap.A = devCap.B = 0;
   txQueue.length = 0;
   startLoop();
 }
@@ -807,15 +807,40 @@ function writeBF(){
 }
 
 let actA = null, actB = null;
+const sentStr = {A: -1, B: -1};          // 设备上当前生效的强度（-1 = 未知，下次两个通道都发）
+const reqStr = {A: -1, B: -1};           // 最近一次请求的强度（用来发现设备软上限）
+const devCap = {A: 0, B: 0};             // 从回执推断出的设备软上限（0 = 未发现）
+let capToastAt = 0;
 function onNotify(e){
   const v = e.target.value;
   if (v.byteLength < 4 || v.getUint8(0) !== 0xB1) return;
   const serial = v.getUint8(1); actA = v.getUint8(2); actB = v.getUint8(3);
   $('#actA').textContent = actA; $('#actB').textContent = actB;
-  if (serial && serial === pendingSerial){ pendingSerial = 0; }
-  else if (serial === 0 && !strengthDirty && !pendingSerial){
-    // 设备滚轮改变的强度 → 同步到 UI
-    S.strA = actA; S.strB = actB; renderStrength();
+  const act = {A: actA, B: actB};
+  if (serial && serial === pendingSerial){
+    pendingSerial = 0;
+    for (const c of ['A','B']){
+      // 请求的比设备实际给的大 → 被设备软上限截住了
+      if (reqStr[c] >= 0 && act[c] < reqStr[c]){
+        if (devCap[c] !== act[c]){
+          devCap[c] = act[c]; renderStrength();
+          if (performance.now() - capToastAt > 4000){ capToastAt = performance.now(); toast(`${c} 路被小狼自己的封顶挡住了：最多 ${act[c]}。想更高请在官方 App 里调高软上限`); }
+          log(`${c} 通道设备软上限 = ${act[c]}`);
+        }
+      } else if (devCap[c] && act[c] > devCap[c]){ devCap[c] = 0; renderStrength(); }
+      sentStr[c] = act[c];
+    }
+  } else if (serial === 0){
+    // 设备滚轮改的强度：同步到页面，扣掉当时的临时加成（否则加成会被算两次）
+    for (const c of ['A','B']){
+      if (sentStr[c] === act[c]) continue;
+      sentStr[c] = act[c];
+      if (!pendingSerial){
+        const add = effStr(c) - S['str'+c];
+        S['str'+c] = clamp(act[c] - Math.max(0, add), 0, 200);
+      }
+    }
+    renderStrength(); save();
   }
 }
 
@@ -827,7 +852,7 @@ function renderStrength(){
     const soft = S['soft'+c];
     S['str'+c] = clamp(S['str'+c], 0, soft);
     $('#str'+c+'v').textContent = S['str'+c];
-    $('#lim'+c).textContent = soft;
+    $('#lim'+c).textContent = devCap[c] ? devCap[c] + '（设备）' : soft;
   }
   renderTmp();
 }
@@ -854,7 +879,18 @@ function setStrength(c, v){
 
 /* ================= 波形 ================= */
 let wave = [], wavePos = 0;
+// 官方 App 内置波形（来自官方协议文档 example_cn.md），每行 = [频率字节, 强度]，持续 100ms
+const OFFICIAL_WAVES = {
+  o_breath: [[10,0],[10,20],[10,40],[10,60],[10,80],[10,100],[10,100],[10,100],[10,0],[10,0],[10,0],[10,0]],
+  o_tide: [[10,0],[11,16],[13,33],[14,50],[16,66],[18,83],[19,100],[21,92],[22,84],[24,76],[26,68],[26,0],
+           [27,16],[29,33],[30,50],[32,66],[34,83],[35,100],[37,92],[38,84],[40,76],[42,68],[10,0]],
+};
+let officialPos = 0;   // 官方波形：每次触发接着上次的位置放
 function buildWave(){
+  if (OFFICIAL_WAVES[S.preset]){
+    wave = []; for (const [f, I] of OFFICIAL_WAVES[S.preset]) for (let k = 0; k < 4; k++) wave.push([f, I]);
+    wavePos = 0; officialPos = 0; drawWave(); return;
+  }
   if (S.preset === 'random'){ wave = genRandomWave(); wavePos = 0; drawWave(); return; }
   const n = Math.max(1, Math.round(S.cyc / 25));
   const f = encFreq(S.pf);
@@ -956,7 +992,9 @@ function placeItems(atTime, items, g){
 function placeBurst(atTime, durMs, g){
   const n = Math.max(1, Math.round(durMs / 25));
   if (S.preset === 'random') buildWave();
-  const items = []; for (let i=0; i<n; i++) items.push(wave[i % wave.length]);
+  const items = [];
+  if (OFFICIAL_WAVES[S.preset]){ for (let i=0; i<n; i++){ items.push(wave[officialPos % wave.length]); officialPos++; } }
+  else for (let i=0; i<n; i++) items.push(wave[i % wave.length]);
   placeItems(atTime, items, g);
 }
 // 音乐节奏模式：按当前音乐自动生成这一拍的波形
@@ -999,12 +1037,19 @@ function tick(){
   const b = new Uint8Array(20);
   b[0] = 0xB0;
   // 强度：仅在变化时用绝对模式 (11) 下发，带序号等待 B1
-  if (pendingSerial && now - pendingAt > 1000){ pendingSerial = 0; strengthDirty = true; } // 超时未收到 B1 → 重发
+  if (pendingSerial && now - pendingAt > 1000){ pendingSerial = 0; strengthDirty = true; sentStr.A = sentStr.B = -1; } // 超时未收到 B1 → 两个通道都重发
   if (strengthDirty && !pendingSerial){
-    serialCtr = (serialCtr % 15) + 1;
-    pendingSerial = serialCtr; pendingAt = now; strengthDirty = false;
-    b[1] = (serialCtr << 4) | 0b1111;
-    b[2] = effStr('A'); b[3] = effStr('B');
+    strengthDirty = false;
+    // 只改有变化的通道（0b11 绝对设定），没变的通道用 0b00 保持，不覆盖滚轮刚调的值
+    const eA = effStr('A'), eB = effStr('B');
+    const mA = eA !== sentStr.A ? 0b11 : 0b00, mB = eB !== sentStr.B ? 0b11 : 0b00;
+    if (mA || mB){
+      serialCtr = (serialCtr % 15) + 1;
+      pendingSerial = serialCtr; pendingAt = now;
+      b[1] = (serialCtr << 4) | (mA << 2) | mB;
+      b[2] = mA ? eA : 0; b[3] = mB ? eB : 0;
+      if (mA) reqStr.A = eA; if (mB) reqStr.B = eB;
+    } else b[1] = 0;
   } else { b[1] = 0; }
 
   let active = false;
@@ -1185,7 +1230,7 @@ function rjTick(){
     rjKind = 'jolt';  // 偷袭 + 加码合一：加重力度并直接电一下
     rjAdd = Math.round(rndf(S.rjAddMin, S.rjAddMax));
     const dur = rndf(S.rjDurMin, S.rjDurMax) * 1000;
-    rjUntil = now + dur; rjNext = 0; strengthDirty = true; pendingSerial = 0;
+    rjUntil = now + dur; rjNext = 0; strengthDirty = true;
     if (rjKind === 'jolt'){
       // 等强度指令先发出去（下一帧），再放电
       setTimeout(() => {
@@ -1227,7 +1272,7 @@ function escSignal(){
   return mE / 60;
 }
 function escReset(){
-  if (escStack.length){ escStack = []; strengthDirty = true; pendingSerial = 0; }
+  if (escStack.length){ escStack = []; strengthDirty = true; }
   escCount = 0; escI = 0;
 }
 function escMean(from, to){ // 相对“现在”的样本区间 [from, to)，单位：样本（100ms）
@@ -1264,7 +1309,7 @@ function escTick(){
     log(`越来越激动（${before.toFixed(2)} → ${recent.toFixed(2)}），力度 +${add}`);
     flyText('🔥+' + add, 8, 'jolt');
   }
-  if (changed){ strengthDirty = true; pendingSerial = 0; }
+  if (changed){ strengthDirty = true; }
   escShow();
 }
 function escShow(){
@@ -1961,7 +2006,7 @@ async function selfCheck(){
       + '② 系统设置 → 应用 → 你正在用的浏览器 → 权限：「附近的设备」和「位置信息」都选允许。'
       + '③ 郊狼同一时间只能被一台设备连着：iPhone / 官方 App 先断开，或者把它们的蓝牙关掉。'
       + '④ 郊狼短按开机，等指示灯亮后再点「召唤小狼」，选择列表要等 3~5 秒才会刷出来。'
-      + '⑤ 还是没有？点下面「显示所有蓝牙设备」，看看列表里有没有 47L 开头或没名字的设备。');
+      + '⑤ 还是没有？点下面「显示所有蓝牙设备」，看看列表里有没有 47L121 开头或没名字的设备（47L120 开头的是无线传感器，不是主机）。');
     R.push({lv: 'warn', t: '__showall__', fx: ''});
   }
 
@@ -2195,7 +2240,7 @@ bindRange('escPct', 'escPct');
 bindRange('escRecent', 'escRecent', null, escReset);
 bindRange('escBase', 'escBase', null, escReset);
 bindRange('escGap', 'escGap');
-bindRange('escMax', 'escMax', null, () => { if (escStack.length > S.escMax){ escStack.length = S.escMax; strengthDirty = true; pendingSerial = 0; } });
+bindRange('escMax', 'escMax', null, () => { if (escStack.length > S.escMax){ escStack.length = S.escMax; strengthDirty = true; } });
 bindCheck('rjOn', 'rjOn', () => { rjStop(); if (S.rjOn && !connected) toast('随机惊喜已准备，等小狼来了、开关打开才会开始'); });
 bindRange('rjGapMin', 'rjGapMin', null, () => { rjNext = 0; });
 bindRange('rjGapMax', 'rjGapMax', null, () => { rjNext = 0; });
@@ -2295,7 +2340,7 @@ glfxInit();
 applyView(false);
 updateArm();
 // 加料快捷入口 → 跳到设置页对应卡片并闪一下
-const PRESET_NAME = {constant:'一直狠', ramp:'慢慢加', pulse:'一顿一顿', sine:'一呼一吸', random:'猜不到'};
+const PRESET_NAME = {constant:'一直狠', ramp:'慢慢加', pulse:'一顿一顿', sine:'一呼一吸', random:'猜不到', o_breath:'官方呼吸', o_tide:'官方潮汐'};
 function renderQuick(){
   $('#quickCard').classList.toggle('dim', !extrasOn());
   const set = (id, txt, on) => { const el = $('#' + id); el.textContent = txt; el.parentElement.classList.toggle('on', on); };
