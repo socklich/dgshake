@@ -185,9 +185,9 @@ details[open] summary::before{content:"▾ "}
 <!-- 波形 -->
 <section class="card glass" id="waveCard">
   <h2>波形</h2>
-  <div class="hint">每次触发播放的波形，每格 25ms。恒定＝一直最大；渐强＝从小到大；脉冲＝前半开后半关；呼吸＝正弦起伏；随机挠痒＝随机点触。</div>
+  <div class="hint">每次触发播放的波形，每格 25ms。恒定＝一直最大；渐强＝从小到大；脉冲＝前半开后半关；呼吸＝正弦起伏；随机＝每次触发都生成一段全新的随机波形（形状、强度、频率都会变），再点一次「随机」可手动换一个。</div>
   <div class="seg" id="presetSeg">
-    <button data-v="constant">恒定</button><button data-v="ramp">渐强</button><button data-v="pulse">脉冲</button><button data-v="sine">呼吸</button><button data-v="tickle">随机挠痒</button>
+    <button data-v="constant">恒定</button><button data-v="ramp">渐强</button><button data-v="pulse">脉冲</button><button data-v="sine">呼吸</button><button data-v="random">🎲 随机</button>
   </div>
   <canvas id="waveCv" height="90" style="margin-top:12px"></canvas>
   <label class="f"><div class="lb">脉冲频率<b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="hint" style="display:flex;justify-content:space-between"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲的间隔（ms）。越小越密、越“麻”；越大越像一下一下的“敲击”。左半段 10–200ms 精细调节，右半段 200–1000ms。</div></label>
@@ -242,6 +242,7 @@ let S = Object.assign({}, DEF);
 try { Object.assign(S, JSON.parse(localStorage.getItem('coyoteShake') || '{}')); } catch(e){}
 S.strA = 0; S.strB = 0; // 安全：每次打开强度归零
 if ((S.ver|0) < 2){ Object.assign(S, {smooth:0.1, burst:50, cool:60, rearm:0.6}); }
+if (S.preset === 'tickle') S.preset = 'random';
 if ((S.ver|0) < 3){ Object.assign(S, {softA:200, softB:200, ver:3}); } // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 
@@ -414,6 +415,7 @@ function setStrength(c, v){
 /* ================= 波形 ================= */
 let wave = [], wavePos = 0;
 function buildWave(){
+  if (S.preset === 'random'){ wave = genRandomWave(); wavePos = 0; drawWave(); return; }
   const n = Math.max(1, Math.round(S.cyc / 25));
   const f = encFreq(S.pf);
   const lo = Math.min(S.minI, S.maxI), hi = Math.max(S.minI, S.maxI);
@@ -425,7 +427,6 @@ function buildWave(){
       case 'ramp': k = n === 1 ? 1 : i/(n-1); break;
       case 'pulse': k = i < n/2 ? 1 : 0; break;
       case 'sine': k = 0.5 - 0.5*Math.cos(2*Math.PI*i/n); break;
-      case 'tickle': k = Math.random() < 0.35 ? Math.random() : 0; break;
       default: k = 1;
     }
     w.push([f, Math.round(lo + (hi-lo)*k)]);
@@ -433,10 +434,42 @@ function buildWave(){
   wave = w; wavePos = 0;
   drawWave();
 }
+// 随机波形：由若干随机片段拼成，每段形状/强度/频率都随机（频率在设定值上下约 1 个八度内漂移）
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function genRandomWave(){
+  const n = Math.max(4, Math.round(S.cyc / 25));
+  const lo = Math.min(S.minI, S.maxI), hi = Math.max(S.minI, S.maxI);
+  const w = [];
+  let fPrev = clamp(S.pf * Math.pow(2, rnd(-1, 1)), 10, 1000);
+  while (w.length < n){
+    const len = Math.min(n - w.length, Math.round(rnd(2, 9)));
+    const shape = pick(['flat','up','down','pulse','sine','spark','spark']);
+    const a = rnd(lo, hi), b = rnd(lo, hi);
+    const f0 = fPrev, f1 = clamp(S.pf * Math.pow(2, rnd(-1, 1)), 10, 1000); // 频率在段内滑动
+    for (let j=0; j<len; j++){
+      const k = len === 1 ? 1 : j / (len - 1);
+      let I;
+      switch (shape){
+        case 'flat': I = a; break;
+        case 'up': I = Math.min(a,b) + Math.abs(a-b) * k; break;
+        case 'down': I = Math.max(a,b) - Math.abs(a-b) * k; break;
+        case 'pulse': I = j % 2 ? lo : Math.max(a,b); break;
+        case 'sine': I = lo + (Math.max(a,b) - lo) * (0.5 - 0.5*Math.cos(2*Math.PI*j/len)); break;
+        default: I = Math.random() < 0.45 ? rnd(lo, hi) : lo; // spark：随机点触
+      }
+      w.push([encFreq(f0 + (f1 - f0) * k), Math.round(clamp(I, 0, 100))]);
+    }
+    fPrev = f1;
+  }
+  // 保证开头一定有感觉：短触发也能体会到变化
+  if (w[0][1] < (lo + hi) / 2) w[0][1] = Math.round(rnd((lo + hi) / 2, hi));
+  return w;
+}
 function nextItems(){ // 4 个 25ms 项
   const out = [];
   for (let i=0; i<4; i++){
-    if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'tickle') buildWaveSilent(); }
+    if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'random') buildWaveSilent(); }
     out.push(wave[wavePos++]);
   }
   return out;
@@ -472,7 +505,7 @@ function placeBurst(atTime, durMs, g){
   const phase = clamp(Math.floor((atTime - lastTickT) / 25), 0, 3);
   const start = nextSlot + phase;
   const n = Math.max(1, Math.round(durMs / 25));
-  if (S.preset === 'tickle') buildWave();
+  if (S.preset === 'random') buildWave();
   for (let i=0; i<n; i++){
     const [f, I] = wave[i % wave.length];
     const v = clamp(Math.round(I * g), 0, 100), k = start + i;
@@ -488,7 +521,7 @@ function tick(){
   // 按住：持续填充本帧
   if (holding){
     for (let i=0; i<4; i++){
-      if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'tickle') buildWave(); }
+      if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'random') buildWave(); }
       const [f, I] = wave[wavePos++]; slotMap.set(nextSlot+i, I); slotFreq.set(nextSlot+i, f);
     }
   } else wavePos = 0;
@@ -646,8 +679,17 @@ function drawWave(){
     const v = wave[i][1], bh = (v/100)*(h-10);
     ctx.fillRect(i*bw + (bw>4?1:0), h-5-bh, Math.max(1, bw-(bw>4?2:0)), bh);
   }
-  ctx.fillStyle = 'rgba(243,243,250,.5)'; ctx.font = '11px -apple-system,sans-serif';
-  ctx.fillText(`${n}×25ms · 频率字节 ${wave[0][0]}`, 8, 14);
+  // 频率曲线（字节 10-240，越高越“稀”）
+  ctx.strokeStyle = 'rgba(95,200,255,.9)'; ctx.lineWidth = 1.5; ctx.beginPath();
+  for (let i=0; i<n; i++){
+    const y = h - 5 - ((wave[i][0] - 10) / 230) * (h - 10), x = i*bw + bw/2;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  if (n === 1) ctx.lineTo(w, h - 5 - ((wave[0][0] - 10) / 230) * (h - 10));
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(243,243,250,.55)'; ctx.font = '11px -apple-system,sans-serif';
+  ctx.fillText(`${n}×25ms · ▮强度  `, 8, 14);
+  ctx.fillStyle = 'rgba(95,200,255,.9)'; ctx.fillText('— 频率', 8 + ctx.measureText(`${n}×25ms · ▮强度  `).width, 14);
 }
 
 /* ================= 屏幕常亮 ================= */
@@ -761,7 +803,7 @@ $('#armBtn').onclick = () => {
   setArm(!armed); keepAwake();
 };
 const hb = $('#holdBtn');
-const holdOn = e => { e.preventDefault(); holding = true; gain = 1; if (S.preset === 'tickle') buildWave(); };
+const holdOn = e => { e.preventDefault(); holding = true; gain = 1; if (S.preset === 'random') buildWave(); };
 const holdOff = () => { holding = false; };
 hb.addEventListener('pointerdown', holdOn);
 ['pointerup','pointercancel','pointerleave'].forEach(ev => hb.addEventListener(ev, holdOff));
