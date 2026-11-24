@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#0b0b16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>小狼调教台 · Coyote 3.0</title>
+<title>郊狼 3.0</title>
 <meta http-equiv="Cache-Control" content="no-cache">
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261124-235356';
+const BUILD = '20261125-000742';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -241,7 +241,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 <header class="top glass">
   <div class="tr">
     <div class="logo">⚡</div>
-    <div class="t" style="flex:1"><h1>小狼调教台</h1></div>
+    <div class="t" style="flex:1"><h1>郊狼 3.0</h1></div>
     <button id="connBtn" class="connb s0"><span id="connDot" class="dot"></span><span id="connTxt">召唤小狼</span><span id="batPill" class="hidden"></span></button>
     <button id="chkBtn" class="roundb" title="没反应？点我排查">🩺</button>
     <button id="hintBtn" title="显示/隐藏详细玩法说明">ⓘ</button>
@@ -258,7 +258,7 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 
 <!-- 力度（所有页面都显示） -->
 <section class="card glass" id="strCard">
-  <h2>力度<small class="sd">开关一开就开始玩</small><span class="sp"></span><span class="pill armp" id="armPill">待命</span><span class="pill">已电 <b id="trigCnt" style="margin-left:4px">0</b> 下</span></h2>
+  <h2>力度<small class="sd">开关一开就开始玩</small><span class="sp"></span><span class="pill hidden" id="escPill" style="text-transform:none;letter-spacing:0;color:#ffd36e">🔥+0</span><span class="pill armp" id="armPill">待命</span><span class="pill">已电 <b id="trigCnt" style="margin-left:4px">0</b> 下</span></h2>
   <div class="hint">A、B 是小狼的两路电极。打开哪一路的开关，那一路就开始听你的指挥；两路都关＝立刻收手。点 ＋/− 一档一档加，按住不放会越加越快。下面「手感」里的百分比，都是在这里的力度上再打折扣。</div>
   <div class="grid2">
     <div class="ch A">
@@ -355,6 +355,13 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 
 
 <!-- ===== 设置页 ===== -->
+<!-- 越激动越重 -->
+<section class="card glass page" data-p="set" id="escCard">
+  <h2>🌡️ 越激动越重<small class="sd">动静越来越大，力度自动往上加</small><span class="sp"></span><span class="pill" id="escStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="escOn"><span></span></label></h2>
+  <div class="cap">一直盯着最近的动静（晃得多猛 / 声音多大）：最近 5 秒比之前 10 秒明显更激动，力度就随机 +5~10 并保持住；平静回刚才的水平就撤回；之后又更激动，再加一级。三种玩法都生效。</div>
+  <div class="hint">“明显”＝至少高出 25%。每级至少隔 5 秒，最多叠 8 级；只加在力度不为 0 的那一路，不会超过封顶。刚开始要先观察 15 秒才会判断。</div>
+</section>
+
 <!-- 随机惊喜 -->
 <section class="card glass page" data-p="set" id="rjCard">
   <h2>🎲 随机惊喜<small class="sd">冷不丁加重电一下</small><span class="sp"></span><span class="pill" id="rjStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="rjOn"><span></span></label></h2>
@@ -375,23 +382,9 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 </section>
 
 <section class="card glass page" data-p="set">
-  <h2>🐺 小狼<small class="sd">连接和底层参数，一般不用动</small></h2>
+  <h2>🐺 小狼<small class="sd">连接相关，一般不用动</small></h2>
   <div class="minis" style="margin-top:0"><span id="devName" style="flex:1">找名字 47L121 开头的小狼</span>自动召唤<small class="sd" style="margin-right:4px">开页就连</small><label class="sw"><input type="checkbox" id="autoConn"><span></span></label></div>
   <div class="hint">打开页面自动连上认识的那只小狼；掉线了也会自己追回来。</div>
-  <div class="sub">
-    <div style="font-size:13px;font-weight:600">封顶 &amp; 手感校准 <small class="sd">觉得比官方 App 弱就看这里</small></div>
-    <div class="grid2" style="margin-top:6px">
-      <label class="f"><div class="lb">A 封顶<small class="sd">怎么加都不超过</small></div><input type="number" id="softA" min="0" max="200"></label>
-      <label class="f"><div class="lb">B 封顶<small class="sd">怎么加都不超过</small></div><input type="number" id="softB" min="0" max="200"></label>
-      <label class="f"><div class="lb">A 低频冲击<small class="sd">大＝更沉更冲</small></div><input type="number" id="fbA" min="0" max="255"></label>
-      <label class="f"><div class="lb">B 低频冲击<small class="sd">大＝更沉更冲</small></div><input type="number" id="fbB" min="0" max="255"></label>
-      <label class="f"><div class="lb">A 扎实度<small class="sd">大＝更扎实</small></div><input type="number" id="ibA" min="0" max="255"></label>
-      <label class="f"><div class="lb">B 扎实度<small class="sd">大＝更扎实</small></div><input type="number" id="ibB" min="0" max="255"></label>
-    </div>
-    <div class="tog"><span>连上就用这里的数值<small class="sd">关＝沿用官方 App 的</small><div class="hint">关着＝小狼保留官方 App 里调好的手感（推荐，体感和官方一样）；打开＝每次连上都用这里的数值覆盖。</div></span><label class="sw"><input type="checkbox" id="bfOn"><span></span></label></div>
-    <button id="bfBtn" class="wide" style="margin-top:8px">现在就写进小狼</button>
-    <div class="note">封顶＝小狼自己的力度天花板（0–200），网页再怎么加也越不过去。低频冲击（0–255）越大，慢节奏时越有冲击感；扎实度（0–255）控制每个脉冲有多“宽”，越大越扎实——同样数值比官方弱，多半是这个值偏低。</div>
-  </div>
   <div class="sub">
   <details id="diagBox" style="margin-top:0">
     <summary>疑难杂症 <small class="sd">没反应时来这里看看</small></summary>
@@ -462,6 +455,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:8, mode:'motion', burstMu:150, view:'motion',
   comboOn:true, comboStart:30, comboSteps:8, comboWin:600,
   autoConn:true, lastDev:'', bfOn:false,
+  escOn:true,
   rjOn:false, rjType:'jolt', rjGapMin:3, rjGapMax:10, rjAddMin:5, rjAddMax:15, rjDurMin:0.3, rjDurMax:1.5,
   band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
@@ -486,7 +480,8 @@ if ((S.ver|0) < 7){ S.bfOn = false; }
 S.rjOn = false; // 安全：随机抖动每次打开页面默认关闭
 if ((S.ver|0) < 8){ S.comboOn = true; }
 if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.softB = 200; }
-S.ver = 8; // 旧设置迁移到跟手参数
+S.ver = 8;
+S.bfOn = false; S.softA = 200; S.softB = 200; // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 save(); // 迁移结果立即落盘
 
@@ -1043,7 +1038,7 @@ const rndf = (a, b) => { if (a > b) [a, b] = [b, a]; return a + Math.random() * 
 // 实际下发的强度 = 基础强度 + 随机增强（只加在强度 > 0 的通道上，且不超过软上限）
 function effStr(c){
   const base = S['str'+c];
-  const add = base > 0 ? rjAdd : 0;
+  const add = base > 0 ? rjAdd + escAdd() : 0;
   return clamp(base + add, 0, Math.min(200, S['soft'+c]));
 }
 function rjRunning(){ return S.rjOn && connected && armed; }
@@ -1091,6 +1086,69 @@ function rjShow(now){
   else el.textContent = '蓄势中';
 }
 setInterval(rjTick, 100);
+
+/* ================= 越激动越重：近 5 秒平均 vs 之前 10 秒平均 ================= */
+// 每 100ms 采一次“激动程度”：晃动＝晃动幅度/门槛；别出声＝音量/门槛；音乐节奏＝音量/60
+// 近 5 秒平均明显高于之前 10 秒平均 → 力度 +5~10 并保持；回落到当时的平均值 → 撤掉这一级；
+// 加完之后如果又明显更高 → 再加一级
+const ESC_N = 150;                         // 15 秒 × 10 次/秒
+const escBuf = new Float32Array(ESC_N); let escI = 0, escCount = 0, escLastEval = 0, escLastUp = 0;
+let escStack = [];                         // [{add, base, ref}]
+const escAdd = () => escStack.reduce((a, l) => a + l.add, 0);
+function escSignal(){
+  if (S.mode === 'motion') return sensorOn ? filt / Math.max(1, S.thr) : 0;
+  if (!micOn) return 0;
+  if (S.band === 'quiet') return mE / Math.max(1, quietThr);
+  return mE / 60;
+}
+function escReset(){
+  if (escStack.length){ escStack = []; strengthDirty = true; pendingSerial = 0; }
+  escCount = 0; escI = 0;
+}
+function escMean(from, to){ // 相对“现在”的样本区间 [from, to)，单位：样本（100ms）
+  let s2 = 0, n = 0;
+  for (let k = from; k < to; k++){ s2 += escBuf[(escI - 1 - k + ESC_N * 2) % ESC_N]; n++; }
+  return n ? s2 / n : 0;
+}
+function escTick(){
+  const now = performance.now();
+  if (!S.escOn || !armed){ escReset(); escShow(); return; }
+  escBuf[escI] = escSignal(); escI = (escI + 1) % ESC_N; escCount = Math.min(ESC_N, escCount + 1);
+  if (escCount < ESC_N || now - escLastEval < 1000){ escShow(); return; }
+  escLastEval = now;
+  const recent = escMean(0, 50);           // 最近 5 秒
+  const before = escMean(50, 150);         // 5 秒前的 10 秒
+  const margin = (v) => v * 1.25 + 0.08;   // 至少高出 25%（再加一点底噪余量），避免抖一抖就加码
+  let changed = false;
+  // 回落：最近 5 秒回到某一级加码时的“刚才的平均值” → 撤掉这一级
+  while (escStack.length && recent <= escStack[escStack.length - 1].base * 1.1 + 0.04){
+    const l = escStack.pop(); changed = true;
+    log(`激动回落，力度 -${l.add}`);
+  }
+  // 刚加码后的 6 秒内，5 秒平均还在爬升，把这段的最高值记为这一级的“新水平”，避免一次变激动被算成两级
+  if (escStack.length && now - escLastUp <= 6000){ const top = escStack[escStack.length - 1]; top.ref = Math.max(top.ref, recent); }
+  // 加码：第一级跟“之前 10 秒”比；之后每级跟上一级加码时的强度比，且至少隔 5 秒
+  const ref = escStack.length ? escStack[escStack.length - 1].ref : before;
+  const base = escStack.length ? escStack[escStack.length - 1].ref : before;
+  if (recent > margin(ref) && now - escLastUp > 6000 && escStack.length < 8){
+    const add = 5 + Math.floor(Math.random() * 6);   // 5~10
+    escStack.push({add, base, ref: recent});
+    escLastUp = now; changed = true;
+    log(`越来越激动（${before.toFixed(2)} → ${recent.toFixed(2)}），力度 +${add}`);
+    flyText('🔥+' + add, 8, 'jolt');
+  }
+  if (changed){ strengthDirty = true; pendingSerial = 0; }
+  escShow();
+}
+function escShow(){
+  const a = escAdd();
+  const el = $('#escPill');
+  el.classList.toggle('hidden', !a);
+  el.textContent = '🔥+' + a;
+  const st = $('#escStat');
+  st.textContent = !S.escOn ? '关' : !armed ? '等你开开关' : escCount < ESC_N ? `观察中 ${Math.round(escCount / 10)}/15s` : a ? `已加 +${a}（${escStack.length} 级）` : '盯着呢';
+}
+setInterval(escTick, 100);
 
 /* ================= 音乐节拍 ================= */
 let micOn = false, actx = null, analyser = null, fbuf = null, micStream = null, beatTimer = 0;
@@ -1277,11 +1335,12 @@ function autoBeatTick(now){
   }
   bpm = Math.round(60000 / tempoP);
 }
-let quietBase = 0, quietLearnUntil = 0;
+let quietBase = 0, quietLearnUntil = 0, quietThr = 12;
 function quietFeed(e, now){
   mE = e;
   if (!quietBase){ quietBase = e; quietLearnUntil = now + 2000; }     // 开始先听 2 秒学习环境噪音
   const thrE = Math.max(quietBase * S.sens, quietBase + 8, 12);
+  quietThr = thrE;
   const learning = now < quietLearnUntil;
   // 只在安静时慢慢更新基线，出声时不更新（否则一直说话门槛会被抬高）
   if (learning) quietBase += 0.1 * (e - quietBase);
@@ -1587,7 +1646,7 @@ function updateArm(){
 }
 function setArm(){ updateArm(); }
 function stopAll(){
-  combo = 0; rjStop();
+  combo = 0; rjStop(); escReset();
   setArm(false); holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear();
   S.strA = 0; S.strB = 0; strengthDirty = true; pendingSerial = 0; renderStrength(); save();
   log('紧急停止：强度归零');
@@ -1645,17 +1704,8 @@ const onChannel = c => () => {
 };
 bindCheck('chA', 'chA', onChannel('A')); bindCheck('chB', 'chB', onChannel('B'));
 
-for (const k of ['softA','softB','fbA','fbB','ibA','ibB']){
-  const el = $('#'+k); el.value = S[k];
-  el.addEventListener('change', () => {
-    const max = k.startsWith('soft') ? 200 : 255;
-    S[k] = clamp(parseInt(el.value)||0, 0, max); el.value = S[k]; save(); renderStrength();
-    if (connected && S.bfOn) writeBF(); // 开了“连接时写入”才自动写
-  });
-}
 
-bindCheck('bfOn', 'bfOn', () => { if (S.bfOn && connected) writeBF(); });
-$('#bfBtn').onclick = () => { if (!connected) return toast('小狼还没来'); writeBF(); toast('已经写进小狼了'); };
+bindCheck('escOn', 'escOn', () => { escReset(); });
 bindCheck('rjOn', 'rjOn', () => { rjStop(); if (S.rjOn && !connected) toast('随机惊喜已准备，等小狼来了、开关打开才会开始'); });
 bindRange('rjGapMin', 'rjGapMin', null, () => { rjNext = 0; });
 bindRange('rjGapMax', 'rjGapMax', null, () => { rjNext = 0; });
@@ -1683,7 +1733,7 @@ bindRange('comboStart', 'comboStart');
 bindRange('comboSteps', 'comboSteps');
 bindRange('comboWin', 'comboWin');
 const applyBand = () => document.querySelectorAll('.bp').forEach(el => el.classList.toggle('on', el.dataset.b === S.band));
-bindSeg('bandSeg', 'band', () => { mAvg = 0; quietBase = 0; mhT.fill(0); applyBand(); });
+bindSeg('bandSeg', 'band', () => { escReset(); mAvg = 0; quietBase = 0; mhT.fill(0); applyBand(); });
 $('#quietRelearn').onclick = () => { quietBase = 0; toast('安静 2 秒，让我记住现在的环境声 🤫'); };
 applyBand();
 bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
@@ -1733,7 +1783,7 @@ $('#tabBar').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const t = b.dataset.t;
   if (t === 'set') S.view = 'set';
-  else { if (t !== S.mode){ S.mode = t; combo = 0; toast(t === 'music' ? '换成听声音 🎵' : '换成摇一摇 📳'); } S.view = t; }
+  else { if (t !== S.mode){ S.mode = t; combo = 0; escReset(); toast(t === 'music' ? '换成听声音 🎵' : '换成摇一摇 📳'); } S.view = t; }
   save(); applyView(true); window.scrollTo(0, 0);
 });
 applyView(false);
