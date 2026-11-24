@@ -277,7 +277,12 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   musicTrig:true, band:'bass', sens:1.5, beatGap:200,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
-try { Object.assign(S, JSON.parse(localStorage.getItem('coyoteShake') || '{}')); } catch(e){}
+let savedVer = 4; // 没有存档 = 新用户，直接用默认值
+try {
+  const raw = JSON.parse(localStorage.getItem('coyoteShake') || 'null');
+  if (raw){ savedVer = raw.ver | 0; Object.assign(S, raw); } // 版本号以存档为准，不能被 DEF 覆盖
+} catch(e){}
+S.ver = savedVer;
 S.strA = 0; S.strB = 0; // 安全：每次打开强度归零
 if ((S.ver|0) < 2){ Object.assign(S, {smooth:0.1, burst:50, cool:60, rearm:0.6}); }
 if (S.preset === 'tickle') S.preset = 'random';
@@ -417,17 +422,12 @@ async function bleWrite(bytes){
   diag.tx++;
 }
 
-async function writeBF(){
-  const b = [0xBF, clamp(S.softA|0,0,200), clamp(S.softB|0,0,200),
-    clamp(S.fbA|0,0,255), clamp(S.fbB|0,0,255), clamp(S.ibA|0,0,255), clamp(S.ibB|0,0,255)];
-  try{
-    // 等当前 B0 写完再写 BF
-    for (let i=0; i<10 && writing; i++) await new Promise(r => setTimeout(r, 15));
-    writing = true;
-    await bleWrite(b);
-    log('BF 写入: ' + b.map(x => x.toString(16).padStart(2,'0')).join(' '));
-  }catch(e){ log('BF 失败: ' + e.message); }
-  finally{ writing = false; }
+// BF 走同一个写入队列（插到最前），避免和 B0 并发写导致 GATT 冲突而静默失败
+let bfPending = null;
+function writeBF(){
+  bfPending = new Uint8Array([0xBF, clamp(S.softA|0,0,200), clamp(S.softB|0,0,200),
+    clamp(S.fbA|0,0,255), clamp(S.fbB|0,0,255), clamp(S.ibA|0,0,255), clamp(S.ibB|0,0,255)]);
+  return pump();
 }
 
 let actA = null, actB = null;
@@ -612,6 +612,12 @@ function tick(){
 async function pump(){
   if (writing) return;
   writing = true;
+  while (bfPending && wChar){
+    const bf = bfPending; bfPending = null;
+    const hex = Array.from(bf, x => x.toString(16).padStart(2,'0')).join(' ');
+    try { await bleWrite(bf); log(`软上限已写入 A${bf[1]} / B${bf[2]}（BF ${hex}）`); }
+    catch(e){ log('BF 失败: ' + e.message + '，1 秒后重试'); setTimeout(() => { if (!bfPending && connected) writeBF(); }, 1000); }
+  }
   while (txQueue.length && wChar){
     const fr = txQueue.shift();
     try { await bleWrite(fr); }
@@ -934,6 +940,7 @@ for (const k of ['softA','softB','fbA','fbB','ibA','ibB']){
   el.addEventListener('change', () => {
     const max = k.startsWith('soft') ? 200 : 255;
     S[k] = clamp(parseInt(el.value)||0, 0, max); el.value = S[k]; save(); renderStrength();
+    if (connected) writeBF(); // 改了就立即写入设备
   });
 }
 $('#bfBtn').onclick = () => { if (!connected) return log('未连接'); writeBF(); strengthDirty = true; };
