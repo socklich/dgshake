@@ -209,7 +209,9 @@ body.hints #hintBtn{background:var(--acc)}
       <label class="f"><div class="lb">A 强度平衡</div><input type="number" id="ibA" min="0" max="255"></label>
       <label class="f"><div class="lb">B 强度平衡</div><input type="number" id="ibB" min="0" max="255"></label>
     </div>
-    <div class="note">软上限＝设备端强度天花板（0–200），存在设备里，改了立即写入，连接时也会自动写入。频率/强度平衡（0–255，默认 128）调节不同频率和脉宽下的体感。</div>
+    <div class="tog"><span>连接时写入设备<div class="hint" style="display:block">关闭＝沿用官方 App 存在设备里的平衡参数和软上限（体感和官方一致）；打开＝每次连接用这里的数值覆盖。</div></span><label class="sw"><input type="checkbox" id="bfOn"><span></span></label></div>
+    <button id="bfBtn" class="wide" style="margin-top:8px">立即写入一次</button>
+    <div class="note">软上限＝设备端强度天花板（0–200）。频率平衡（0–255）：值越大，低频冲击感越强。强度平衡（0–255）：调节脉冲宽度，值越大，低频刺激越强——如果同样强度比官方 App 弱，多半是这个值写低了。</div>
   </details>
 </section>
 
@@ -342,13 +344,13 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* ================= 设置 ================= */
 const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
-  src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:6, mode:'motion',
+  src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:7, mode:'motion',
   comboOn:false, comboStart:30, comboSteps:8, comboWin:600,
-  autoConn:true, lastDev:'',
+  autoConn:true, lastDev:'', bfOn:false,
   band:'auto', sens:1.5, beatGap:200, mult:'1', lead:120,
   preset:'pulse', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
-let savedVer = 6; // 没有存档 = 新用户，直接用默认值
+let savedVer = 7; // 没有存档 = 新用户，直接用默认值
 try {
   const raw = JSON.parse(localStorage.getItem('coyoteShake') || 'null');
   if (raw){ savedVer = raw.ver | 0; Object.assign(S, raw); } // 版本号以存档为准，不能被 DEF 覆盖
@@ -362,7 +364,9 @@ if ((S.ver|0) < 4){ if (S.burst < 75) S.burst = 75; }
 if ((S.ver|0) < 5){ delete S.mapI; delete S.vib; delete S.motionTrig; delete S.musicTrig; S.mode = S.mode || 'motion'; S.ver = 5; }
 // v6：早期存档的软上限 30 可能被错误标成新版本而没迁移 —— 按数值修正（30 是第一版的默认值）
 if (S.band === 'full') S.band = 'auto';
-if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.softB = 200; S.ver = 6; } // 旧设置迁移到跟手参数
+if ((S.ver|0) < 7){ S.bfOn = false; }
+if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.softB = 200; }
+S.ver = 7; // 旧设置迁移到跟手参数
 const save = () => { try { localStorage.setItem('coyoteShake', JSON.stringify(S)); } catch(e){} };
 save(); // 迁移结果立即落盘
 
@@ -415,7 +419,17 @@ async function connect(){
   }catch(e){
     setConn(0, '未连接');
     log(`连接失败 @${step}: ${e.name} ${e.message}`);
-    if (e.name !== 'NotFoundError') alert(`连接失败（${step}）：${e.message}`);
+    const android = /Android/i.test(navigator.userAgent);
+    let tip = '';
+    if (step === 'requestDevice' && /cancel/i.test(e.message)){
+      tip = '';
+      toast(android ? '没搜到郊狼？检查蓝牙、位置信息是否打开，以及郊狼是否被其他手机连着' : '没搜到郊狼？确认已开机、没被其他手机或官方 App 连着');
+    }
+    else if (step === 'requestDevice') tip = android
+      ? '\n\n安卓请检查：①用 Chrome 打开（不要用微信/QQ/系统浏览器）②手机蓝牙和「位置信息」都已打开 ③Chrome 已获得「附近的设备」/位置权限 ④郊狼没有同时连着 iPhone 或官方 App（它只能连一台，连着时搜不到）'
+      : '\n\n请确认郊狼已开机、没有被其他手机或官方 App 连着。';
+    else tip = '\n\n设备可能被其他手机/官方 App 占用，或信号太弱。关掉其他连接后重试。';
+    if (e.name !== 'NotFoundError' || tip) alert(`连接失败（${step}）：${e.message}${tip}`);
   }
 }
 
@@ -507,10 +521,14 @@ async function openGatt(){
   diag.mode = ''; pickWrite();
   setConn(2, '已连接');
   log(`已连接 ${device.name} · 150A 属性[${diag.props}] · 写入方式 ${diag.mode}`);
-  await writeBF();
+  if (S.bfOn) await writeBF();
+  else log('未写入 BF：沿用设备里已有的软上限和平衡参数');
+  // 电量读取放在发送循环之前，避免和 B0 写入并发（安卓 Chrome 对并发 GATT 操作会报错）
+  step = 'battery';
+  await gattTimeout(initBattery(server), 3000).catch(() => {});
   // 连接后以绝对值同步一次强度
   strengthDirty = true; pendingSerial = 0;
-  initBattery(server);
+  txQueue.length = 0;
   startLoop();
 }
 
@@ -885,17 +903,29 @@ function renderCombo(pop){
 setInterval(() => renderCombo(false), 150);
 
 /* ================= 音乐节拍 ================= */
-let micOn = false, actx = null, analyser = null, fbuf = null;
+let micOn = false, actx = null, analyser = null, fbuf = null, micStream = null, beatTimer = 0;
 let mAvg = 0, mPrev = 0, mE = 0, beatLast = 0, beatCount = 0, bpm = 0;
 const beatTimes = [];
 const MH = 160, mh = new Float32Array(MH), mhT = new Float32Array(MH), mhB = new Uint8Array(MH); let mhI = 0;
 
+function stopMic(){
+  clearInterval(beatTimer); beatTimer = 0;
+  try { micStream && micStream.getTracks().forEach(t => t.stop()); } catch(e){}
+  try { actx && actx.close(); } catch(e){}
+  micStream = null; actx = null; analyser = null; micOn = false; prevSpec = null;
+}
+function micDead(){
+  if (!micOn) return false;
+  const tr = micStream && micStream.getAudioTracks()[0];
+  return !tr || tr.readyState === 'ended' || tr.muted || !actx || actx.state === 'closed' || actx.state === 'interrupted';
+}
 async function enableMic(){
   keepAwake();
   if (micOn) return;
   try{
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('此浏览器不支持麦克风访问');
     const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+    micStream = stream;
     actx = new (window.AudioContext || window.webkitAudioContext)();
     if (actx.state === 'suspended') await actx.resume();
     analyser = actx.createAnalyser();
@@ -903,7 +933,7 @@ async function enableMic(){
     actx.createMediaStreamSource(stream).connect(analyser);
     fbuf = new Uint8Array(analyser.frequencyBinCount);
     micOn = true;
-    setInterval(beatStep, 10);
+    clearInterval(beatTimer); beatTimer = setInterval(beatStep, 10);
     $('#micBtn').classList.add('hidden');
     log('麦克风已启用 ' + actx.sampleRate + 'Hz');
   }catch(e){ log('麦克风失败: ' + e.message); alert('无法启用麦克风：' + e.message); }
@@ -1186,10 +1216,50 @@ document.addEventListener('visibilitychange', () => {
     if (armed) disarmedByHide = true;
     setArm(false); holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear();
   } else {
-    if (connected || sensorOn) keepAwake();
-    if (disarmedByHide){ disarmedByHide = false; setTimeout(() => toast('页面切到过后台，已自动解除触发，需要重新点「启用触发」'), 300); }
+    onForeground();
   }
 });
+window.addEventListener('pageshow', e => { if (e.persisted) onForeground(); });
+
+// 回到前台：能自动恢复的立即恢复（蓝牙、发送循环）；需要用户手势的（麦克风、陀螺仪权限、屏幕常亮）等下一次点击
+let needGesture = false;
+function onForeground(){
+  txQueue.length = 0; slotMap.clear(); slotFreq.clear();
+  // 蓝牙：iOS/安卓切后台常会断开，这里主动重连
+  if (device && !userDisconnect){
+    const gattUp = device.gatt && device.gatt.connected;
+    if (connected && !gattUp){ log('回到前台：蓝牙已断开，重连中'); connected = false; wChar = null; }
+    if (!connected){
+      reconnectTries = 0; setConn(1, '重连中…');
+      gattTimeout(openGatt(), 8000).catch(e => { log('前台重连失败: ' + e.message); setConn(0, '已断开'); toast('蓝牙重连失败，点右上角重新连接'); });
+    }
+  }
+  if (connected && !loopOn) startLoop();
+  if (actx && actx.state !== 'running') actx.resume().catch(() => {});
+  needGesture = sensorOn || micOn || !!device || connected;
+  const msgs = [];
+  if (disarmedByHide){ disarmedByHide = false; msgs.push('已自动解除触发'); }
+  if (micDead()) msgs.push('轻点屏幕恢复麦克风');
+  setTimeout(() => toast('回到前台' + (msgs.length ? '：' + msgs.join('，') : '，轻点屏幕恢复全部功能')), 300);
+}
+async function resumeByGesture(){
+  if (!needGesture) return;
+  needGesture = false;
+  wakeLock = null; keepAwake();
+  if (sensorOn){
+    window.removeEventListener('devicemotion', onMotion);
+    try {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') await DeviceMotionEvent.requestPermission();
+    } catch(e){}
+    window.addEventListener('devicemotion', onMotion);
+  }
+  if (micOn){
+    if (micDead()){ log('麦克风已被系统中断，重新启用'); stopMic(); await enableMic(); }
+    else if (actx.state !== 'running') actx.resume().catch(() => {});
+  }
+  log('已恢复：屏幕常亮' + (sensorOn ? ' / 陀螺仪' : '') + (micOn ? ' / 麦克风' : ''));
+}
+document.addEventListener('pointerdown', resumeByGesture, true);
 
 /* ================= 控制 ================= */
 function setArm(on){
@@ -1253,10 +1323,12 @@ for (const k of ['softA','softB','fbA','fbB','ibA','ibB']){
   el.addEventListener('change', () => {
     const max = k.startsWith('soft') ? 200 : 255;
     S[k] = clamp(parseInt(el.value)||0, 0, max); el.value = S[k]; save(); renderStrength();
-    if (connected) writeBF(); // 改了就立即写入设备
+    if (connected && S.bfOn) writeBF(); // 开了“连接时写入”才自动写
   });
 }
 
+bindCheck('bfOn', 'bfOn', () => { if (S.bfOn && connected) writeBF(); });
+$('#bfBtn').onclick = () => { if (!connected) return toast('未连接'); writeBF(); toast('已写入软上限和平衡参数'); };
 bindSeg('srcSeg', 'src');
 bindRange('thr', 'thr');
 bindRange('smooth', 'smooth', v => v.toFixed(2));
