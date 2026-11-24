@@ -152,6 +152,16 @@ body.hints #hintBtn{background:var(--acc)}
 .ch .hd{margin-bottom:2px}
 .ch .act{text-align:center;margin-top:2px}
 .bp{display:none}.bp.on{display:block}
+.roundb{flex:none;width:30px;height:30px;padding:0;border-radius:50%;font-size:14px}
+.mask{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top) + 20px) 12px 20px;overflow:auto}
+.chkbox{width:100%;max-width:520px;margin:0;background:rgba(20,20,34,.92)}
+.ck{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.ck:last-child{border-bottom:0}
+.ck .ic{flex:none;width:22px;text-align:center}
+.ck b{display:block;font-weight:600}
+.ck .fx{color:var(--dim);font-size:12.5px;margin-top:2px;line-height:1.5}
+.ck.bad b{color:var(--bad)} .ck.warn b{color:var(--warn)}
+.top .tr{gap:7px}.top .t{min-width:0;overflow:hidden}.top h1{overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -162,6 +172,7 @@ body.hints #hintBtn{background:var(--acc)}
     <div class="logo">⚡</div>
     <div class="t" style="flex:1"><h1>Shake Coyote</h1></div>
     <button id="connBtn" class="connb s0"><span id="connDot" class="dot"></span><span id="connTxt">连接郊狼</span><span id="batPill" class="hidden"></span></button>
+    <button id="chkBtn" class="roundb" title="自检">🩺</button>
     <button id="hintBtn" title="显示/隐藏说明">ⓘ</button>
   </div>
   <div id="pickBox" class="hidden" style="margin-top:8px">
@@ -340,6 +351,16 @@ body.hints #hintBtn{background:var(--acc)}
 </section>
 
 <div id="toast" class="toast"></div>
+<div id="chkMask" class="mask hidden">
+  <div class="card glass chkbox">
+    <h2>🩺 自检<span class="sp"></span><button id="chkClose" class="roundb">✕</button></h2>
+    <div id="chkList"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="chkRerun">重新检测</button>
+      <button id="chkCopy">复制结果</button>
+    </div>
+  </div>
+</div>
 <nav class="dock glass">
   <button id="armBtn">启用触发</button>
   <button id="holdBtn">按住</button>
@@ -429,10 +450,11 @@ function setConn(state, txt){
 }
 
 const NAME_PREFIX = '47L121';
+let lastConnErr = null;
 let autoTimer = 0, autoTries = 0;
 
 async function connect(){
-  if (!navigator.bluetooth) return alert('此浏览器不支持 Web Bluetooth，请用 Bluefy 打开。');
+  if (!navigator.bluetooth) return runSelfCheck(true);
   keepAwake();
   stopAutoRetry();
   try{
@@ -456,7 +478,9 @@ async function connect(){
       ? '\n\n安卓请检查：①用 Chrome 打开（不要用微信/QQ/系统浏览器）②手机蓝牙和「位置信息」都已打开 ③Chrome 已获得「附近的设备」/位置权限 ④郊狼没有同时连着 iPhone 或官方 App（它只能连一台，连着时搜不到）'
       : '\n\n请确认郊狼已开机、没有被其他手机或官方 App 连着。';
     else tip = '\n\n设备可能被其他手机/官方 App 占用，或信号太弱。关掉其他连接后重试。';
-    if (e.name !== 'NotFoundError' || tip) alert(`连接失败（${step}）：${e.message}${tip}`);
+    lastConnErr = {step, name: e.name, msg: e.message};
+    if (/cancel/i.test(e.message)) return;          // 用户取消：只提示，不弹自检
+    runSelfCheck(true);                             // 其他失败：自动打开自检
   }
 }
 
@@ -1270,6 +1294,105 @@ function drawWave(){
   ctx.fillStyle = 'rgba(95,200,255,.9)'; ctx.fillText('— 频率', 8 + ctx.measureText(`${n}×25ms · ▮强度  `).width, 14);
 }
 
+/* ================= 自检 ================= */
+async function selfCheck(){
+  const R = [];  // {lv:'ok'|'warn'|'bad', t:标题, fx:建议}
+  const add = (lv, t, fx) => R.push({lv, t, fx: fx || ''});
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /Android/i.test(ua);
+  const inApp = /MicroMessenger|QQ\/|MQQBrowser|Weibo|DingTalk|AlipayClient|Lark|FBAN|FBAV|Instagram|Line\//i.test(ua);
+  const bluefy = /Bluefy/i.test(ua);
+
+  // 1. 浏览器环境
+  if (inApp) add('bad', '当前在 App 内置浏览器里打开', '微信/QQ/钉钉等内置浏览器不支持网页蓝牙。点右上角「…」→ 用浏览器打开：' + (ios ? 'iPhone 请用 Bluefy。' : '安卓请用 Chrome。'));
+  if (!window.isSecureContext) add('bad', '页面不是 HTTPS', '网页蓝牙只能在 HTTPS 下使用，请用 https://luke7628.github.io/DG/ 打开。');
+  if (!navigator.bluetooth){
+    if (ios) add('bad', '此浏览器不支持网页蓝牙', 'iPhone 的 Safari / Chrome 都不支持。请安装并用 Bluefy 浏览器打开本页。');
+    else if (android) add('bad', '此浏览器不支持网页蓝牙', '请用 Chrome（版本 56+）打开；三星浏览器、小米/华为自带浏览器、Firefox 都不支持。');
+    else add('bad', '此浏览器不支持网页蓝牙', '请用 Chrome / Edge 打开。');
+  } else add('ok', '浏览器支持网页蓝牙' + (bluefy ? '（Bluefy）' : android ? '（安卓 Chrome）' : ''));
+
+  // 2. 蓝牙开关
+  if (navigator.bluetooth && navigator.bluetooth.getAvailability){
+    try {
+      const av = await navigator.bluetooth.getAvailability();
+      if (av) add('ok', '手机蓝牙可用');
+      else add('bad', '手机蓝牙不可用（可能没打开）', '打开系统蓝牙' + (ios ? '；并在 设置 → Bluefy 里允许蓝牙。' : '；如已打开，检查 Chrome 是否有「附近的设备」权限。'));
+    } catch(e){ add('warn', '无法读取蓝牙开关状态', '请手动确认系统蓝牙已打开。'); }
+  } else if (navigator.bluetooth){
+    add('warn', '无法自动检测蓝牙开关', '请手动确认系统蓝牙已打开' + (ios ? '，并在 设置 → Bluefy 里允许蓝牙' : '') + '。');
+  }
+
+  // 3. 安卓定位 / 附近设备权限
+  if (android){
+    let geo = '';
+    try { geo = (await navigator.permissions.query({name: 'geolocation'})).state; } catch(e){}
+    add('warn', '安卓需要「位置信息」开关打开' + (geo ? `（Chrome 定位权限：${geo === 'granted' ? '已允许' : geo === 'denied' ? '已拒绝' : '未决定'}）` : ''),
+      '安卓 11 及以下搜索蓝牙设备必须打开系统「位置信息」并允许 Chrome 定位；安卓 12+ 需要在 设置 → 应用 → Chrome → 权限 里允许「附近的设备」。' + (geo === 'denied' ? ' 当前定位权限被拒绝，请到设置里改为允许。' : ''));
+  }
+
+  // 4. 设备
+  if (connected) add('ok', '郊狼已连接：' + (device && device.name || ''));
+  else {
+    add('warn', '郊狼未连接', '确认：①郊狼已开机（指示灯亮）②没有被另一台手机或官方 App 连着——郊狼同时只能连一台，被占用时搜不到 ③手机离郊狼 1 米内。');
+    if (navigator.bluetooth && navigator.bluetooth.getDevices){
+      try {
+        const list = (await navigator.bluetooth.getDevices()).filter(d => (d.name || '').startsWith(NAME_PREFIX));
+        add(list.length ? 'ok' : 'warn', list.length ? `已授权过 ${list.length} 台郊狼` : '还没有授权过郊狼', list.length ? '' : '点右上角「连接郊狼」，在弹出列表里选 47L121 开头的设备。');
+      } catch(e){}
+    }
+  }
+  if (lastConnErr){
+    const m = lastConnErr.msg || '';
+    let fx = '';
+    if (/cancel/i.test(m)) fx = '上次是在选择列表里取消了。如果列表里没有设备，见上面「郊狼未连接」的检查项。';
+    else if (/timeout|超时/i.test(m)) fx = '连接超时：设备没开机、不在附近，或被其他手机占用。';
+    else if (/GATT|Network|disconnect/i.test(m)) fx = '蓝牙连接被中断：关掉其他手机/官方 App 的连接，重启郊狼后重试。';
+    else if (/Security|permission|denied/i.test(m)) fx = '权限被拒：检查浏览器的蓝牙 / 附近设备权限。';
+    else if (/Unsupported|not supported/i.test(m)) fx = '浏览器不支持该操作，请换 Bluefy（iPhone）或 Chrome（安卓）。';
+    add('bad', `上次连接失败：${lastConnErr.step}`, (m ? '错误：' + m + '。' : '') + fx);
+  }
+  if (connected){
+    if (diag.err > 5) add('warn', `写入失败 ${diag.err} 次`, '最近错误：' + diag.lastErr + '。可在「诊断」里切换写入方式试试。');
+    if (actA === null) add('warn', '设备还没回传强度（B1）', '强度可能没设上；断开重连一次。');
+  }
+
+  // 5. 触发相关
+  if (S.mode === 'motion'){
+    if (!sensorOn) add('warn', '陀螺仪还没启用', '在「触发方式 → 晃动」里点「启用陀螺仪」' + (ios ? '，并在弹窗里点「允许」。如果以前点过拒绝，需要完全关闭 Bluefy 再打开。' : '。'));
+    else if (!evHz) add('bad', '陀螺仪已启用但没有数据', ios ? 'iOS：设置 → Bluefy → 打开「运动与方向」权限；然后刷新页面。' : '浏览器没有提供运动传感器数据，检查网站权限里的「运动传感器」。');
+    else add('ok', `陀螺仪正常（${evHz} Hz）`);
+  }
+  if (S.mode === 'music'){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) add('bad', '此浏览器不能使用麦克风', ios ? '在 设置 → Bluefy 里打开麦克风权限。' : '请用 Chrome。');
+    else if (!micOn) add('warn', '麦克风还没启用', '在「触发方式 → 节拍」里点「启用麦克风」并允许。');
+    else if (micDead()) add('bad', '麦克风被系统中断', '轻点屏幕任意位置即可恢复；不行就刷新页面。');
+    else add('ok', '麦克风正常');
+  }
+  if (!S.chA && !S.chB) add('warn', 'A/B 通道都关着', '打开至少一个通道的开关。');
+  else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) add('warn', '打开的通道强度都是 0', '用 ＋ 把强度调上去，否则不会有感觉。');
+  if (S.mode !== 'tap' && !armed) add('warn', '「启用触发」没打开', '点底部「启用触发」后，晃动/节拍才会输出。');
+
+  // 6. 屏幕常亮
+  if (!('wakeLock' in navigator)) add('warn', '浏览器不支持屏幕常亮', '请在系统设置里把自动锁屏改长，锁屏后会断开。');
+  if (document.hidden) add('warn', '页面在后台', '页面必须保持在前台。');
+  return R;
+}
+
+let chkText = '';
+async function runSelfCheck(auto){
+  const R = await selfCheck();
+  const ic = {ok: '✅', warn: '⚠️', bad: '❌'};
+  const order = {bad: 0, warn: 1, ok: 2};
+  R.sort((a, b) => order[a.lv] - order[b.lv]);
+  $('#chkList').innerHTML = R.map(r => `<div class="ck ${r.lv}"><span class="ic">${ic[r.lv]}</span><div><b>${r.t}</b>${r.fx ? `<div class="fx">${r.fx}</div>` : ''}</div></div>`).join('');
+  chkText = R.map(r => `${ic[r.lv]} ${r.t}${r.fx ? '：' + r.fx : ''}`).join('\n') + '\n\n' + navigator.userAgent;
+  $('#chkMask').classList.remove('hidden');
+  const bad = R.filter(r => r.lv === 'bad').length;
+  log(`自检：${bad} 个问题，${R.filter(r => r.lv === 'warn').length} 个提醒`);
+}
+
 /* ================= 屏幕常亮 ================= */
 let wakeLock = null, noSleepVid = null, disarmedByHide = false;
 async function keepAwake(){
@@ -1418,6 +1541,14 @@ bindRange('rjAddMin', 'rjAddMin');
 bindRange('rjAddMax', 'rjAddMax');
 bindRange('rjDurMin', 'rjDurMin', v => (+v).toFixed(1));
 bindRange('rjDurMax', 'rjDurMax', v => (+v).toFixed(1));
+$('#chkBtn').onclick = () => runSelfCheck(false);
+$('#chkRerun').onclick = () => runSelfCheck(false);
+$('#chkClose').onclick = () => $('#chkMask').classList.add('hidden');
+$('#chkMask').addEventListener('click', e => { if (e.target.id === 'chkMask') $('#chkMask').classList.add('hidden'); });
+$('#chkCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText(chkText); toast('已复制，可以直接发给我'); }
+  catch(e){ toast('复制失败，请截图'); }
+};
 bindSeg('srcSeg', 'src');
 bindRange('thr', 'thr');
 bindRange('smooth', 'smooth', v => v.toFixed(2));
