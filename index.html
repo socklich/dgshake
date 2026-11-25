@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-162043';
+const BUILD = '20261125-175219';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -348,7 +348,12 @@ body.hints .hint{display:block}
     <canvas id="beatCv" height="84"></canvas>
     <div class="mrow" id="meterBRow"><span class="mthr"><span id="thrNameB">节奏敏感度</span> <b id="thrLabB">5</b></span><div class="meter" id="meterB"><i></i><b></b></div></div>
     <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">节奏捕捉中</span> <b id="beThrV"></b></span><span>拍数 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
-    <div class="hint">用麦克风听歌。最好用另一台手机或音箱放歌，同一台手机边放边听可能会被系统打断。</div>
+    <div id="audSrcBox" class="hidden">
+      <div class="seg" id="audSrcSeg" style="margin-top:6px"><button data-v="mic">🎤 麦克风</button><button data-v="sys">🖥 电脑声音</button></div>
+      <button id="sysPickBtn" class="hidden" style="margin-top:6px;width:100%">🖥 选择要听的声音</button>
+      <div class="hint" id="sysHint">电脑声音＝直接听这台电脑正在播放的声音，不经过麦克风，没有环境噪音，戴耳机也能用。点「选择要听的声音」后：选<b>整个屏幕</b>并勾选「分享系统音频」（听全部声音），或者选正在放歌的<b>标签页</b>并勾选「分享标签页音频」。选「窗口」听不到声音。</div>
+    </div>
+    <div class="hint" id="micHint">用麦克风听歌。最好用另一台手机或音箱放歌，同一台手机边放边听可能会被系统打断。</div>
     <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 节奏跟随</button><button data-v="quiet">🤫 禁声惩罚</button></div>
     <div class="cap">节奏跟随＝跟随音乐节奏电击 · 禁声惩罚＝禁止发声，一出声就电</div>
     <div class="hint">节奏跟随会听几秒算出 BPM，然后预判下一拍、提前出手，准准地踩在拍子上，偶尔漏听也不会断。禁声惩罚：拖音量条上的黄块定触发阈值，声音（说话、喘息、叫出声）超过黄块就电一下；一直出声就隔一会儿再电一下，直到安静下来。统计里的「环境声」是平时安静时的音量，阈值放在它上面一点就好。</div>
@@ -463,7 +468,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   autoConn:true, lastDev:'', bfOn:false,
   fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
   musFlow:true, musGrain:1, qThr:30, musLayers:true, musSwap:true, musSens:5, goodDevs:[], badDevs:[],
-  band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
+  band:'auto', audSrc:'mic', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'random', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
 let savedVer = 10; // 没有存档 = 新用户，直接用默认值
@@ -1227,6 +1232,17 @@ async function enableSensor(){
   }catch(e){ log('陀螺仪失败: ' + e.message); toast('手机不让读晃动，点 🩺 看看怎么开权限'); }
 }
 
+// 线性加速度（去掉重力）的大小。以前用「含重力加速度的长度 − 9.81」：上下晃正好，
+// 但水平前后平移时加速度和重力垂直，长度只变成 √(9.81² + a²)，5 m/s² 的平移只剩约 1.2，几乎触发不了。
+// 优先用系统融合好的 e.acceleration；没有的机型用低通估出重力方向，按向量减掉
+const GEST = {x: 0, y: 0, z: 0, ok: false};
+function linAcc(a, g){
+  if (a && a.x != null && a.y != null && a.z != null) return Math.hypot(a.x, a.y, a.z);
+  if (g.x == null || g.y == null || g.z == null) return 0;
+  if (!GEST.ok){ Object.assign(GEST, {x: g.x, y: g.y, z: g.z, ok: true}); return 0; }
+  GEST.x += (g.x - GEST.x) * 0.05; GEST.y += (g.y - GEST.y) * 0.05; GEST.z += (g.z - GEST.z) * 0.05;
+  return Math.hypot(g.x - GEST.x, g.y - GEST.y, g.z - GEST.z);
+}
 function onMotion(e){
   const now = performance.now();
   // 采样率统计
@@ -1235,7 +1251,7 @@ function onMotion(e){
   const r = e.rotationRate || {};
   const rot = Math.hypot(r.alpha||0, r.beta||0, r.gamma||0); // °/s
   const g = e.accelerationIncludingGravity || {};
-  const acc = Math.abs(Math.hypot(g.x||0, g.y||0, g.z||0) - 9.81) * 40; // m/s² ×40 方便与 °/s 同刻度
+  const acc = linAcc(e.acceleration, g) * 40; // m/s² ×40 方便与 °/s 同刻度
   const raw = S.src === 'rot' ? rot : S.src === 'acc' ? acc : Math.max(rot, acc);
   filt += (1 - S.smooth) * (raw - filt);
   tiltFeed(g);
@@ -1480,21 +1496,65 @@ async function ensureAudio(){
   if (actx.state === 'suspended') await actx.resume();
   if (!beatTimer) beatTimer = setInterval(beatStep, 10);
 }
+// 电脑声音：Chrome / Edge 桌面版可以用「共享屏幕 / 标签页」抓系统或标签页的声音（手机浏览器没有 getDisplayMedia）
+const canSysAudio = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+if (!canSysAudio) S.audSrc = 'mic';
+function useSys(){ return canSysAudio && S.audSrc === 'sys'; }
+async function attachStream(stream, label){
+  micStream = stream;
+  await ensureAudio();
+  micSrc = actx.createMediaStreamSource(stream);
+  AGC.g = clamp(S.agcG || 1, 1, AGC.MAX);
+  micGain = actx.createGain(); micGain.gain.value = AGC.g;
+  micSrc.connect(micGain); micGain.connect(analyser);
+  micOn = true;
+  log(label + '已启用 ' + actx.sampleRate + 'Hz');
+}
 async function enableMic(){
   keepAwake();
   if (micOn) return;
+  if (useSys()) return enableSysAudio();
   try{
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('此浏览器不支持麦克风访问');
     const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
-    micStream = stream;
-    await ensureAudio();
-    micSrc = actx.createMediaStreamSource(stream);
-    AGC.g = clamp(S.agcG || 1, 1, AGC.MAX);
-    micGain = actx.createGain(); micGain.gain.value = AGC.g;
-    micSrc.connect(micGain); micGain.connect(analyser);
-    micOn = true;
-    log('麦克风已启用 ' + actx.sampleRate + 'Hz');
+    await attachStream(stream, '麦克风');
   }catch(e){ log('麦克风失败: ' + e.message); toast('手机不让用麦克风，点 🩺 看看怎么开权限'); }
+  syncAudSrcUI();
+}
+// 必须在一次点击里调用（浏览器要求），会弹出选择共享内容的窗口
+async function enableSysAudio(){
+  if (micOn) stopMic();
+  try{
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,                                   // Chrome 要求必须带画面，拿到后马上关掉
+      audio: {echoCancellation:false, noiseSuppression:false, autoGainControl:false, suppressLocalAudioPlayback:false},
+      systemAudio: 'include', selfBrowserSurface: 'exclude', surfaceSwitching: 'include', preferCurrentTab: false
+    });
+    stream.getVideoTracks().forEach(t => t.stop());
+    const at = stream.getAudioTracks()[0];
+    if (!at){
+      stream.getTracks().forEach(t => t.stop());
+      log('电脑声音：共享里没有音频');
+      toast('没抓到声音：要选「整个屏幕」勾选分享系统音频，或选标签页勾选分享标签页音频');
+    } else {
+      at.addEventListener('ended', () => { if (micStream === stream){ log('电脑声音：共享已停止'); stopMic(); syncAudSrcUI(); toast('电脑声音已停止共享，点「选择要听的声音」重新开始'); } });
+      await attachStream(new MediaStream([at]), '电脑声音');
+      toast('正在听电脑声音');
+    }
+  }catch(e){
+    log('电脑声音失败: ' + e.message);
+    if (!/NotAllowed|Permission|cancel/i.test(e.name + e.message)) toast('抓不到电脑声音：' + e.message);
+  }
+  syncAudSrcUI();
+}
+function syncAudSrcUI(){
+  const box = $('#audSrcBox'); if (!box) return;
+  box.classList.toggle('hidden', !canSysAudio);
+  const sys = useSys();
+  $('#sysPickBtn').classList.toggle('hidden', !sys);
+  $('#sysPickBtn').textContent = sys && micOn ? '🖥 正在听电脑声音 · 点这里换一个' : '🖥 选择要听的声音';
+  $('#sysHint').classList.toggle('hidden', !sys);
+  $('#micHint').classList.toggle('hidden', sys);
 }
 
 function beatStep(){
@@ -2553,7 +2613,10 @@ async function resumeByGesture(){
     window.addEventListener('devicemotion', onMotion);
   }
   if (micOn){
-    if (micDead()){ log('麦克风已被系统中断，重新启用'); stopMic(); await enableMic(); }
+    if (micDead()){
+      if (useSys()){ log('电脑声音已中断'); stopMic(); syncAudSrcUI(); }
+      else { log('麦克风已被系统中断，重新启用'); stopMic(); await enableMic(); }
+    }
     if (actx && actx.state !== 'running') actx.resume().catch(() => {});
     else if (actx.state !== 'running') actx.resume().catch(() => {});
   }
@@ -2696,7 +2759,14 @@ bindSeg('mWaveSeg', 'mWave', () => { if (S.mWave === 'random') SHK.rnd = newShak
 bindRange('qPenWin', 'qPenWin');
 bindRange('qPenCap', 'qPenCap');
 const applyBand = () => document.querySelectorAll('.bp').forEach(el => el.classList.toggle('on', el.dataset.b === S.band));
-bindSeg('bandSeg', 'band', () => { combo = 0; penReset(); mAvg = 0; quietBase = 0; mhT.fill(0); applyBand(); });
+bindSeg('audSrcSeg', 'audSrc', () => {
+  // 在这次点击里直接切换音源（电脑声音需要点击才能弹出选择窗口）
+  stopMic(); prevSpec = null; mhT.fill(0);
+  if (S.mode === 'music') enableMic(); else syncAudSrcUI();
+});
+$('#sysPickBtn').onclick = () => enableSysAudio();
+syncAudSrcUI();
+bindSeg('bandSeg', 'band',() => { combo = 0; penReset(); mAvg = 0; quietBase = 0; mhT.fill(0); applyBand(); });
 applyBand();
 bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
 // 门槛条：按住黄块（或点条上任意处）拖动
@@ -2759,7 +2829,7 @@ function ensureInputs(fromGesture){
       if (!needPerm || fromGesture) enableSensor();
     }
   } else if (S.mode === 'music'){
-    if (!micOn && fromGesture) enableMic();
+    if (!micOn && fromGesture && !useSys()) enableMic();   // 电脑声音会弹窗选择，只在点按钮时开，不随便点一下就弹
   }
 }
 document.addEventListener('pointerdown', () => ensureInputs(true), true);
