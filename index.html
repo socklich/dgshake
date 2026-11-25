@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-155617';
+const BUILD = '20261125-162043';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -325,6 +325,7 @@ body.hints .hint{display:block}
     <div class="mrow" id="meterMRow"><span class="mthr">晃动阈值 <b id="thrLabM">200</b></span><div class="meter" id="meterM"><i></i><b></b></div></div>
     <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span><b id="hzV">0</b> Hz</span><span id="mComboMini"></span></div>
     <div class="hint">拖动黄块调晃动阈值：晃动冲过阈值就电一下。太低连呼吸都算，太高就得使劲甩。</div>
+    <div class="hint">A、B 都开时，手机往哪边歪，电流就往哪边流（右歪流向 B、左歪流向 A）；拿着不动几秒就自动回到两路一样。</div>
       <div class="f rng" id="mSpeed"><div class="lb"><span>快慢分界 (ms)<small class="sd">两下间隔：左边以内算快，右边以上算慢</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
       <div class="f rng" id="mBoost"><div class="lb"><span>重击加力<small class="sd">每次在范围里随机加</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
     <div class="grp">
@@ -355,9 +356,10 @@ body.hints .hint{display:block}
       <div class="hint">节奏跟随：上面的细条是「节奏把握」（听出来的拍子有多确定），黄块是门槛——把握过了黄块才开始电。往左拖＝更敏感（节奏不清楚也跟着电），往右拖＝更挑剔。电多强跟着此刻比前几秒响多少走，不再需要音量阈值。</div>
       <div class="tog"><span>持续律动<small class="sd">一直有底振，拍子上加尖刺</small></span><label class="sw"><input type="checkbox" id="musFlow"><span></span></label></div>
       <div class="hint">持续律动：有音乐时一直保持一层较轻的振动，颗粒跟着音色走（低沉＝粗、明亮＝细），力度跟着音量走，并随拍子轻轻起伏；每到一拍再叠一下短促满力的尖刺。两路都开时，低音那一路粗颗粒、高音那一路细颗粒。关掉就回到只在拍子上电。</div>
+      <div class="hint">会自己听歌的结构：第一拍最重、二四拍轻，有强弱才像在跟着歌走；8 小节一个乐句。歌越来越亮、越来越响（副歌前的上扬）时进入「蓄力」：底振往上爬、颗粒越来越细、拍子之间越加越密；低音一砸回来就是 Drop——两路一起一下满力长击，再临时加力两拍（用颤抖调教里重击加力的范围）。</div>
       <div class="tog"><span>分声部输出<small class="sd">低音粗、中音细、高音最细最短</small></span><label class="sw"><input type="checkbox" id="musLayers"><span></span></label></div>
-      <div class="tog" id="musSwapRow"><span>A/B 随机互换<small class="sd">两路都开时，声部隔几拍换边</small></span><label class="sw"><input type="checkbox" id="musSwap"><span></span></label></div>
-      <div class="hint">分声部：低音（鼓点、贝斯）颗粒大、时长适中；中音（人声、军鼓）颗粒偏短、时长较短；高音（镲、沙锤）颗粒最短、时长最短。每个声部电多久跟着它最近一个音能响多久走；歌进入高潮时整体更重。A、B 两路都开时，低音走一路、高音走另一路，中音补到空着的那一路，并且每隔几拍随机互换。关掉就回到所有声部合成一段、两路同样输出。</div>
+      <div class="tog" id="musSwapRow"><span>A/B 互换流动<small class="sd">跟着小节换边，从一边流到另一边</small></span><label class="sw"><input type="checkbox" id="musSwap"><span></span></label></div>
+      <div class="hint">分声部：低音（鼓点、贝斯）颗粒大、时长适中；中音（人声、军鼓）颗粒偏短、时长较短；高音（镲、沙锤）颗粒最短、时长最短。每个声部电多久跟着它最近一个音能响多久走；歌进入高潮时整体更重。A、B 两路都开时，低音走一路、高音走另一路，中音补到空着的那一路；打开互换流动后，每隔 1–4 小节在第一拍上换边，8 小节一个乐句时一定换。换边不是硬切：那一下电击会从旧的一边划到新的一边，底振也在一拍里慢慢流过去；平时每小节第一拍也会轻轻带一点流动。关掉分声部就回到所有声部合成一段、两路同样输出。</div>
       <div class="cap" id="musAutoInfo">每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。</div>
       <div class="seg" id="multSeg" style="margin-top:6px"><button data-v="0.5">双拍电击</button><button data-v="1">单拍电击</button><button data-v="2">半拍电击</button></div>
       <div class="cap">多久来一下；节奏听成快一倍或慢一倍时，也用这里纠正</div>
@@ -994,6 +996,20 @@ function placeItems(atTime, items, g, ch, replace){   // ch：'A' / 'B' 只写�
 }
 // 频率字节 → 脉冲间隔 ms（encFreq 的反过程）
 function decFreq(b){ return b <= 100 ? b : b <= 200 ? (b - 100) * 5 + 100 : (b - 200) * 10 + 600; }
+// 等感知强度：同样的强度值，粗颗粒（一下一下敲）比细颗粒（密集酥麻）体感更重。
+// 下发前按颗粒补一点：以 30ms 为基准，每粗一个八度 −8%、每细一个八度 +8%（封顶 100）——颗粒变了只换质感，不换轻重
+function percComp(fb, v){ return v > 0 ? clamp(Math.round(v * clamp(1 - 0.08 * Math.log2(decFreq(fb) / 30), 0.72, 1.12)), 0, 100) : v; }
+// A/B 流动：同一段电击从 from 那一路“流”到 to 那一路。amt 0–1：0＝两路一样，1＝完整地从一边划到另一边。
+// from 从满强度渐弱，to 晚 lag 格（25ms/格）、从弱渐强 → 皮肤上像一个点在两片电极之间移动，而不是两下分开的电
+function placeSweep(atTime, items, from, to, amt, lag){
+  const n = items.length, t = i => n <= 1 ? 1 : i / (n - 1);
+  const a = items.map(([f, I], i) => [f, Math.round(I * (1 - amt * t(i)))]);
+  const b = items.map(([f, I], i) => [f, Math.round(I * (1 - amt * (1 - t(i))))]);
+  for (let k = 0; k < lag; k++) b.unshift([items[0][0], 0]);
+  placeItems(atTime, a, 1, from);
+  placeItems(atTime, b, 1, to);
+}
+const otherCh = c => c === 'A' ? 'B' : 'A';
 function placeBurst(atTime, durMs, g, grain){   // grain：颗粒缩放（<1＝更细），不传＝原样
   const n = Math.max(1, Math.round(durMs / 25));
   let items = [];
@@ -1015,13 +1031,13 @@ function placeBurst(atTime, durMs, g, grain){   // grain：颗粒缩放（<1＝�
 let musCentroid = 1500, musAccent = 1;
 const MUS = {dur: 0, pf: 0, layers: []};
 const BAND_NAME = ['低音', '中音', '高音'];
-let musSwap = false, musSwapIn = 8;
+let musSwap = false;
 // 颗粒倍率：节奏跟随的颗粒都是按音乐自动算的，用户只在上面乘一个系数（×0.5 更细密，×2 更粗重）
 const gx = ms => encFreq(clamp(ms * (S.musGrain || 1), 10, 1000));
 function musicBurst(now, mult){
   if (S.musLayers) return musicLayers(now, mult || 1);
   const iv = beatInterval() || 500;
-  const dur = (S.musFlow ? clamp(iv * 0.2, 60, 150) : clamp(iv * 0.4, 60, 320)) * (mult || 1);
+  const dur = (S.musFlow ? clamp(iv * 0.2, 60, 150) : clamp(iv * 0.4, 60, 320)) * (mult || 1) * beatAcc.D;
   const bright = clamp((musCentroid - 600) / 3400, 0, 1);          // 0 低沉 … 1 明亮
   const fast = clamp((60000 / iv - 70) / 90, 0, 1);                 // 0 慢 … 1 快
   const pf = Math.round(70 - 55 * (0.6 * bright + 0.4 * fast));      // 15–70ms
@@ -1033,7 +1049,7 @@ function musicBurst(now, mult){
     items.push([fb, S.musFlow ? Math.round(100 * (0.15 + 0.85 * Math.pow(1 - i / n, 2.5))) : Math.round(100 * acc * (0.35 + 0.65 * decay))]);
   }
   MUS.dur = Math.round(n * 25); MUS.pf = pf; MUS.layers = [];
-  placeItems(now, items, 1);
+  placeItems(now, items, beatAcc.I);
   return MUS.dur;
 }
 function musicLayers(now, mult){
@@ -1051,19 +1067,20 @@ function musicLayers(now, mult){
     {pf: Math.round(18 - 6 * fast),   r: span(40,  Math.min(160, iv * 0.3)), shape: 2.2, floor: 0.2},
   ];
   // 通道分配：两路都开时声部分开走，隔 4–12 拍随机互换 A/B
-  const two = S.chA && S.chB;
-  if (two && S.musSwap && --musSwapIn <= 0){ musSwap = !musSwap; musSwapIn = 4 + Math.floor(Math.random() * 9); }
+  const two = S.chA && S.chB;            // 互换的时机交给小节（barBeat）：隔 1–4 小节在第一拍上换，乐句开头一定换
   const X = musSwap ? 'B' : 'A', Y = musSwap ? 'A' : 'B';
+  const ba = buildAmt(), main = act.reduce((a, k) => st[k] > st[a] ? k : a, act[0]);
   const route = k => !two ? undefined : k === 0 ? X : k === 2 ? Y : (act.includes(2) ? X : Y);
   let maxDur = 0; MUS.layers = [];
   for (const k of act){
     const spike = S.musFlow;                                         // 持续律动：拍子上只要一下短促的尖刺
-    const sp = spec[k], d = spike ? Math.min(150, clamp(lenOf(k), sp.r[0], sp.r[1])) * mult : clamp(lenOf(k), sp.r[0], sp.r[1]) * mult;
-    const n = Math.max(2, Math.round(d / 25)), fb = gx(sp.pf);
-    const I0 = spike ? 100 * (0.85 + 0.15 * st[k]) : 100 * (0.5 + 0.5 * st[k]) * lift, items = [];
+    const sp = spec[k], d = (spike ? Math.min(150, clamp(lenOf(k), sp.r[0], sp.r[1])) : clamp(lenOf(k), sp.r[0], sp.r[1])) * mult * beatAcc.D * (1 - 0.35 * ba);
+    const n = Math.max(2, Math.round(d / 25)), fb = gx(sp.pf * (1 - 0.4 * ba));     // 蓄力：越来越细、越来越短促
+    const I0 = (spike ? 100 * (0.85 + 0.15 * st[k]) : 100 * (0.5 + 0.5 * st[k]) * lift) * beatAcc.I, items = [];
     const shape = spike ? 2.5 : sp.shape, floor = spike ? 0.15 : sp.floor;
     for (let i = 0; i < n; i++){ const decay = Math.pow(1 - i / n, shape); items.push([fb, Math.round(I0 * (floor + (1 - floor) * decay))]); }
-    placeItems(now, items, 1, route(k));
+    if (two && beatAcc.sweep && k === main) placeSweep(now, items, otherCh(route(k)), route(k), beatAcc.sweep, beatAcc.lag);   // 第一拍 / 换边：主声部从另一边流过来
+    else placeItems(now, items, 1, route(k));
     maxDur = Math.max(maxDur, n * 25);
     MUS.layers.push({k, dur: n * 25, pf: sp.pf, ch: route(k) || ''});
   }
@@ -1076,7 +1093,7 @@ function musicLayers(now, mult){
  *   颗粒：跟着音色（频谱重心）——低沉 110ms 粗、明亮 15ms 细；双通道时低音那路粗、高音那路细
  *   力度：15–85%，跟着“此刻比最近几秒响多少”/ 各自声部的响度，高潮更重，并在每拍之间像呼吸一样起伏
  * 拍子上的电击（musicBurst）照常放进时间槽，取较强的一方 → 叠在底振上成为尖刺 */
-const FLOW = {pf: 60, pfX: 100, pfY: 20, on: false};
+const FLOW = {pf: 60, pfX: 100, pfY: 20, on: false, mix: 0};
 function flowFill(now){
   FLOW.on = armed && S.mode === 'music' && S.band === 'auto' && S.musFlow && micOn && rhythmLocked();
   if (!FLOW.on) return;
@@ -1084,21 +1101,26 @@ function flowFill(now){
   // 力度看“此刻比最近几秒响多少”：自动增益会把平均音量拉平，直接用音量的话力度几乎不变
   let energy = 0.8 * musDyn + 0.2 * musClimax;
   if (sustaining(now)) energy = Math.max(energy, 0.5);          // 长音 / 尾音：保持一段有分量的持续电流，不随着变轻而几乎消失
+  const ba = buildAmt();
+  if (ba > 0) energy = Math.max(energy, 0.3 + 0.6 * ba);        // 蓄力：底振一路往上爬
   const lvl = k => clamp((bandLvl[k] / Math.max(1, bandAvg[k]) - 0.5) / 1.2, 0, 1);
   // 跟拍子呼吸：拍点上最强，两拍中间最弱
-  const iv = beatInterval();
+  const iv = beatInterval() / (ba > 0.6 ? 2 : 1);               // 蓄力后段：起伏快一倍
   const breath = k => { if (!iv || !nextBeatAt) return 1; const ph = ((now + k * 25 - nextBeatAt) / iv % 1 + 1) % 1; return 0.75 + 0.25 * Math.cos(2 * Math.PI * ph); };
-  FLOW.pf += (Math.round(110 - 95 * bright) - FLOW.pf) * 0.3;
-  FLOW.pfX += (Math.round(120 - 30 * bright) - FLOW.pfX) * 0.3;
-  FLOW.pfY += (Math.round(26 - 12 * bright) - FLOW.pfY) * 0.3;
+  const fine = 1 - 0.5 * ba;                                    // 蓄力：颗粒越来越细
+  FLOW.pf += (Math.round((110 - 95 * bright) * fine) - FLOW.pf) * 0.3;
+  FLOW.pfX += (Math.round((120 - 30 * bright) * fine) - FLOW.pfX) * 0.3;
+  FLOW.pfY += (Math.round((26 - 12 * bright) * fine) - FLOW.pfY) * 0.3;
+  // A/B 互换不是一下切过去：底振在大约一拍里从一边慢慢流到另一边（颗粒和力度一起交叉渐变）
+  FLOW.mix += ((musSwap ? 1 : 0) - FLOW.mix) * clamp(100 / (beatInterval() || 500), 0.1, 0.6);
   const put = (m, fm, k, f, I) => { if (!m.has(k) || m.get(k) < I){ m.set(k, I); fm.set(k, f); } };
   const two = S.chA && S.chB && S.musLayers;
   for (let i = 0; i < 4; i++){
     const k = nextSlot + i, br = breath(i);
     if (two){
-      const X = musSwap ? 'B' : 'A', Y = musSwap ? 'A' : 'B';
-      put(chSlot[X].m, chSlot[X].f, k, gx(FLOW.pfX), Math.round((15 + 70 * (0.5 * energy + 0.5 * lvl(0))) * br));
-      put(chSlot[Y].m, chSlot[Y].f, k, gx(FLOW.pfY), Math.round((15 + 70 * (0.5 * energy + 0.5 * lvl(2))) * br));
+      const m = FLOW.mix, lx = lvl(0), ly = lvl(2);
+      put(chSlot.A.m, chSlot.A.f, k, gx(FLOW.pfX + (FLOW.pfY - FLOW.pfX) * m), Math.round((15 + 70 * (0.5 * energy + 0.5 * (lx + (ly - lx) * m))) * br));
+      put(chSlot.B.m, chSlot.B.f, k, gx(FLOW.pfY + (FLOW.pfX - FLOW.pfY) * m), Math.round((15 + 70 * (0.5 * energy + 0.5 * (ly + (lx - ly) * m))) * br));
     } else put(slotMap, slotFreq, k, gx(FLOW.pf), Math.round((15 + 70 * energy) * br));
   }
 }
@@ -1142,7 +1164,7 @@ function tick(){
       if (!en){ b[off+i] = 10; b[off+4+i] = 101; continue; } // 101 = 该通道本次不输出
       let v = slotMap.has(k) ? slotMap.get(k) : -1, f = slotFreq.get(k);
       if (cm.m.has(k) && cm.m.get(k) > v){ v = cm.m.get(k); f = cm.f.get(k); }
-      if (v >= 0){ b[off+i] = f; b[off+4+i] = v; active = active || v > 0; }
+      if (v >= 0){ b[off+i] = f; b[off+4+i] = percComp(f, v); active = active || v > 0; }
       else { b[off+i] = 10; b[off+4+i] = 0; }
     }
   };
@@ -1216,6 +1238,7 @@ function onMotion(e){
   const acc = Math.abs(Math.hypot(g.x||0, g.y||0, g.z||0) - 9.81) * 40; // m/s² ×40 方便与 °/s 同刻度
   const raw = S.src === 'rot' ? rot : S.src === 'acc' ? acc : Math.max(rot, acc);
   filt += (1 - S.smooth) * (raw - filt);
+  tiltFeed(g);
 
   hist[histI] = filt; histB[histI] = now < burstUntil ? 1 : 0; histI = (histI + 1) % hist.length;
   peak = Math.max(peak * 0.995, filt);
@@ -1232,6 +1255,22 @@ function onMotion(e){
     latched = true; armPeak = filt; coolUntil = now + S.cool;
     if (S.mode === 'motion') trigger(clamp(filt / (S.thr * 2), 0.3, 1), now, 'motion');
   }
+}
+
+/* ---------- 倾斜 → A/B 流向 ----------
+ * 重力方向平滑后得到手机此刻往左 / 右歪了多少度；再用一条很慢（~4 秒）的基线记住「平时怎么拿」。
+ * 手机一直那样拿着不动 → 基线追上来，偏差为 0，两路一样；开始往一边歪 → 电流往低的那一边流。
+ * 往右歪流向 B、往左歪流向 A（iOS 的重力方向和安卓相反，这里统一过） */
+const TILT = {ang: null, base: null, pan: 0};
+const TILT_SGN = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 1 : -1;
+function tiltFeed(g){
+  if (g.x == null || g.y == null || g.z == null) return;
+  const ang = Math.atan2(TILT_SGN * g.x, Math.hypot(g.y, g.z)) * 180 / Math.PI;
+  if (TILT.ang === null){ TILT.ang = TILT.base = ang; return; }
+  TILT.ang += (ang - TILT.ang) * 0.08;                  // ~0.2 秒：滤掉晃动本身的抖
+  TILT.base += (TILT.ang - TILT.base) * 0.004;          // ~4 秒：拿稳不动就回到“不激活”
+  const d = TILT.ang - TILT.base, p = Math.sign(d) * clamp((Math.abs(d) - 6) / 24, 0, 1);   // 歪 6° 以内不算，30° 流满
+  TILT.pan += (p - TILT.pan) * 0.2;
 }
 
 /* ================= 连击 ================= */
@@ -1336,7 +1375,10 @@ function shakeBurst(now, mult){
   const shape = 0.3 + 1.9 * f, floor = 0.7 - 0.55 * f;          // 慢＝平稳持续，快＝先猛后衰
   const items = [];
   for (let i = 0; i < n; i++) items.push([fb, Math.round(100 * shakeEnv(i, n, shape, floor))]);
-  placeItems(now, items, 1, undefined, true);
+  for (const c of [undefined, 'A', 'B']) placeItems(now, [], 1, c, true);   // 这一下接管：清掉上一下还没放完的
+  const pan = TILT.pan, amt = Math.abs(pan);
+  if (S.chA && S.chB && amt > 0.05){ const to = pan > 0 ? 'B' : 'A'; placeSweep(now, items, otherCh(to), to, amt, Math.round(amt * 3)); }
+  else placeItems(now, items, 1);
   SHK.items = items;
   SHK.pf = pf; SHK.dur = n * 25; SHK.fast = f >= 0.5;
   drawMWave();
@@ -1375,7 +1417,8 @@ setInterval(() => renderCombo(false), 150);
 // 基础强度 + 颤抖调教重击的临时加力（只加在强度 > 0 的通道上，且不超过软上限）
 function effStr(c){
   const base = S['str'+c];
-  const add = base > 0 && S.mode === 'motion' ? shakeAdd(performance.now()) : 0;
+  const now = performance.now();
+  const add = base > 0 && S.mode === 'motion' ? shakeAdd(now) : base > 0 && S.mode === 'music' && SONG.addUntil > now ? SONG.add : 0;
   return clamp(base + add, 0, Math.min(200, S['soft'+c]));
 }
 
@@ -1486,6 +1529,9 @@ function beatStep(){
   // 高音的频格数是低音的几十倍，以前直接求和，键盘 / 咔哒声这种高频尖响会盖过鼓点，节奏就乱了
   flux = 3 * bf[0] / Math.max(1, wd[0]) + bf[1] / Math.max(1, wd[1]) + 0.3 * bf[2] / Math.max(1, wd[2]);
   bandTrack(bf, bs, wd, now);
+  // 低音电平（dB 近似：字节频谱约 3.64/dB，去掉自动增益），给蓄力 / Drop 判断用
+  const loDb = bs[0] / Math.max(1, wd[0]) / 3.64 - 20 * Math.log10(AGC.g);
+  loAcc += loDb; loN++; SONG.loF += (loDb - SONG.loF) * 0.15;
   // 真实响度：时域波形的 RMS（线性），换成 dB 后比较“此刻（~200ms）vs 最近 3 秒”，±4dB 对应 0–1
   if (!tbuf || tbuf.length !== analyser.fftSize) tbuf = new Float32Array(analyser.fftSize);
   analyser.getFloatTimeDomainData(tbuf);
@@ -1497,6 +1543,7 @@ function beatStep(){
   let num = 0, den = 0; for (let i = i0; i <= i1; i += 2){ const m = fbuf[i]; num += m * i * binHz; den += m; }
   if (den > 0) musCentroid += (num / den - musCentroid) * 0.02;
   autoFeed(flux, now);
+  dropCheck(now);
 }
 
 /* ================= 自动节拍：起音包络 → 自相关测速 → 梳状滤波定相 → 预测节拍网格 ================= */
@@ -1676,7 +1723,7 @@ function rhythmLocked(){
   if (Lmus !== null && !musicPresent()){
     if (!goneAt) goneAt = now;
     if (now - goneAt > 1500){
-      lockAt = 0; goneAt = 0; Lmus = null;
+      lockAt = 0; goneAt = 0; Lmus = null; barReset();
       envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0;
       return false;
     }
@@ -1688,6 +1735,87 @@ function rhythmLocked(){
   }
   return lockAt > 0;     // 锁定过：把握掉下去（没鼓点的段落、干扰）也继续，直到音乐真的停
 }
+/* ---------- 小节 / 乐句 ----------
+ * 拍子网格每走一步记一下在第几拍；第一拍＝低音起音最明显的那个位置（慢慢累计，换得慢，不来回跳）。
+ * 第一拍更长一点（×1.2），第三拍稍轻，二、四拍更轻；半拍上的那一下又轻又短 → 有了强弱，才像在跟歌走。
+ * 8 小节一个乐句：乐句开头更长（×1.5），A/B 一定换边；平时隔 1–4 小节在第一拍上换。 */
+const ACC0 = {I: 1, D: 1, sweep: 0, lag: 0};
+let beatAcc = ACC0;
+const BAR = {sub: -1, db: [0, 0, 0, 0], down: 0, bars: 0, phraseBar: 0, swapIn: 2, lastQ: 0, pos: -1};
+function barReset(){ Object.assign(BAR, {sub: -1, db: [0, 0, 0, 0], down: 0, bars: 0, phraseBar: 0, swapIn: 2, lastQ: 0, pos: -1}); SONG.h.length = 0; SONG.lv = SONG.recent = 0; }
+function barStep(){       // 网格往前走一步：返回第几个四分拍；-1＝落在两拍中间（半拍电击时）
+  BAR.sub += 1 / (+S.mult || 1);
+  const q = Math.round(BAR.sub);
+  if (Math.abs(BAR.sub - q) > 0.01) return -1;
+  BAR.sub = q; return q;
+}
+function barBeat(q, now){
+  beatAcc = {I: 1, D: 1, sweep: 0, lag: 0};
+  if (q < 0){ beatAcc.I = 0.75; beatAcc.D = 0.7; return; }
+  const slot = q % 4;
+  BAR.db[slot] = BAR.db[slot] * 0.88 + bandStrength(0, tempoP) + 0.5 * (musAccent - 0.55);
+  let best = 0; for (let k = 1; k < 4; k++) if (BAR.db[k] > BAR.db[best]) best = k;
+  if (best !== BAR.down && BAR.db[best] > BAR.db[BAR.down] * 1.25) BAR.down = best;
+  const pos = ((q - BAR.down) % 4 + 4) % 4;
+  BAR.pos = pos; BAR.lastQ = q;
+  buildSample(now);
+  if (pos){ beatAcc.I = pos === 2 ? 0.92 : 0.82; return; }
+  BAR.bars++;
+  const phrase = BAR.bars - BAR.phraseBar >= 8;
+  if (phrase){ BAR.phraseBar = BAR.bars; fxBeat(1.6); }
+  beatAcc.D = phrase ? 1.5 : 1.2;
+  if (S.chA && S.chB && S.musLayers && S.musSwap){
+    if (phrase || --BAR.swapIn <= 0){ musSwap = !musSwap; BAR.swapIn = pick([1, 2, 2, 4]); beatAcc.sweep = 1; beatAcc.lag = 2; }   // 换边这一下：整个从旧的一边划到新的一边
+    else { beatAcc.sweep = 0.45; beatAcc.lag = 1; }                                                                             // 平时的第一拍：轻轻带一点流动
+  }
+}
+
+/* ---------- 蓄力 → Drop ----------
+ * 每拍记一次：响度、音色明亮度、低音电平。最近 8 拍里越来越亮、越来越响（低音被抽掉更算）＝蓄力。
+ * 蓄力时：底振往上爬、颗粒越来越细、拍子之间加密到半拍再到十六分。
+ * 低音和响度突然一起砸回来（蓄力之后 +4.5dB 就算；没蓄力要 +8dB）＝ Drop / 新段落：
+ *   两路一起来一下满力的粗颗粒长击 + 临时加力（用重击加力的范围，持续两拍），乐句从这里重新数，A/B 换边。 */
+const SONG = {h: [], lv: 0, recent: 0, dropAt: -1e9, loF: 0, add: 0, addUntil: 0};
+let loAcc = 0, loN = 0;
+const buildAmt = () => clamp((SONG.lv - 0.35) / 0.5, 0, 1);
+const meanOf = (a, k) => a.reduce((s, o) => s + o[k], 0) / a.length;
+function buildSample(now){
+  const lo = loN ? loAcc / loN : SONG.loF; loAcc = 0; loN = 0;
+  const h = SONG.h; h.push({E: Lfast, C: musCentroid, lo});
+  if (h.length > 16) h.shift();
+  if (h.length < 8){ SONG.lv *= 0.8; return; }
+  const r = h.slice(-8), n = r.length;
+  const slope = key => { let sx = 0, sy = 0, sxy = 0, sxx = 0; r.forEach((o, i) => { sx += i; sy += o[key]; sxy += i * o[key]; sxx += i * i; }); return (n * sxy - sx * sy) / (n * sxx - sx * sx); };
+  const cs = slope('C') * 8 / Math.max(300, meanOf(r, 'C'));     // 8 拍里音色亮了多少（比例）
+  const es = slope('E') * 8;                                      // 8 拍里响了多少 dB
+  let sc = clamp(cs / 0.35, 0, 1) * 0.55 + clamp(es / 5, 0, 1) * 0.45;
+  if (h.length >= 12 && meanOf(h.slice(0, 4), 'lo') - meanOf(h.slice(-4), 'lo') > 4) sc += 0.2;   // 低音被抽掉：典型的蓄力段
+  if (cs <= 0 && es <= 0) sc = 0;
+  SONG.lv += (clamp(sc, 0, 1) - SONG.lv) * 0.35;
+  SONG.recent = Math.max(SONG.lv, SONG.recent * 0.85);
+}
+function dropCheck(now){
+  if (!armed || S.mode !== 'music' || S.band !== 'auto' || !lockAt || now - SONG.dropAt < 10000 || SONG.h.length < 6) return;
+  const prev = SONG.h.slice(-4), jl = SONG.loF - meanOf(prev, 'lo'), je = Lfast - meanOf(prev, 'E');
+  const afterBuild = SONG.recent > 0.5 && jl > 4.5 && je > 1.5;
+  if (afterBuild || (jl > 8 && je > 4)) dropFire(now, afterBuild);
+}
+function dropFire(now, built){
+  SONG.dropAt = now; SONG.lv = SONG.recent = 0; SONG.h.length = 0;
+  const iv = tempoP || 500, n = Math.round(clamp(iv * (built ? 1.2 : 0.8), 300, 700) / 25), fb = gx(100), items = [];
+  for (let i = 0; i < n; i++) items.push([fb, Math.round(100 * (0.55 + 0.45 * Math.pow(1 - i / n, 0.6)))]);
+  placeItems(now, items, 1);
+  burstUntil = Math.max(burstUntil, now + n * 25);
+  // 这里就是新乐句的第一拍
+  BAR.down = BAR.lastQ % 4; BAR.db[BAR.down] += 3; BAR.phraseBar = BAR.bars;
+  if (S.chA && S.chB && S.musLayers && S.musSwap){ musSwap = !musSwap; BAR.swapIn = pick([2, 4]); }
+  const bl = Math.min(S.mBoostMin, S.mBoostMax), bh = Math.max(S.mBoostMin, S.mBoostMax);
+  SONG.add = built ? bl + Math.floor(Math.random() * (bh - bl + 1)) : bl;
+  if (SONG.add > 0){ SONG.addUntil = now + 2 * iv; strengthDirty = true; setTimeout(() => { strengthDirty = true; }, 2 * iv + 50); }
+  fxBeat(2.2); fxTrig('music');
+  flyText((built ? '⚡ DROP' : '🎆 新段落') + (SONG.add > 0 ? ' +' + SONG.add : ''), 12);
+}
+
 // 有声部正在持续响（长音、尾音）超过 0.3 秒
 function sustaining(now){ for (let k = 0; k < 3; k++) if (bandOn[k] && now - bandOnAt[k] > 300) return true; return false; }
 function autoBeatTick(now){
@@ -1698,11 +1826,22 @@ function autoBeatTick(now){
   let fireAt = nextBeatAt - S.lead;
   let guard = 0;
   while (now >= fireAt && guard++ < 8){
+    const q = barStep();
     if (now - fireAt < 120 && ok){
       let rec = 0; for (let k = 1; k <= Math.min(envCount, Math.round(iv / HOP)); k++) rec = Math.max(rec, envBuf[(envI - k + ENV_N) % ENV_N]);
       musAccent = 0.55 + 0.45 * clamp(rec / Math.max(1, envPeak), 0, 1);
+      barBeat(q, now);
       beatCount++; beatPendingMark = 1; fxBeat(1);
       if (armed && S.mode === 'music') trigger(1, now, 'music');
+      beatAcc = ACC0;
+      // 蓄力：拍与拍之间加密（先半拍，快到 Drop 时十六分），越来越急
+      const ba = buildAmt();
+      if (ba > 0.3 && q >= 0 && +S.mult === 1 && armed && S.mode === 'music'){
+        for (const f of ba > 0.75 ? [0.25, 0.5, 0.75] : [0.5]) setTimeout(() => {
+          if (!armed || S.mode !== 'music' || !lockAt) return;
+          beatAcc = {I: 0.5 + 0.4 * ba, D: 0.5, sweep: 0, lag: 0}; trigger(1, performance.now(), 'music'); beatAcc = ACC0;
+        }, iv * f);
+      }
     }
     nextBeatAt += iv; fireAt = nextBeatAt - S.lead;
   }
@@ -2582,16 +2721,18 @@ bindCheck('musFlow', 'musFlow');
 bindRange('musGrain', 'musGrain', v => '×' + (+v).toFixed(1));
 bindCheck('musLayers', 'musLayers');
 setInterval(() => { const n = $('#waveNote'); if (n) n.classList.toggle('hidden', !(S.band === 'auto' && S.musLayers)); }, 300);
-bindCheck('musSwap', 'musSwap', () => { musSwap = false; musSwapIn = 8; });
+bindCheck('musSwap', 'musSwap', () => { musSwap = false; BAR.swapIn = 2; });
+// 乐句进度 + 蓄力 / Drop 状态
+const songInfo = () => !lockAt ? '' : ` ｜ 乐句 ${Math.min(8, BAR.bars - BAR.phraseBar + 1)}/8` + (performance.now() - SONG.dropAt < 3000 ? ' ｜ ⚡ Drop' : buildAmt() > 0.3 ? ' ｜ ⏫ 蓄力中' : '');
 setInterval(() => {
   const el = $('#musAutoInfo'); if (!el || S.band !== 'auto') return;
   $('#musSwapRow').style.opacity = S.musLayers ? '' : '.45';
   if (S.musLayers && MUS.layers.length){
     const G = S.musGrain || 1;
-    el.textContent = (FLOW.on ? `底振 颗粒${Math.round(FLOW.pf * G)} ｜ ` : '') + MUS.layers.map(l => `${BAND_NAME[l.k]} ${l.dur}ms·颗粒${Math.round(l.pf * G)}${l.ch ? '→' + l.ch : ''}`).join(' ｜ ') + (musClimax > 0.5 ? ' ｜ 🔥 高潮' : '');
+    el.textContent = (FLOW.on ? `底振 颗粒${Math.round(FLOW.pf * G)} ｜ ` : '') + MUS.layers.map(l => `${BAND_NAME[l.k]} ${l.dur}ms·颗粒${Math.round(l.pf * G)}${l.ch ? '→' + l.ch : ''}`).join(' ｜ ') + (musClimax > 0.5 ? ' ｜ 🔥 高潮' : '') + songInfo();
     return;
   }
-  el.textContent = MUS.dur ? `自动波形：每拍 ${MUS.dur}ms · 颗粒 ${MUS.pf}ms（${MUS.pf < 30 ? '细密酥麻' : MUS.pf < 50 ? '中等' : '粗重敲击'}）· 重拍更重` : '每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。';
+  el.textContent = MUS.dur ? `自动波形：每拍 ${MUS.dur}ms · 颗粒 ${MUS.pf}ms（${MUS.pf < 30 ? '细密酥麻' : MUS.pf < 50 ? '中等' : '粗重敲击'}）· 重拍更重` + songInfo() : '每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。';
 }, 500);
 bindRange('lead', 'lead');
 bindRange('beatGap', 'beatGap');
