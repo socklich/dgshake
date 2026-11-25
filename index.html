@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-181230';
+const BUILD = '20261125-185809';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -1517,7 +1517,7 @@ const MH = 160, mh = new Float32Array(MH), mhT = new Float32Array(MH), mhB = new
 function stopMic(){
   try { micStream && micStream.getTracks().forEach(t => t.stop()); } catch(e){}
   try { if (micSrc) micSrc.disconnect(); } catch(e){}
-  micStream = null; micSrc = null; micOn = false; prevSpec = null;
+  micStream = null; micSrc = null; micOn = false; prevSpec = null; Lmus = null; lockAt = 0; goneAt = 0;
 }
 function micDead(){
   if (!micOn) return false;
@@ -1638,6 +1638,7 @@ function beatStep(){
   const L = 10 * Math.log10(sq / (tbuf.length / 2) + 1e-10) - 20 * Math.log10(AGC.g);   // 去掉自动增益的影响，只看音乐本身的变化
   Lfast += (L - Lfast) * 0.05; Lslow = Lslow ? Lslow + (L - Lslow) * 0.003 : L;
   musDyn = clamp((Lfast - Lslow + 4) / 8, 0, 1);
+  trackLmus();
   // 频谱重心（音色明亮度），慢慢平滑
   let num = 0, den = 0; for (let i = i0; i <= i1; i += 2){ const m = fbuf[i]; num += m * i * binHz; den += m; }
   if (den > 0) musCentroid += (num / den - musCentroid) * 0.02;
@@ -1683,7 +1684,7 @@ function reactiveOnset(v, now){
   const thr = reAvg * 2.2 + 0.5;
   const hit = v > thr && rePrev <= thr && now - reLast > 220;
   rePrev = v;
-  if (!hit || envCount < 15 || rhythmLocked() || !armed || S.mode !== 'music' || S.band !== 'auto') return;   // 刚开始 0.3 秒不算（第一帧全是“变响”）
+  if (!hit || envCount < 15 || (Lmus !== null && !musicPresent()) || rhythmLocked() || !armed || S.mode !== 'music' || S.band !== 'auto') return;   // 刚开始 0.3 秒不算（第一帧全是“变响”）
   reLast = now; beatCount++; beatPendingMark = 1; fxBeat(1);
   trigger(1, now, 'music');
 }
@@ -1697,6 +1698,7 @@ function autoFeed(flux, now){
   // 自动增益：太小慢慢放大，太大较快收回
   if (micGain){
     if (mE > 110) AGC.g *= 0.95;                                       // 快削峰
+    else if (Lmus !== null && !musicPresent()) {}                          // 音乐停了（暂停）：别把底噪放大，否则噪声会被当成鼓点
     else if (mE < AGC.TARGET * 0.4) AGC.g *= 1.015;                    // 很小：快速拉起来（约每秒 4 倍）
     else if (mEslow > AGC.TARGET * 1.35) AGC.g *= 0.997;               // 平均偏大：慢慢收
     else if (mEslow < AGC.TARGET * 0.8) AGC.g *= 1.0015;               // 平均偏小：慢慢放（几秒级，保留强弱变化）
@@ -1809,27 +1811,31 @@ const musNeed = () => 0.405 - S.musSens * 0.035;
 // 锁定保持：锁定过一次之后，只要还有音乐声就一直保持输出（主歌、过门、人声段鼓点不明显时把握会掉，
 // 以前只保持 8 秒，歌没停却会空白一段）；音乐真的停了 1.5 秒才解除
 let lockAt = 0, Lmus = null, goneAt = 0;
-// 还有音乐：比锁定时的音乐响度低不到 20dB；音乐响度会跟着歌慢慢变轻 / 变响（安静下来的那一段也能跟上）
-function musicPresent(){
-  if (Lmus === null) return false;
-  if (Lfast > Lmus - 10) Lmus += (Lfast - Lmus) * 0.002;
-  return Lfast > Lmus - 20;
+// 还有音乐：比记住的音乐响度低不到 18dB。音乐响度只在“接近它”时跟着慢慢变（歌变轻 / 变响能跟上），
+// 暂停后的底噪差得远，拉不动它。解除锁定时也不清掉它——以前一清掉，暂停时被自动增益放大的底噪
+// 会被重新当成音乐锁上（或被起步反应当成鼓点），于是暂停了还在电。重新开始听声音时才清掉。
+function musicPresent(){ return Lmus !== null && Lfast > Lmus - 18; }
+function trackLmus(){      // 每帧一次
+  if (Lmus === null) return;
+  if (Lfast > Lmus) Lmus += (Lfast - Lmus) * 0.01;
+  else if (Lfast > Lmus - 10) Lmus += (Lfast - Lmus) * 0.002;
 }
 function rhythmLocked(){
-  if (!tempoP || (mE < 8 && AGC.g >= AGC.MAX * 0.9)) return false;
   const now = performance.now();
-  // 音乐真的停了 1.5 秒：解除，并清掉最近 6 秒的节奏记录（否则旧的鼓点还在，把握一直很高，安静了也照样电）
+  // 音乐停了（暂停）：马上停电；持续 1.5 秒才清掉节奏记录（短暂的安静不用从头再锁）
   if (Lmus !== null && !musicPresent()){
     if (!goneAt) goneAt = now;
-    if (now - goneAt > 1500){
-      lockAt = 0; goneAt = 0; Lmus = null; barReset();
+    if (now - goneAt > 1500 && (lockAt || envCount)){
+      lockAt = 0; barReset();
       envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0;
-      return false;
     }
-  } else goneAt = 0;
+    return false;
+  }
+  goneAt = 0;
+  if (!tempoP || (mE < 8 && AGC.g >= AGC.MAX * 0.9)) return false;
   if (tempoConf >= musNeed()){
     lockAt = now;
-    if (Lmus === null) Lmus = Lfast; else if (Lfast > Lmus - 10) Lmus += (Lfast - Lmus) * 0.01;
+    if (Lmus === null) Lmus = Lfast;
     return true;
   }
   return lockAt > 0;     // 锁定过：把握掉下去（没鼓点的段落、干扰）也继续，直到音乐真的停
@@ -1894,7 +1900,7 @@ function buildSample(now){
   SONG.recent = Math.max(SONG.lv, SONG.recent * 0.85);
 }
 function dropCheck(now){
-  if (!armed || S.mode !== 'music' || S.band !== 'auto' || !lockAt || now - SONG.dropAt < 10000 || SONG.h.length < 6) return;
+  if (!armed || S.mode !== 'music' || S.band !== 'auto' || !lockAt || goneAt || now - SONG.dropAt < 10000 || SONG.h.length < 6) return;
   const prev = SONG.h.slice(-4), jl = SONG.loF - meanOf(prev, 'lo'), je = Lfast - meanOf(prev, 'E');
   const afterBuild = SONG.recent > 0.5 && jl > 4.5 && je > 1.5;
   if (afterBuild || (jl > 8 && je > 4)) dropFire(now, afterBuild);
@@ -1937,7 +1943,7 @@ function autoBeatTick(now){
       const ba = buildAmt();
       if (ba > 0.3 && q >= 0 && +S.mult === 1 && armed && S.mode === 'music'){
         for (const f of ba > 0.75 ? [0.25, 0.5, 0.75] : [0.5]) setTimeout(() => {
-          if (!armed || S.mode !== 'music' || !lockAt) return;
+          if (!armed || S.mode !== 'music' || !lockAt || goneAt) return;
           beatAcc = {I: 0.5 + 0.4 * ba, D: 0.5, sweep: 0, lag: 0}; trigger(1, performance.now(), 'music'); beatAcc = ACC0;
         }, iv * f);
       }
