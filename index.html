@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-185809';
+const BUILD = '20261125-190044';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -181,6 +181,12 @@ canvas{display:block;width:100%;border-radius:var(--rs);background:var(--bg);bor
 .fxlabel{position:absolute;left:8px;bottom:7px;font-size:11px;padding:3px 9px;border-radius:99px;background:rgba(0,0,0,.45);color:rgba(255,255,255,.9);
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;pointer-events:none}
 .fxlabel.show{animation:lbl 2.4s ease-out forwards}
+.fxfold{position:absolute;top:6px;right:6px;z-index:2;width:28px;height:24px;padding:0;border-radius:8px;border:1px solid rgba(255,255,255,.15);
+  background:rgba(0,0,0,.45);color:rgba(255,255,255,.85);font-size:12px;line-height:22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer}
+.fxwrap.folded{height:36px;background:rgba(5,5,10,.55)}
+.fxwrap.folded canvas.glfx,.fxwrap.folded .fxlabel{display:none}
+.fxwrap .fxfoldtxt{display:none;position:absolute;left:12px;top:0;line-height:34px;font-size:12px;color:rgba(255,255,255,.55)}
+.fxwrap.folded .fxfoldtxt{display:block}
 @keyframes lbl{0%{opacity:0}12%{opacity:1}75%{opacity:1}100%{opacity:0}}
 .stats{display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
 .stats b{color:var(--text);font-weight:600}
@@ -472,7 +478,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   src:'both', thr:60, thrHeavy:200, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:14, mode:'motion', burstMu:150, view:'motion',
   mComboOn:true, mWave:'auto', mFast:150, mSlow:800, mBoostMin:2, mBoostMax:5, qPenWin:3, qPenCap:3,
   autoConn:true, lastDev:'', bfOn:false,
-  fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
+  fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0, fxFold:false,
   musFlow:true, musGrain:1, qThr:30, musLayers:true, musSwap:true, musSens:5, goodDevs:[], badDevs:[],
   band:'auto', audSrc:'mic', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'random', pf:20, cyc:500, minI:0, maxI:100};
@@ -2325,12 +2331,19 @@ function glfxInit(){
     Object.assign(GLFX, {gl, cv, ok: true});
     const wrap = document.createElement('div'); wrap.className = 'fxwrap';
     const label = document.createElement('div'); label.className = 'fxlabel';
-    wrap.appendChild(cv); wrap.appendChild(label);
+    // 右上角折叠开关：收起后不再渲染（省电），点收起的那一条或按钮都能展开
+    const fold = document.createElement('button'); fold.className = 'fxfold';
+    const foldTxt = document.createElement('div'); foldTxt.className = 'fxfoldtxt'; foldTxt.textContent = '✨ 视觉效果已收起（不渲染）';
+    const setFold = f => { S.fxFold = f; wrap.classList.toggle('folded', f); fold.textContent = f ? '▾' : '▴'; fold.title = f ? '展开视觉效果' : '收起视觉效果（收起后不渲染）'; };
+    fold.addEventListener('click', e => { e.stopPropagation(); setFold(!S.fxFold); save(); });
+    wrap.appendChild(cv); wrap.appendChild(label); wrap.appendChild(foldTxt); wrap.appendChild(fold);
+    setFold(!!S.fxFold);
     GLFX.wrap = wrap; GLFX.label = label;
     cv.addEventListener('webglcontextlost', e => { e.preventDefault(); GLFX.ok = false; glfxShowFallback(true); });
     GLFX.cur = clamp(S.fxStyle | 0, 0, GLFX_STYLES.length - 1);
     if (FX_PALS[GLFX.cur]) GLFX.pal = FX_PALS[GLFX.cur][0].map(c => c.slice());
     wrap.addEventListener('click', () => {
+      if (S.fxFold){ setFold(false); save(); return; }
       GLFX.cur = (GLFX.cur + 1) % GLFX_STYLES.length; S.fxStyle = GLFX.cur; save();
       const pp = FX_PALS[GLFX.cur]; if (pp){ GLFX.palI = 0; GLFX.palAt = performance.now(); GLFX.pal = pp[0].map(c => c.slice()); }
       label.textContent = GLFX_STYLES[GLFX.cur] + '  ·  点一下换下一个';
@@ -2426,6 +2439,7 @@ function glfxInputs(now){
 }
 function glfxDraw(now){
   if (!GLFX.ok || !S.fxOn) return false;
+  if (S.fxFold) return true;        // 收起了：什么都不画
   glfxInputs(now);
   const gl = GLFX.gl, cv = GLFX.cv;
   const dpr = Math.min(1.5, window.devicePixelRatio || 1);
