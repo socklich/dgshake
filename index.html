@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-151758';
+const BUILD = '20261125-154403';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -336,9 +336,9 @@ body.hints .hint{display:block}
 <section class="card glass page" data-p="motion" id="mWaveCard">
   <h2>💗 波形<small class="sd">每一下的力度形状</small></h2>
   <div class="seg" id="mWaveSeg">
-    <button data-v="auto">✨ 自动</button><button data-v="constant">持续猛烈</button><button data-v="ramp">渐进加压</button><button data-v="pulse">间歇脉冲</button><button data-v="sine">呼吸同步</button><button data-v="random">🎲 随机混乱</button><button data-v="o_breath">呼吸</button><button data-v="o_tide">潮汐</button>
+    <button data-v="auto">✨ 自动</button><button data-v="constant">持续猛烈</button><button data-v="ramp">渐进加压</button><button data-v="pulse">间歇脉冲</button><button data-v="sine">呼吸同步</button><button data-v="random">🎲 随机</button><button data-v="chaos">🌀 混乱</button><button data-v="o_breath">呼吸</button><button data-v="o_tide">潮汐</button>
   </div>
-  <div class="cap">自动＝快晃先猛后衰、慢晃平稳持续 · 其他形状会压缩/拉伸到每一下的长度里播放 · 颗粒粗细始终跟着晃动快慢走 · 和声控调教的波形分开设置</div>
+  <div class="cap">自动＝快晃先猛后衰、慢晃平稳持续 · 随机＝随机一段并固定，再点一次换一段 · 混乱＝每一下都重新随机 · 其他形状会压缩/拉伸到每一下的长度里播放 · 颗粒粗细始终跟着晃动快慢走 · 和声控调教的波形分开设置</div>
   <canvas id="mWaveCv" height="46" style="margin-top:8px"></canvas>
 </section>
 
@@ -388,9 +388,9 @@ body.hints .hint{display:block}
   <div class="cap" id="waveNote">节奏跟随开着「分声部输出」时，每一拍的波形自动生成，不用这里的设置。</div>
   <div class="hint">每次电击的“形状”，每格 25ms。图上柱子越高越重，蓝线是颗粒密度。</div>
   <div class="seg" id="presetSeg">
-    <button data-v="constant">持续猛烈</button><button data-v="ramp">渐进加压</button><button data-v="pulse">间歇脉冲</button><button data-v="sine">呼吸同步</button><button data-v="random">🎲 随机混乱</button><button data-v="o_breath">呼吸</button><button data-v="o_tide">潮汐</button>
+    <button data-v="constant">持续猛烈</button><button data-v="ramp">渐进加压</button><button data-v="pulse">间歇脉冲</button><button data-v="sine">呼吸同步</button><button data-v="random">🎲 随机</button><button data-v="chaos">🌀 混乱</button><button data-v="o_breath">呼吸</button><button data-v="o_tide">潮汐</button>
   </div>
-  <div class="cap">持续猛烈＝全程满力 · 渐进加压＝由轻到重 · 间歇脉冲＝一开一停 · 呼吸同步＝起起伏伏 · 随机混乱＝每次都不一样 · 呼吸 / 潮汐＝和郊狼官方 App 内置的一模一样（每次触发接着上次的位置往下放）</div>
+  <div class="cap">持续猛烈＝全程满力 · 渐进加压＝由轻到重 · 间歇脉冲＝一开一停 · 呼吸同步＝起起伏伏 · 随机＝随机生成一段并固定下来，再点一次「随机」换一段 · 混乱＝每一下都重新随机，完全不重样 · 呼吸 / 潮汐＝和郊狼官方 App 内置的一模一样（每次触发接着上次的位置往下放）</div>
   <canvas id="waveCv" height="46" style="margin-top:8px"></canvas>
   <label class="f"><div class="lb"><span>颗粒密度<small class="sd">小＝酥麻 大＝一下下敲</small></span><b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲之间的间隔。左半段 10–200ms 细细调（越小越密越麻），右半段 200–1000ms 是一下一下的敲打感。</div></label>
   <div class="grp"><div class="grph">更多 <small class="sd">单轮时长</small></div>
@@ -885,7 +885,7 @@ function buildWave(){
     wave = []; for (const [f, I] of OFFICIAL_WAVES[S.preset]) for (let k = 0; k < 4; k++) wave.push([f, I]);
     wavePos = 0; officialPos = 0; drawWave(); return;
   }
-  if (S.preset === 'random'){ wave = genRandomWave(); wavePos = 0; drawWave(); return; }
+  if (S.preset === 'random' || S.preset === 'chaos'){ wave = genRandomWave(); wavePos = 0; drawWave(); return; }
   const n = Math.max(1, Math.round(S.cyc / 25));
   const f = encFreq(S.pf);
   const lo = Math.min(S.minI, S.maxI), hi = Math.max(S.minI, S.maxI);
@@ -907,13 +907,15 @@ function buildWave(){
 // 随机波形：由若干随机片段拼成，每段形状/强度/频率都随机（频率在设定值上下约 1 个八度内漂移）
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
-function genRandomWave(){
-  const n = Math.max(4, Math.round(S.cyc / 25));
+// 随机波形：每段只有 1–3 格，变化更密；随机＝点一次生成一段并固定，混乱＝每一下现生成
+// n 不传时按「单次电击时长」生成（用于预览）
+function genRandomWave(n){
+  n = Math.max(3, n || Math.round((S.burstMu || 150) / 25));
   const lo = Math.min(S.minI, S.maxI), hi = Math.max(S.minI, S.maxI);
   const w = [];
   let fPrev = clamp(S.pf * Math.pow(2, rnd(-1, 1)), 10, 1000);
   while (w.length < n){
-    const len = Math.min(n - w.length, Math.round(rnd(2, 9)));
+    const len = Math.min(n - w.length, Math.round(rnd(1, 3)));
     const shape = pick(['flat','up','down','pulse','sine','spark','spark']);
     const a = rnd(lo, hi), b = rnd(lo, hi);
     const f0 = fPrev, f1 = clamp(S.pf * Math.pow(2, rnd(-1, 1)), 10, 1000); // 频率在段内滑动
@@ -939,7 +941,7 @@ function genRandomWave(){
 function nextItems(){ // 4 个 25ms 项
   const out = [];
   for (let i=0; i<4; i++){
-    if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'random') buildWaveSilent(); }
+    if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'chaos') buildWaveSilent(); }
     out.push(wave[wavePos++]);
   }
   return out;
@@ -992,9 +994,10 @@ function placeItems(atTime, items, g, ch, replace){   // ch：'A' / 'B' 只写�
 function decFreq(b){ return b <= 100 ? b : b <= 200 ? (b - 100) * 5 + 100 : (b - 200) * 10 + 600; }
 function placeBurst(atTime, durMs, g, grain){   // grain：颗粒缩放（<1＝更细），不传＝原样
   const n = Math.max(1, Math.round(durMs / 25));
-  if (S.preset === 'random') buildWave();
   let items = [];
-  if (OFFICIAL_WAVES[S.preset]){ for (let i=0; i<n; i++){ items.push(wave[officialPos % wave.length]); officialPos++; } }
+  if (S.preset === 'chaos'){ wave = genRandomWave(n); items = wave.slice(); }    // 混乱：每一下现生成一段正好这么长的
+  else if (S.preset === 'random'){ for (let i=0; i<n; i++) items.push(wave[Math.min(wave.length - 1, Math.floor(i * wave.length / n))]); }   // 随机：固定那一段，拉伸到这一下的长度，整段都播到
+  else if (OFFICIAL_WAVES[S.preset]){ for (let i=0; i<n; i++){ items.push(wave[officialPos % wave.length]); officialPos++; } }
   else for (let i=0; i<n; i++) items.push(wave[i % wave.length]);
   if (grain && grain !== 1) items = items.map(([f, I]) => [encFreq(Math.max(10, decFreq(f) * grain)), I]);
   placeItems(atTime, items, g);
@@ -1075,7 +1078,8 @@ function flowFill(now){
   if (!FLOW.on) return;
   const bright = clamp((musCentroid - 600) / 3400, 0, 1);
   // 力度看“此刻比最近几秒响多少”：自动增益会把平均音量拉平，直接用音量的话力度几乎不变
-  const energy = 0.8 * musDyn + 0.2 * musClimax;
+  let energy = 0.8 * musDyn + 0.2 * musClimax;
+  if (sustaining(now)) energy = Math.max(energy, 0.5);          // 长音 / 尾音：保持一段有分量的持续电流，不随着变轻而几乎消失
   const lvl = k => clamp((bandLvl[k] / Math.max(1, bandAvg[k]) - 0.5) / 1.2, 0, 1);
   // 跟拍子呼吸：拍点上最强，两拍中间最弱
   const iv = beatInterval();
@@ -1102,7 +1106,7 @@ function tick(){
   // 按住：持续填充本帧
   if (holding){
     for (let i=0; i<4; i++){
-      if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'random') buildWave(); }
+      if (wavePos >= wave.length){ wavePos = 0; if (S.preset === 'chaos') buildWave(); }
       const [f, I] = wave[wavePos++]; slotMap.set(nextSlot+i, I); slotFreq.set(nextSlot+i, f);
     }
   } else wavePos = 0;
@@ -1274,7 +1278,8 @@ function renderCombo(pop){
  * 每次触发都会覆盖还没放完的上一段，所以慢晃中突然快晃能立刻切成短促细腻
  * 重击：这一下晃动幅度 > 最近几下平均的 1.6 倍 → 这一下临时加力（重击加力范围内随机） */
 const SHK_HEAVY = 1.6;
-const SHK = {last: 0, iv: 0, mag: 0, n: 0, add: 0, addUntil: 0, pf: 0, dur: 0, fast: false};
+const newShakeRnd = () => Array.from({length: 16}, (_, i) => i === 0 ? 0.7 + Math.random() * 0.3 : 0.25 + Math.random() * 0.75);
+const SHK = {rnd: newShakeRnd(), last: 0, iv: 0, mag: 0, n: 0, add: 0, addUntil: 0, pf: 0, dur: 0, fast: false};
 const shakeAdd = now => SHK.addUntil > now ? SHK.add : 0;
 // 颤抖调教的波形：第 i 格（共 n 格）的力度 0–1；形状压缩/拉伸到这一下的长度
 function shakeEnv(i, n, shape, floor){
@@ -1284,7 +1289,8 @@ function shakeEnv(i, n, shape, floor){
     case 'ramp': return 0.25 + 0.75 * t;
     case 'pulse': return Math.floor(i / 2) % 2 ? 0 : 1;
     case 'sine': return 0.15 + 0.85 * Math.sin(Math.PI * (i + 0.5) / n);
-    case 'random': return i === 0 ? 0.7 + Math.random() * 0.3 : 0.25 + Math.random() * 0.75;
+    case 'random': { const r = SHK.rnd; return r[Math.min(r.length - 1, Math.floor(t * r.length))]; }   // 固定的那一段，拉伸到这一下
+    case 'chaos': return i === 0 ? 0.7 + Math.random() * 0.3 : 0.25 + Math.random() * 0.75;          // 每一下现随机
     case 'o_breath': case 'o_tide': {
       const w = OFFICIAL_WAVES[S.mWave], k = Math.min(w.length - 1, Math.floor(t * (w.length - 1) + 0.5));
       return Math.max(0.1, w[k][1] / 100);
@@ -1465,12 +1471,16 @@ function beatStep(){
   const bf = [0, 0, 0], bs = [0, 0, 0];             // 低 / 中 / 高 三个声部各自的起音和音量
   for (let i = i0; i <= i1; i++){
     const d = fbuf[i] - prevSpec[i], k = i < b1 ? 0 : i < b2 ? 1 : 2;
-    if (d > 0){ flux += k === 0 ? d * 2 : d; bf[k] += d; }   // 低频（鼓）加权
+    if (d > 0) bf[k] += d;
     lvl += fbuf[i]; bs[k] += fbuf[i];
   }
   prevSpec.set(fbuf);
   mE = lvl / (i1 - i0 + 1);
-  bandTrack(bf, bs, [b1 - i0, b2 - b1, i1 - b2 + 1], now);
+  const wd = [b1 - i0, b2 - b1, i1 - b2 + 1];
+  // 起音强度：各频段按“平均每格”的变化加权——低音（鼓）3、中音 1、高音 0.3。
+  // 高音的频格数是低音的几十倍，以前直接求和，键盘 / 咔哒声这种高频尖响会盖过鼓点，节奏就乱了
+  flux = 3 * bf[0] / Math.max(1, wd[0]) + bf[1] / Math.max(1, wd[1]) + 0.3 * bf[2] / Math.max(1, wd[2]);
+  bandTrack(bf, bs, wd, now);
   // 真实响度：时域波形的 RMS（线性），换成 dB 后比较“此刻（~200ms）vs 最近 3 秒”，±4dB 对应 0–1
   if (!tbuf || tbuf.length !== analyser.fftSize) tbuf = new Float32Array(analyser.fftSize);
   analyser.getFloatTimeDomainData(tbuf);
@@ -1601,7 +1611,7 @@ function analyzeTempo(now){
   // 速度稳定：相近则平滑；明显不同时，新速度把握大得多就马上换，否则连续 2 次才换
   const near = (a, b) => Math.abs(a - b) / b < 0.06;
   const curConf = tempoP ? clamp(At(tempoP / HOP) / ac0, 0, 1) : 0;
-  if (!tempoP || near(P, tempoP)){ tempoP = tempoP ? tempoP * 0.7 + P * 0.3 : P; tempoConf = newConf; candHits = 0; }
+  if (!tempoP || near(P, tempoP)){ tempoConf = tempoP ? tempoConf * 0.6 + newConf * 0.4 : newConf; tempoP = tempoP ? tempoP * 0.7 + P * 0.3 : P; candHits = 0; }
   else if (curConf < 0.2 || newConf > curConf + 0.25){ tempoP = P; tempoConf = newConf; candHits = 0; nextBeatAt = 0; }
   else if (candP && near(P, candP)){ if (++candHits >= 2){ tempoP = P; tempoConf = newConf; candHits = 0; nextBeatAt = 0; } else tempoConf = curConf; }
   else { candP = P; candHits = 1; tempoConf = curConf; }
@@ -1633,7 +1643,17 @@ function beatInterval(){ return tempoP / (+S.mult || 1); }
 // 节奏敏感度 1–10 → 需要的节奏把握 0.37 → 0.05（越敏感要求越低）
 const musNeed = () => 0.405 - S.musSens * 0.035;
 // 节奏锁定：把握够了，且不是真的没声音（增益拉满还几乎听不到）
-function rhythmLocked(){ return tempoP > 0 && tempoConf >= musNeed() && !(mE < 8 && AGC.g >= AGC.MAX * 0.9); }
+// 长音 / 干扰保持：刚锁定过，现在把握掉下去了（长音没有鼓点、或被键盘声打乱），但还明显有音乐声 → 继续保持 8 秒
+let lockAt = 0, Lmus = null;
+const musicPresent = () => Lmus !== null && Lfast > Lmus - 15;   // 比锁定时的音乐响度低不到 15dB，就算还有音乐
+function rhythmLocked(){
+  if (!tempoP || (mE < 8 && AGC.g >= AGC.MAX * 0.9)) return false;
+  const now = performance.now();
+  if (tempoConf >= musNeed()){ lockAt = now; Lmus = Lmus === null ? Lfast : Lmus + (Lfast - Lmus) * 0.01; return true; }
+  return lockAt > 0 && now - lockAt < 8000 && musicPresent();
+}
+// 有声部正在持续响（长音、尾音）超过 0.3 秒
+function sustaining(now){ for (let k = 0; k < 3; k++) if (bandOn[k] && now - bandOnAt[k] > 300) return true; return false; }
 function autoBeatTick(now){
   if (!tempoP || !nextBeatAt) return;
   const iv = beatInterval();
@@ -1849,6 +1869,10 @@ function drawWave(now){
   }
   // 流光：一条柔光带缓缓扫过
   const sx = ((now / 2200) % 1.4 - 0.2) * w;
+  // 混乱：没有实际电击时，每扫过一遍就换一段新的随机波形（有电击时每一下本来就会重新生成）
+  const pass = Math.floor(now / 3080);
+  if (S.preset === 'chaos' && pass !== drawWave.pass && now - FX.trigAt > 1500){ drawWave.pass = pass; wave = genRandomWave(); return drawWave(now); }
+  drawWave.pass = pass;
   const sh = ctx.createLinearGradient(sx - 30, 0, sx + 30, 0);
   sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(.5, 'rgba(255,255,255,.10)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = sh; ctx.fillRect(sx - 30, 0, 60, h);
@@ -2494,7 +2518,7 @@ S.smooth = 0.1; S.rearm = 0.6;
 S.mComboOn = true;   // 颤抖调教的连击始终开启
 bindDual('mBoost', 'mBoostMin', 'mBoostMax', 0, 30, 1, v => '+' + v);
 bindDual('mSpeed', 'mFast', 'mSlow', 50, 2000, 10, v => v);
-bindSeg('mWaveSeg', 'mWave', () => { SHK.items = null; drawMWave(); });
+bindSeg('mWaveSeg', 'mWave', () => { if (S.mWave === 'random') SHK.rnd = newShakeRnd(); SHK.items = null; drawMWave(); });
 bindRange('qPenWin', 'qPenWin');
 bindRange('qPenCap', 'qPenCap');
 const applyBand = () => document.querySelectorAll('.bp').forEach(el => el.classList.toggle('on', el.dataset.b === S.band));
