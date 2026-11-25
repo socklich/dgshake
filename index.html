@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-154942';
+const BUILD = '20261125-155215';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -361,7 +361,8 @@ body.hints .hint{display:block}
       <div class="cap" id="musAutoInfo">每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。</div>
       <div class="seg" id="multSeg" style="margin-top:6px"><button data-v="0.5">双拍电击</button><button data-v="1">单拍电击</button><button data-v="2">半拍电击</button></div>
       <div class="cap">多久来一下；节奏听成快一倍或慢一倍时，也用这里纠正</div>
-      <label class="f"><div class="lb"><span>抢拍 (ms)<small class="sd">觉得慢半拍就调大</small></span><b id="leadV">120</b></div><input type="range" id="lead" min="0" max="400" step="10"><div class="hint">从手机发出指令到小狼真正放电要 0.1–0.2 秒，所以要提前这么多出手，电击才正好砸在鼓点上。电得比鼓点晚 → 调大；早了 → 调小。</div></label>
+      <label class="f"><div class="lb"><span>颗粒 ×<small class="sd">在自动识别的颗粒上乘</small></span><b id="musGrainV">×1.0</b></div><input type="range" id="musGrain" min="0.5" max="2" step="0.1"><div class="hint">节奏跟随的颗粒会按音色自动变化（低沉粗、明亮细），这里只是整体放大或缩小：×0.5＝都细一倍更酥麻，×2＝都粗一倍更像敲打，×1＝完全按音乐。双拍 / 单拍 / 半拍也是在识别出的节拍上乘的。</div></label>
+      <label class="f"><div class="lb"><span>抢拍 (ms)<small class="sd">补偿蓝牙和设备的延迟</small></span><b id="leadV">120</b></div><input type="range" id="lead" min="0" max="400" step="10"><div class="hint">从手机发出指令到小狼真正放电要 0.1–0.2 秒，所以要提前这么多出手，电击才正好砸在鼓点上。电得比鼓点晚 → 调大；早了 → 调小。</div></label>
     </div>
     <div class="bp" data-b="quiet">
       <label class="f"><div class="lb"><span>连电间隔 (ms)<small class="sd">一直出声多久电一次</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">还在出声的话，每隔这么久再电一下，直到安静。</div></label>
@@ -460,7 +461,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   mComboOn:true, mWave:'auto', mFast:150, mSlow:800, mBoostMin:2, mBoostMax:5, qPenWin:3, qPenCap:3,
   autoConn:true, lastDev:'', bfOn:false,
   fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
-  musFlow:true, musLayers:true, musSwap:true, musSens:5, goodDevs:[], badDevs:[],
+  musFlow:true, musGrain:1, musLayers:true, musSwap:true, musSens:5, goodDevs:[], badDevs:[],
   band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'random', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
@@ -1016,6 +1017,8 @@ let musCentroid = 1500, musAccent = 1;
 const MUS = {dur: 0, pf: 0, layers: []};
 const BAND_NAME = ['低音', '中音', '高音'];
 let musSwap = false, musSwapIn = 8;
+// 颗粒倍率：节奏跟随的颗粒都是按音乐自动算的，用户只在上面乘一个系数（×0.5 更细密，×2 更粗重）
+const gx = ms => encFreq(clamp(ms * (S.musGrain || 1), 10, 1000));
 function musicBurst(now, mult){
   if (S.musLayers) return musicLayers(now, mult || 1);
   const iv = beatInterval() || 500;
@@ -1023,7 +1026,7 @@ function musicBurst(now, mult){
   const bright = clamp((musCentroid - 600) / 3400, 0, 1);          // 0 低沉 … 1 明亮
   const fast = clamp((60000 / iv - 70) / 90, 0, 1);                 // 0 慢 … 1 快
   const pf = Math.round(70 - 55 * (0.6 * bright + 0.4 * fast));      // 15–70ms
-  const fb = encFreq(pf), n = Math.max(2, Math.round(dur / 25));
+  const fb = gx(pf), n = Math.max(2, Math.round(dur / 25));
   const acc = clamp(musAccent, 0.55, 1);
   const items = [];
   for (let i = 0; i < n; i++){
@@ -1057,7 +1060,7 @@ function musicLayers(now, mult){
   for (const k of act){
     const spike = S.musFlow;                                         // 持续律动：拍子上只要一下短促的尖刺
     const sp = spec[k], d = spike ? Math.min(150, clamp(lenOf(k), sp.r[0], sp.r[1])) * mult : clamp(lenOf(k), sp.r[0], sp.r[1]) * mult;
-    const n = Math.max(2, Math.round(d / 25)), fb = encFreq(sp.pf);
+    const n = Math.max(2, Math.round(d / 25)), fb = gx(sp.pf);
     const I0 = spike ? 100 * (0.85 + 0.15 * st[k]) : 100 * (0.5 + 0.5 * st[k]) * lift, items = [];
     const shape = spike ? 2.5 : sp.shape, floor = spike ? 0.15 : sp.floor;
     for (let i = 0; i < n; i++){ const decay = Math.pow(1 - i / n, shape); items.push([fb, Math.round(I0 * (floor + (1 - floor) * decay))]); }
@@ -1095,9 +1098,9 @@ function flowFill(now){
     const k = nextSlot + i, br = breath(i);
     if (two){
       const X = musSwap ? 'B' : 'A', Y = musSwap ? 'A' : 'B';
-      put(chSlot[X].m, chSlot[X].f, k, encFreq(FLOW.pfX), Math.round((15 + 70 * (0.5 * energy + 0.5 * lvl(0))) * br));
-      put(chSlot[Y].m, chSlot[Y].f, k, encFreq(FLOW.pfY), Math.round((15 + 70 * (0.5 * energy + 0.5 * lvl(2))) * br));
-    } else put(slotMap, slotFreq, k, encFreq(FLOW.pf), Math.round((15 + 70 * energy) * br));
+      put(chSlot[X].m, chSlot[X].f, k, gx(FLOW.pfX), Math.round((15 + 70 * (0.5 * energy + 0.5 * lvl(0))) * br));
+      put(chSlot[Y].m, chSlot[Y].f, k, gx(FLOW.pfY), Math.round((15 + 70 * (0.5 * energy + 0.5 * lvl(2))) * br));
+    } else put(slotMap, slotFreq, k, gx(FLOW.pf), Math.round((15 + 70 * energy) * br));
   }
 }
 function tick(){
@@ -2579,6 +2582,7 @@ for (const [view, id] of [['motion', 'M'], ['music', 'B']]){
   bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
 }
 bindCheck('musFlow', 'musFlow');
+bindRange('musGrain', 'musGrain', v => '×' + (+v).toFixed(1));
 bindCheck('musLayers', 'musLayers');
 setInterval(() => { const n = $('#waveNote'); if (n) n.classList.toggle('hidden', !(S.band === 'auto' && S.musLayers)); }, 300);
 bindCheck('musSwap', 'musSwap', () => { musSwap = false; musSwapIn = 8; });
@@ -2586,7 +2590,8 @@ setInterval(() => {
   const el = $('#musAutoInfo'); if (!el || S.band !== 'auto') return;
   $('#musSwapRow').style.opacity = S.musLayers ? '' : '.45';
   if (S.musLayers && MUS.layers.length){
-    el.textContent = (FLOW.on ? `底振 颗粒${Math.round(FLOW.pf)} ｜ ` : '') + MUS.layers.map(l => `${BAND_NAME[l.k]} ${l.dur}ms·颗粒${l.pf}${l.ch ? '→' + l.ch : ''}`).join(' ｜ ') + (musClimax > 0.5 ? ' ｜ 🔥 高潮' : '');
+    const G = S.musGrain || 1;
+    el.textContent = (FLOW.on ? `底振 颗粒${Math.round(FLOW.pf * G)} ｜ ` : '') + MUS.layers.map(l => `${BAND_NAME[l.k]} ${l.dur}ms·颗粒${Math.round(l.pf * G)}${l.ch ? '→' + l.ch : ''}`).join(' ｜ ') + (musClimax > 0.5 ? ' ｜ 🔥 高潮' : '');
     return;
   }
   el.textContent = MUS.dur ? `自动波形：每拍 ${MUS.dur}ms · 颗粒 ${MUS.pf}ms（${MUS.pf < 30 ? '细密酥麻' : MUS.pf < 50 ? '中等' : '粗重敲击'}）· 重拍更重` : '每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。';
