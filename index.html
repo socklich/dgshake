@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-180442';
+const BUILD = '20261125-180750';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -65,9 +65,9 @@ body{background:transparent;min-height:100vh;max-width:640px;margin:0 auto;
 .bgfx b{position:absolute;left:0;top:0;border-radius:50%;opacity:0;will-change:transform,opacity}
 @keyframes bokeh{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(14vmin,-10vmin,0) scale(1.08)}100%{transform:translate3d(-12vmin,14vmin,0) scale(.94)}}
 /* 卡片 */
-.glass{background:rgba(15,16,17,.78);border:1px solid var(--line);border-radius:var(--r);
-  backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
-  box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 4px 16px rgba(0,0,0,.25)}
+.glass{background:rgba(10,11,14,.42);border:1px solid rgba(255,255,255,.09);border-radius:var(--r);
+  backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 8px 28px rgba(0,0,0,.28)}
 .card{padding:12px 13px;margin-bottom:8px}
 h1{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 h2{font-size:13px;margin:0 0 8px;font-weight:600;color:var(--text);letter-spacing:-.005em;display:flex;align-items:center;gap:6px;min-height:22px}
@@ -75,7 +75,7 @@ h2 .sp{flex:1}
 .sd{font-size:11px;color:var(--faint);margin-left:6px;font-weight:400;letter-spacing:0;text-transform:none}
 /* 顶栏 */
 .top{padding:8px 10px;margin-bottom:8px;display:block;position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:5;
-  background:rgba(15,16,17,.82);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+  background:rgba(10,11,14,.5);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%)}
 .top .tr{display:flex;align-items:center;gap:7px}
 .top .logo{flex:none;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:13px;
   background:linear-gradient(180deg,#6b76e0,#4f59c0);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset, 0 1px 2px rgba(0,0,0,.4)}
@@ -116,7 +116,7 @@ body.hints #hintBtn .ic{background:var(--acc);color:#fff}
 .row>*{flex:1}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 /* A / B 通道 */
-.ch{border-radius:10px;padding:8px 9px;background:var(--s2);border:1px solid var(--line);position:relative;overflow:hidden}
+.ch{border-radius:10px;padding:8px 9px;background:rgba(255,255,255,.035);border:1px solid var(--line);position:relative;overflow:hidden}
 .ch::before{content:"";position:absolute;left:0;top:0;right:0;height:2px;opacity:.85}
 .ch.A::before{background:var(--a)} .ch.B::before{background:var(--b)}
 .ch .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
@@ -129,7 +129,7 @@ body.hints #hintBtn .ic{background:var(--acc);color:#fff}
 .tmp{margin:0 2px}
 .big small.tmp{color:var(--bad);font-weight:700}
 /* 重击：统一用红色（门槛条上的红块、重击加力的数字、力度旁临时加的 +x） */
-#mBoost .rv{color:var(--bad)}
+#mBoost .rv,.mthr b.hvl{color:var(--bad)}
 .meter .hv{position:absolute;top:-3px;width:10px;height:10px;margin-left:-5px;border-radius:3px;background:var(--bad);
   box-shadow:0 0 0 2px var(--s1);pointer-events:none;transition:left .25s linear}
 .act{font-size:11px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums}
@@ -157,7 +157,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radiu
 input[type=number]{width:100%;font:inherit;color:var(--text);background:var(--s2);border:1px solid var(--line2);border-radius:var(--rs);padding:7px 9px}
 input[type=number]:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(94,106,210,.25)}
 /* 分段选择 */
-.seg{display:flex;flex-wrap:wrap;gap:3px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.seg{display:flex;flex-wrap:wrap;gap:3px;padding:3px;background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:10px}
 .seg button{flex:1 1 auto;padding:5px 7px;font-size:12.5px;border-radius:7px;background:transparent;border-color:transparent;color:var(--dim);box-shadow:none}
 @media (hover:hover){.seg button:not(.on):hover{background:var(--s2);color:var(--text);border-color:transparent}}
 .seg button.on{background:var(--s3);border-color:var(--line2);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.04) inset}
@@ -238,8 +238,8 @@ body.hints .hint{display:block}
 .mp{display:none}.mp.on{display:block}
 .bp{display:none}.bp.on{display:block}
 .tabs{position:fixed;left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 16px));bottom:calc(env(safe-area-inset-bottom) + 8px);z-index:10;
-  display:flex;gap:4px;padding:4px;border-radius:12px;background:rgba(15,16,17,.86);
-  backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  display:flex;gap:4px;padding:4px;border-radius:12px;background:rgba(10,11,14,.5);border:1px solid rgba(255,255,255,.09);
+  backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);box-shadow:0 8px 30px rgba(0,0,0,.5)}
 .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border-radius:9px;background:transparent;border-color:transparent;
   font-size:11px;color:var(--dim);position:relative;box-shadow:none}
 .tabs button i{font-style:normal;font-size:17px;line-height:1.15;filter:grayscale(.6);opacity:.75;transition:filter .15s,opacity .15s}
@@ -267,9 +267,9 @@ body.hints .hint{display:block}
   box-shadow:0 12px 40px rgba(0,0,0,.55);transition:transform .25s cubic-bezier(.2,.8,.2,1);max-width:90vw;text-align:left}
 .toast::before{content:"";position:absolute;left:12px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--warn)}
 .toast.show{transform:translate(-50%,0)}
-.mask{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+.mask{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
   display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top) + 40px) 12px 20px;overflow:auto}
-.chkbox{width:100%;max-width:520px;margin:0;background:var(--s1);border-color:var(--line2);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.chkbox{width:100%;max-width:520px;margin:0;background:rgba(10,11,14,.62);border-color:var(--line2);box-shadow:0 24px 60px rgba(0,0,0,.6)}
 .ck{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
 .ck:last-child{border-bottom:0}
 .ck .ic{flex:none;width:22px;text-align:center}
@@ -327,9 +327,9 @@ body.hints .hint{display:block}
 <!-- ===== 晃动页 ===== -->
 <section class="card glass page" data-p="motion" id="motionCard">
     <canvas id="motionCv" height="84"></canvas>
-    <div class="mrow" id="meterMRow"><span class="mthr">最低门槛 <b id="thrLabM">60</b></span><div class="meter" id="meterM"><i></i><b></b><s class="hv hidden" id="heavyMk"></s></div></div>
+    <div class="mrow" id="meterMRow"><span class="mthr">门槛 <b id="thrLabM">60</b> 重击 <b id="heavyLabM" class="hvl">108</b></span><div class="meter" id="meterM"><i></i><b></b><s class="hv" id="heavyMk"></s></div></div>
     <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span><b id="hzV">0</b> Hz</span><span id="mComboMini"></span></div>
-    <div class="hint">强弱是相对的：会记住你前几秒平时晃多大，不管是前后几厘米的小动作还是走路的大幅度，都按「平时」正常电；突然比平时猛很多（约 1.8 倍，图里粉色虚线）就来个大的（重击加力；门槛条上的红块就是重击线，跟着平均自动移动）。之后一直保持这个幅度，一两秒后它就成了新的「平时」。黄块是最低门槛，只用来挡住手抖、呼吸这种小噪声：手放着不动也乱电就往右拖，轻轻动都没反应就往左拖。</div>
+    <div class="hint">强弱是相对的：会记住你前几秒平时晃多大，不管是前后几厘米的小动作还是走路的大幅度，都按「平时」正常电；突然比平时猛很多（约 1.8 倍，图里粉色虚线）就来个大的（重击加力）。门槛条上：晃动过黄块＝触发，过红块＝重击；红块是第二阈值，等于「平时」× 1.8（至少是黄块 × 1.8），跟着平均自动移动，不用拖。之后一直保持这个幅度，一两秒后它就成了新的「平时」。黄块是最低门槛，只用来挡住手抖、呼吸这种小噪声：手放着不动也乱电就往右拖，轻轻动都没反应就往左拖。</div>
     <div class="hint">A、B 都开时，手机往哪边歪，电流就往哪边流（右歪流向 B、左歪流向 A）；拿着不动几秒就自动回到两路一样。</div>
       <div class="f rng" id="mSpeed"><div class="lb"><span>快慢分界 (ms)<small class="sd">两下间隔：左边以内算快，右边以上算慢</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
       <div class="f rng" id="mBoost"><div class="lb"><span>重击加力<small class="sd">每次在范围里随机加</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
@@ -1295,6 +1295,8 @@ function onMotion(e){
 const MOT = {env: 0, base: 0, lastT: 0, activeSince: 0, heavyAt: -1e9, heavyDone: false};
 const MOT_HEAVY = 1.8, MOT_REL = 0.45;
 const motThr = () => Math.max(S.thr, MOT.base * MOT_REL);
+// 第二阈值（重击线）：平均 × 1.8，至少是最低门槛 × 1.8 —— 不动的时候也有意义，红块一直显示
+const motHeavyLine = () => Math.max(S.thr, MOT.base) * MOT_HEAVY;
 function motFeed(now){
   const dt = MOT.lastT ? clamp(now - MOT.lastT, 1, 200) : 16; MOT.lastT = now;
   MOT.env = Math.max(filt, MOT.env * Math.exp(-dt / 400));
@@ -1307,7 +1309,7 @@ function motFeed(now){
 }
 function motHeavyCheck(now){
   if (MOT.heavyDone || !MOT.activeSince || now - MOT.activeSince < 1500) return;   // 刚开始晃，平均还没学好
-  if (now - MOT.heavyAt < 1500 || filt < MOT.base * MOT_HEAVY) return;
+  if (now - MOT.heavyAt < 1500 || filt < motHeavyLine()) return;
   MOT.heavyDone = true; MOT.heavyAt = now;
   const bl = Math.min(S.mBoostMin, S.mBoostMax), bh = Math.max(S.mBoostMin, S.mBoostMax);
   SHK.add = bl + Math.floor(Math.random() * (bh - bl + 1));
@@ -2069,7 +2071,7 @@ function drawMotionCv(now){
   if (!sensorOn){ drawIdle(mcv, '👆 轻点屏幕任意处，开始感应晃动'); return; }
   const [ctx, w, h] = fitCanvas(mcv);
   ctx.clearRect(0,0,w,h);
-  const te = motThr(), n = hist.length, top = Math.max(te * 1.6, MOT.base * MOT_HEAVY * 1.15, peak * 1.1, 50);
+  const te = motThr(), n = hist.length, top = Math.max(te * 1.6, motHeavyLine() * 1.15, peak * 1.1, 50);
   const y = v => h - 6 - (v/top)*(h-12);
   const ty = y(te), since = now - FX.trigAt, flash = Math.max(0, 1 - since / 300);
   // 门槛以上的“危险区”，触发瞬间亮一下
@@ -2083,8 +2085,8 @@ function drawMotionCv(now){
   ctx.setLineDash([6,5]); ctx.strokeStyle = armed ? `rgba(78,224,160,${0.7 + flash * 0.3})` : 'rgba(255,184,78,.8)'; ctx.lineWidth = 1.5 + flash * 1.5;
   ctx.beginPath(); ctx.moveTo(0, ty); ctx.lineTo(w, ty); ctx.stroke(); ctx.setLineDash([]);
   // 重击线：前几秒平均 × 1.8，冲过它就是「来个大的」
-  if (MOT.base * MOT_HEAVY > te){
-    const hy = y(MOT.base * MOT_HEAVY);
+  {
+    const hy = y(motHeavyLine());
     ctx.setLineDash([2,4]); ctx.strokeStyle = 'rgba(255,95,162,.55)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(w, hy); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(255,95,162,.7)'; ctx.font = '10px -apple-system,sans-serif'; ctx.fillText('💥 重击', 6, hy - 3);
@@ -2464,8 +2466,8 @@ function meterDraw(){
     $('#thrLab' + id).textContent = c.lab !== undefined ? c.lab : Math.round(c.thr);
     if (id === 'B') $('#thrNameB').textContent = S.band === 'quiet' ? '触发阈值' : '节奏敏感度';
     if (id === 'M'){   // 红块：重击线（前几秒平均 × 1.8），跟着平均自动移动，不能拖
-      const hv = MOT.base * MOT_HEAVY, mk = $('#heavyMk');
-      mk.classList.toggle('hidden', !MOT.activeSince || hv <= motThr());
+      const hv = motHeavyLine(), mk = $('#heavyMk');
+      $('#heavyLabM').textContent = Math.round(hv);
       mk.style.left = c.map(hv) * 100 + '%';
     }
   }
