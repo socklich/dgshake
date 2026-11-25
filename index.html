@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-190044';
+const BUILD = '20261125-205224';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -2526,7 +2526,7 @@ async function selfCheck(){
 
   // 1. 浏览器环境
   if (inApp) add('bad', '当前在 App 内置浏览器里打开', '微信/QQ/钉钉等内置浏览器不支持网页蓝牙。点右上角「…」→ 用浏览器打开：' + (ios ? 'iPhone 请用 Bluefy。' : '安卓用支持网页蓝牙的浏览器，比如 Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器。'));
-  if (!window.isSecureContext) add('bad', '页面不是 HTTPS', '网页蓝牙只能在 HTTPS 下使用，请用 https://luke7628.github.io/DG/ 打开。');
+  if (!window.isSecureContext) add('bad', '页面不是 HTTPS', '网页蓝牙只能在 HTTPS 下使用，请用 https://socklich.github.io/dgshake/ 打开。');
   if (!navigator.bluetooth){
     if (ios) add('bad', '此浏览器不支持网页蓝牙', 'iPhone 的 Safari / Chrome 都不支持。请安装并用 Bluefy 浏览器打开本页。');
     else if (android) add('bad', '此浏览器不支持网页蓝牙', '换一个支持网页蓝牙的浏览器打开本页，比如 Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器（应用商店能装到哪个用哪个）。QQ 浏览器、Firefox、多数手机自带浏览器不支持。');
