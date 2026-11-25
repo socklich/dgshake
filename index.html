@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-155215';
+const BUILD = '20261125-155617';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -350,7 +350,7 @@ body.hints .hint{display:block}
     <div class="hint">用麦克风听歌。最好用另一台手机或音箱放歌，同一台手机边放边听可能会被系统打断。</div>
     <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 节奏跟随</button><button data-v="quiet">🤫 禁声惩罚</button></div>
     <div class="cap">节奏跟随＝跟随音乐节奏电击 · 禁声惩罚＝禁止发声，一出声就电</div>
-    <div class="hint">节奏跟随会听几秒算出 BPM，然后预判下一拍、提前出手，准准地踩在拍子上，偶尔漏听也不会断。禁声惩罚会先安静地听一会儿记住环境噪音，之后谁发出比这明显大的声音（说话、喘息、叫出声），就电一下；一直出声就隔一会儿再电一下，直到安静下来。</div>
+    <div class="hint">节奏跟随会听几秒算出 BPM，然后预判下一拍、提前出手，准准地踩在拍子上，偶尔漏听也不会断。禁声惩罚：拖音量条上的黄块定触发阈值，声音（说话、喘息、叫出声）超过黄块就电一下；一直出声就隔一会儿再电一下，直到安静下来。统计里的「环境声」是平时安静时的音量，阈值放在它上面一点就好。</div>
     <div class="bp" data-b="auto">
       <div class="hint">节奏跟随：上面的细条是「节奏把握」（听出来的拍子有多确定），黄块是门槛——把握过了黄块才开始电。往左拖＝更敏感（节奏不清楚也跟着电），往右拖＝更挑剔。电多强跟着此刻比前几秒响多少走，不再需要音量阈值。</div>
       <div class="tog"><span>持续律动<small class="sd">一直有底振，拍子上加尖刺</small></span><label class="sw"><input type="checkbox" id="musFlow"><span></span></label></div>
@@ -366,7 +366,6 @@ body.hints .hint{display:block}
     </div>
     <div class="bp" data-b="quiet">
       <label class="f"><div class="lb"><span>连电间隔 (ms)<small class="sd">一直出声多久电一次</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">还在出声的话，每隔这么久再电一下，直到安静。</div></label>
-      <button id="quietRelearn" class="wide" style="margin-top:6px">🤫 重新记住安静的样子</button>
         <label class="f"><div class="lb"><span>单次电击时长 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="0" max="1000" step="1"><div class="ticks tk3"><span>20</span><span style="left:75%">200</span><span style="right:0;left:auto">1000 ms</span></div><div class="hint">出声时每下电多久。</div></label>
     <div class="grp">
       <div class="grid2">
@@ -461,7 +460,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   mComboOn:true, mWave:'auto', mFast:150, mSlow:800, mBoostMin:2, mBoostMax:5, qPenWin:3, qPenCap:3,
   autoConn:true, lastDev:'', bfOn:false,
   fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
-  musFlow:true, musGrain:1, musLayers:true, musSwap:true, musSens:5, goodDevs:[], badDevs:[],
+  musFlow:true, musGrain:1, qThr:30, musLayers:true, musSwap:true, musSens:5, goodDevs:[], badDevs:[],
   band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'random', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
@@ -1712,13 +1711,12 @@ function autoBeatTick(now){
 let quietBase = 0, quietLearnUntil = 0, quietThr = 12;
 function quietFeed(e, now){
   mE = e;
-  if (!quietBase){ quietBase = e; quietLearnUntil = now + 2000; }     // 开始先听 2 秒学习环境噪音
-  const thrE = Math.max(quietBase * S.sens, quietBase + 8, 12);
+  // 触发阈值由用户在音量条上拖黄块决定（绝对值），不再自动学习；环境声只用来在统计里给个参考
+  if (!quietBase) quietBase = e;
+  const thrE = S.qThr;
   quietThr = thrE;
-  const learning = now < quietLearnUntil;
-  // 只在安静时慢慢更新基线，出声时不更新（否则一直说话门槛会被抬高）
-  if (learning) quietBase += 0.1 * (e - quietBase);
-  else if (e < thrE) quietBase += 0.01 * (e - quietBase);
+  const learning = false;
+  if (e < thrE) quietBase += 0.01 * (e - quietBase);   // 环境声参考：只在没超过阈值时更新
   mAvg = quietBase;
   let beat = 0;
   // 下一下至少隔「连电间隔」，而且要等上一下（惩罚加长后可能比间隔还长）放完再停 200ms，
@@ -1815,7 +1813,7 @@ function drawBeat(now){
 }
 function beatStats(now){
   if (S.band === 'quiet'){
-    $('#beThrL').textContent = '环境声'; $('#beThrV').textContent = now < quietLearnUntil ? '记忆中' : Math.round(quietBase);
+    $('#beThrL').textContent = '环境声'; $('#beThrV').textContent = Math.round(quietBase);
   } else {
     $('#beThrL').textContent = tempoP ? '节奏把握' : '节奏捕捉中'; $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '';
   }
@@ -2207,9 +2205,9 @@ function meterCfg(view){
   if (view === 'motion') return Object.assign({v: filt, thr: S.thr,
     set: t => { S.thr = clamp(Math.round(t / 5) * 5, 20, 1000); }}, sqrt1000);
   if (view === 'music'){
-    if (S.band === 'quiet') return Object.assign({v: mE, thr: quietThr,
-      // 别出声的门槛＝环境声 × 倍数（有下限）；拖到哪就反算倍数
-      set: t => { const base = Math.max(quietBase, 1); S.sens = +clamp(t / base, 1.1, 10).toFixed(2); quietThr = Math.max(quietBase * S.sens, quietBase + 8, 12); }}, lin160);
+    if (S.band === 'quiet') return Object.assign({v: mE, thr: S.qThr,
+      // 禁声惩罚的触发阈值：拖到哪里就是哪里，声音超过黄块就电
+      set: t => { S.qThr = clamp(Math.round(t), 3, 150); quietThr = S.qThr; }}, lin160);
     // 节奏跟随：条＝节奏把握（0–100%），黄块＝要求的把握；往左拖更敏感
     return {v: tempoConf, thr: musNeed(), good: true, lab: S.musSens, map: x => clamp(x, 0, 1), unmap: q => q,
       set: t => { S.musSens = clamp(Math.round((0.405 - t) / 0.035 * 2) / 2, 1, 10); }};
@@ -2560,7 +2558,6 @@ bindRange('qPenWin', 'qPenWin');
 bindRange('qPenCap', 'qPenCap');
 const applyBand = () => document.querySelectorAll('.bp').forEach(el => el.classList.toggle('on', el.dataset.b === S.band));
 bindSeg('bandSeg', 'band', () => { combo = 0; penReset(); mAvg = 0; quietBase = 0; mhT.fill(0); applyBand(); });
-$('#quietRelearn').onclick = () => { quietBase = 0; toast('安静 2 秒，让我记住现在的环境声 🤫'); };
 applyBand();
 bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
 // 门槛条：按住黄块（或点条上任意处）拖动
