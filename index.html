@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-135326';
+const BUILD = '20261125-143213';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -1363,7 +1363,10 @@ setInterval(penShow, 150);
 
 /* ================= 音乐节拍 ================= */
 let micOn = false, actx = null, analyser = null, fbuf = null, micStream = null, beatTimer = 0;
-let micSrc = null;
+let micSrc = null, micGain = null;
+// 软件自动增益（只在节奏跟随里用）：手机麦克风关掉系统增益后声音很小，这里把音量慢慢拉到稳定水平；
+// 禁声惩罚要比较“安静 vs 出声”，增益固定为 1
+const AGC = {g: 1, MAX: 60, TARGET: 45};
 let mAvg = 0, mE = 0, beatLast = 0, beatCount = 0, bpm = 0;
 const MH = 160, mh = new Float32Array(MH), mhT = new Float32Array(MH), mhB = new Uint8Array(MH); let mhI = 0;
 
@@ -1397,7 +1400,8 @@ async function enableMic(){
     micStream = stream;
     await ensureAudio();
     micSrc = actx.createMediaStreamSource(stream);
-    micSrc.connect(analyser);
+    micGain = actx.createGain(); micGain.gain.value = AGC.g;
+    micSrc.connect(micGain); micGain.connect(analyser);
     micOn = true;
     log('麦克风已启用 ' + actx.sampleRate + 'Hz');
   }catch(e){ log('麦克风失败: ' + e.message); toast('手机不让用麦克风，点 🩺 看看怎么开权限'); }
@@ -1411,6 +1415,7 @@ function beatStep(){
   const binHz = actx.sampleRate / analyser.fftSize;
   const bin = f => clamp(Math.round(f / binHz), 1, fbuf.length - 1);
   if (S.band === 'quiet'){
+    if (micGain && micGain.gain.value !== 1){ micGain.gain.value = 1; AGC.g = 1; }
     // 别出声：人声频段（150–4000Hz）的音量超过“安静基线 × 灵敏度” → 电
     const i0 = bin(150), i1 = bin(4000);
     let sum = 0; for (let i = i0; i <= i1; i++) sum += fbuf[i];
@@ -1474,8 +1479,15 @@ function autoFeed(flux, now){
     pushEnv(hopMax, now); hopMax = 0;
     hopNext += HOP; if (now - hopNext > 200) hopNext = now + HOP;
   }
-  // 停顿（歌与歌之间）超过 1 秒 → 清空，下一首从头快速锁定
-  if (mE < 8){ if (!silentSince) silentSince = now; else if (now - silentSince > 1000 && envCount){ envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0; } }
+  // 自动增益：太小慢慢放大，太大较快收回
+  if (micGain){
+    if (mE > 110) AGC.g *= 0.95; else if (mE > AGC.TARGET * 1.35) AGC.g *= 0.985; else if (mE < AGC.TARGET * 0.8) AGC.g *= 1.006;
+    AGC.g = clamp(AGC.g, 1, AGC.MAX);
+    if (Math.abs(micGain.gain.value - AGC.g) > 0.01) micGain.gain.value = AGC.g;
+  }
+  // 真的没声音（增益已经拉满还很小）持续 2.5 秒 → 清空，下一首从头快速锁定；
+  // 以前是音量 < 8 持续 1 秒就清空，手机麦克风声音小时会一直被清掉，节奏永远锁不上
+  if (mE < 8 && AGC.g >= AGC.MAX * 0.9){ if (!silentSince) silentSince = now; else if (now - silentSince > 2500 && envCount){ envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0; } }
   else silentSince = 0;
   if (now - lastAnal > 250 && envCount >= 100){ lastAnal = now; analyzeTempo(now); }   // 有 2 秒音乐就开始判断，每 0.25 秒更新
   autoBeatTick(now);
@@ -1699,7 +1711,7 @@ function beatStats(now){
   } else {
     $('#beThrL').textContent = tempoP ? '节奏捕捉' : '节奏捕捉中'; $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '';
   }
-  $('#beV').textContent = Math.round(mE); $('#beatCntV').textContent = beatCount;
+  $('#beV').textContent = Math.round(mE) + (S.band === 'auto' && AGC.g > 1.5 ? ` ·放大×${Math.round(AGC.g)}` : ''); $('#beatCntV').textContent = beatCount;
   $('#bpmV').textContent = bpm || '--';
 }
 
