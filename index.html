@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-175219';
+const BUILD = '20261125-180442';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -127,6 +127,11 @@ body.hints #hintBtn .ic{background:var(--acc);color:#fff}
 .big small{font-size:12px;color:var(--dim);font-weight:500;margin-left:4px}
 .big .sub2{display:block;height:12px;margin-top:2px;font-size:10.5px;line-height:12px;font-weight:600;color:var(--dim);white-space:nowrap;text-align:center;letter-spacing:0}
 .tmp{margin:0 2px}
+.big small.tmp{color:var(--bad);font-weight:700}
+/* 重击：统一用红色（门槛条上的红块、重击加力的数字、力度旁临时加的 +x） */
+#mBoost .rv{color:var(--bad)}
+.meter .hv{position:absolute;top:-3px;width:10px;height:10px;margin-left:-5px;border-radius:3px;background:var(--bad);
+  box-shadow:0 0 0 2px var(--s1);pointer-events:none;transition:left .25s linear}
 .act{font-size:11px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums}
 .ch .act{text-align:center}
 .stp{display:flex;align-items:center;gap:4px;margin-top:2px}
@@ -322,9 +327,9 @@ body.hints .hint{display:block}
 <!-- ===== 晃动页 ===== -->
 <section class="card glass page" data-p="motion" id="motionCard">
     <canvas id="motionCv" height="84"></canvas>
-    <div class="mrow" id="meterMRow"><span class="mthr">晃动阈值 <b id="thrLabM">200</b></span><div class="meter" id="meterM"><i></i><b></b></div></div>
+    <div class="mrow" id="meterMRow"><span class="mthr">最低门槛 <b id="thrLabM">60</b></span><div class="meter" id="meterM"><i></i><b></b><s class="hv hidden" id="heavyMk"></s></div></div>
     <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span><b id="hzV">0</b> Hz</span><span id="mComboMini"></span></div>
-    <div class="hint">拖动黄块调晃动阈值：晃动冲过阈值就电一下。太低连呼吸都算，太高就得使劲甩。</div>
+    <div class="hint">强弱是相对的：会记住你前几秒平时晃多大，不管是前后几厘米的小动作还是走路的大幅度，都按「平时」正常电；突然比平时猛很多（约 1.8 倍，图里粉色虚线）就来个大的（重击加力；门槛条上的红块就是重击线，跟着平均自动移动）。之后一直保持这个幅度，一两秒后它就成了新的「平时」。黄块是最低门槛，只用来挡住手抖、呼吸这种小噪声：手放着不动也乱电就往右拖，轻轻动都没反应就往左拖。</div>
     <div class="hint">A、B 都开时，手机往哪边歪，电流就往哪边流（右歪流向 B、左歪流向 A）；拿着不动几秒就自动回到两路一样。</div>
       <div class="f rng" id="mSpeed"><div class="lb"><span>快慢分界 (ms)<small class="sd">两下间隔：左边以内算快，右边以上算慢</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
       <div class="f rng" id="mBoost"><div class="lb"><span>重击加力<small class="sd">每次在范围里随机加</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
@@ -463,7 +468,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* ================= 设置 ================= */
 const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
-  src:'both', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:13, mode:'motion', burstMu:150, view:'motion',
+  src:'both', thr:60, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:14, mode:'motion', burstMu:150, view:'motion',
   mComboOn:true, mWave:'auto', mFast:150, mSlow:800, mBoostMin:2, mBoostMax:5, qPenWin:3, qPenCap:3,
   autoConn:true, lastDev:'', bfOn:false,
   fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
@@ -494,7 +499,12 @@ if ((S.ver|0) < 12){ for (const k of ['m']) for (const f of ['On']) if (S['combo
 if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.softB = 200; }
 if ((S.ver|0) < 9){ S.preset = 'random'; }
 if ((S.ver|0) < 13){ S.fxStyle = S.fxStyle === 3 ? 2 : S.fxStyle === 2 ? 0 : S.fxStyle; }
-S.ver = 13;
+// v14：晃动改成相对强弱，原来的阈值只当最低门槛（挡噪声），默认放低
+if ((S.ver|0) < 14){ S.thr = Math.min(S.thr, 60); }
+// 门槛 / 冷却 / 重击加力的刻度改成 0–200（门槛最小 1）
+S.thr = clamp(S.thr, 1, 200); S.cool = clamp(S.cool, 0, 200);
+S.mBoostMin = clamp(S.mBoostMin, 0, 200); S.mBoostMax = clamp(S.mBoostMax, 0, 200);
+S.ver = 14;
 S.fxOn = true;
 S.minI = 0; S.maxI = 100;   // 最轻/最重 已移除，固定全范围   // 视觉效果固定开启（只有极光流带一种）
 S.bfOn = false; S.softA = 200; S.softB = 200; // 旧设置迁移到跟手参数
@@ -1258,18 +1268,54 @@ function onMotion(e){
 
   hist[histI] = filt; histB[histI] = now < burstUntil ? 1 : 0; histI = (histI + 1) % hist.length;
   peak = Math.max(peak * 0.995, filt);
+  motFeed(now);
+  const te = motThr();
 
-  // 峰值检测：越过阈值触发；之后跟踪本次峰值，
-  // 信号从峰值回落到 (回落比例) 以下，或低于阈值的 70%，即重新上膛 —— 连续快速晃动时每个峰都能触发
+  // 峰值检测：越过（相对）门槛触发；之后跟踪本次峰值，
+  // 信号从峰值回落到 (回落比例) 以下，或低于门槛的 70%，即重新上膛 —— 连续快速晃动时每个峰都能触发
   // 重新上膛后跟踪谷底，只有信号从谷底重新“升起来”（≥ 谷底/回落比例）才触发，避免同一个峰的下降沿重复触发
   if (latched){
     armPeak = Math.max(armPeak, filt);
-    if (filt < S.thr * 0.7 || filt < armPeak * S.rearm){ latched = false; valley = filt; }
+    if (filt < te * 0.7 || filt < armPeak * S.rearm){ latched = false; valley = filt; }
+    else if (S.mode === 'motion') motHeavyCheck(now);   // 这一下还在往上冲：比前几秒的平均猛得多 → 来个大的
   } else valley = Math.min(valley, filt);
-  const risen = valley < S.thr * 0.7 || filt >= valley / S.rearm;
-  if (armed && !latched && filt > S.thr && risen && now >= coolUntil){
-    latched = true; armPeak = filt; coolUntil = now + S.cool;
-    if (S.mode === 'motion') trigger(clamp(filt / (S.thr * 2), 0.3, 1), now, 'motion');
+  const risen = valley < te * 0.7 || filt >= valley / S.rearm;
+  if (armed && !latched && filt > te && risen && now >= coolUntil){
+    latched = true; armPeak = filt; coolUntil = now + S.cool; MOT.heavyDone = false;
+    if (S.mode === 'motion'){ trigger(clamp(filt / (te * 2), 0.3, 1), now, 'motion'); motHeavyCheck(now); }
+  }
+}
+
+/* ---------- 相对强弱：跟前几秒的平均比，而不是跟固定值比 ----------
+ * env：晃动包络（每一下的峰值，约 0.4 秒慢慢回落），base：env 的几秒平均＝「最近平时晃多大」。
+ * 门槛＝max(最低门槛, 平均 × 0.45)：小幅度（前后几厘米）和走路（几十厘米）都按「平时」正常触发。
+ * 某一下 > 平均 × 1.8 → 重击：临时加力一下。之后如果一直保持这个幅度，平均会在 1–2 秒内追上来，
+ * 它就成了新的「平时」，不再每下都算重击；幅度变小时平均几秒内降下来，门槛跟着降，小动作照样能触发。
+ * 最低门槛（黄块）只用来挡住手抖、呼吸这种噪声，不决定强弱。 */
+const MOT = {env: 0, base: 0, lastT: 0, activeSince: 0, heavyAt: -1e9, heavyDone: false};
+const MOT_HEAVY = 1.8, MOT_REL = 0.45;
+const motThr = () => Math.max(S.thr, MOT.base * MOT_REL);
+function motFeed(now){
+  const dt = MOT.lastT ? clamp(now - MOT.lastT, 1, 200) : 16; MOT.lastT = now;
+  MOT.env = Math.max(filt, MOT.env * Math.exp(-dt / 400));
+  // 往上追 3 秒、往下回 2 秒；刚来过重击后的 2.5 秒里加快到 1.2 秒 ——「接下来还是这么猛」就当成新的平均
+  if (MOT.env < S.thr * 0.5) MOT.activeSince = 0;            // 停下来了：下次重新开始，第一下不算重击
+  else if (!MOT.activeSince) MOT.activeSince = now;
+  // 刚开始晃的 1.5 秒：平均快速跟上（0.4 秒），先学会「平时」再判断重击
+  const tau = MOT.activeSince && now - MOT.activeSince < 1500 ? 400 : now - MOT.heavyAt < 2500 ? 1200 : MOT.env > MOT.base ? 3000 : 2000;
+  MOT.base += (MOT.env - MOT.base) * (1 - Math.exp(-dt / tau));
+}
+function motHeavyCheck(now){
+  if (MOT.heavyDone || !MOT.activeSince || now - MOT.activeSince < 1500) return;   // 刚开始晃，平均还没学好
+  if (now - MOT.heavyAt < 1500 || filt < MOT.base * MOT_HEAVY) return;
+  MOT.heavyDone = true; MOT.heavyAt = now;
+  const bl = Math.min(S.mBoostMin, S.mBoostMax), bh = Math.max(S.mBoostMin, S.mBoostMax);
+  SHK.add = bl + Math.floor(Math.random() * (bh - bl + 1));
+  if (SHK.add > 0){
+    const d = Math.max(SHK.dur || 0, S.mComboOn ? 0 : S.burst, 200);
+    SHK.addUntil = now + d + 150; strengthDirty = true;
+    setTimeout(() => { strengthDirty = true; }, d + 200);
+    flyText('💥 +' + SHK.add, 8);
   }
 }
 
@@ -1335,8 +1381,7 @@ function renderCombo(pop){
  *   快 → 颗粒 12ms、时长短（间隔的 60%，40–300ms）、快起快落
  *   慢 → 颗粒 140ms、时长填满到下一下（间隔的 90%；间隔超过 3 秒就当重新开始）、持续不衰减
  * 每次触发都会覆盖还没放完的上一段，所以慢晃中突然快晃能立刻切成短促细腻
- * 重击：这一下晃动幅度 > 最近几下平均的 1.6 倍 → 这一下临时加力（重击加力范围内随机） */
-const SHK_HEAVY = 1.6;
+ * 重击：这一下晃动幅度 > 前几秒平均的 1.8 倍 → 这一下临时加力（重击加力范围内随机），见 motHeavyCheck */
 const newShakeRnd = () => Array.from({length: 16}, (_, i) => i === 0 ? 0.7 + Math.random() * 0.3 : 0.25 + Math.random() * 0.75);
 const SHK = {rnd: newShakeRnd(), last: 0, iv: 0, mag: 0, n: 0, add: 0, addUntil: 0, pf: 0, dur: 0, fast: false};
 const shakeAdd = now => SHK.addUntil > now ? SHK.add : 0;
@@ -1398,19 +1443,7 @@ function shakeBurst(now, mult){
   SHK.items = items;
   SHK.pf = pf; SHK.dur = n * 25; SHK.fast = f >= 0.5;
   drawMWave();
-  // 重击：比最近几下明显猛 → 临时加力
-  const mag = filt;
-  if (SHK.n > 2 && SHK.mag && mag > SHK.mag * SHK_HEAVY){
-    const bl = Math.min(S.mBoostMin, S.mBoostMax), bh = Math.max(S.mBoostMin, S.mBoostMax);
-    SHK.add = bl + Math.floor(Math.random() * (bh - bl + 1));
-    if (SHK.add > 0){
-      SHK.addUntil = now + SHK.dur + 150; strengthDirty = true;
-      setTimeout(() => { strengthDirty = true; }, SHK.dur + 200);
-      flyText('💥 +' + SHK.add, 8);
-    }
-    SHK.mag += (mag - SHK.mag) * 0.1;                            // 重击只轻微抬高“平时”的水平
-  } else SHK.mag = SHK.mag ? SHK.mag + (mag - SHK.mag) * 0.3 : mag;
-  return SHK.dur;
+  return SHK.dur;                                                 // 重击加力在 motHeavyCheck 里（跟前几秒的平均比）
 }
 // 类似游戏连击数：贴着屏幕左右边缘跳出、上浮、淡出，不挡中间的内容
 const FLY_ICONS = ['🔥', '💥', '🎆', '🎇', '🧨', '💣', '✨', '⚡', '☄️'];
@@ -2036,9 +2069,9 @@ function drawMotionCv(now){
   if (!sensorOn){ drawIdle(mcv, '👆 轻点屏幕任意处，开始感应晃动'); return; }
   const [ctx, w, h] = fitCanvas(mcv);
   ctx.clearRect(0,0,w,h);
-  const n = hist.length, top = Math.max(S.thr * 1.6, peak * 1.1, 50);
+  const te = motThr(), n = hist.length, top = Math.max(te * 1.6, MOT.base * MOT_HEAVY * 1.15, peak * 1.1, 50);
   const y = v => h - 6 - (v/top)*(h-12);
-  const ty = y(S.thr), since = now - FX.trigAt, flash = Math.max(0, 1 - since / 300);
+  const ty = y(te), since = now - FX.trigAt, flash = Math.max(0, 1 - since / 300);
   // 门槛以上的“危险区”，触发瞬间亮一下
   const dz = ctx.createLinearGradient(0, 0, 0, ty);
   dz.addColorStop(0, `rgba(255,95,162,${0.10 + flash * 0.25})`); dz.addColorStop(1, 'rgba(255,95,162,0)');
@@ -2049,6 +2082,13 @@ function drawMotionCv(now){
   // 门槛线
   ctx.setLineDash([6,5]); ctx.strokeStyle = armed ? `rgba(78,224,160,${0.7 + flash * 0.3})` : 'rgba(255,184,78,.8)'; ctx.lineWidth = 1.5 + flash * 1.5;
   ctx.beginPath(); ctx.moveTo(0, ty); ctx.lineTo(w, ty); ctx.stroke(); ctx.setLineDash([]);
+  // 重击线：前几秒平均 × 1.8，冲过它就是「来个大的」
+  if (MOT.base * MOT_HEAVY > te){
+    const hy = y(MOT.base * MOT_HEAVY);
+    ctx.setLineDash([2,4]); ctx.strokeStyle = 'rgba(255,95,162,.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(w, hy); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,95,162,.7)'; ctx.font = '10px -apple-system,sans-serif'; ctx.fillText('💥 重击', 6, hy - 3);
+  }
   // 曲线：填充 + 发光描边
   ctx.beginPath();
   for (let i=0; i<n; i++){ const v = hist[(histI+i)%n], X = i*w/(n-1); i ? ctx.lineTo(X, y(v)) : ctx.moveTo(X, y(v)); }
@@ -2327,13 +2367,13 @@ function glfxInputs(now){
     lvl = clamp(mE / 120, 0, 1);
     if (S.band === 'quiet') hot = mE > quietThr && now > quietLearnUntil ? 1 : 0;
   } else if (S.view === 'motion' && sensorOn){
-    const n = hist.length, seg = n / 8, top = S.thr * 1.6;
+    const n = hist.length, seg = n / 8, top = motThr() * 1.6;
     for (let k = 0; k < 8; k++){
       let m = 0; for (let i = Math.floor(k * seg); i < Math.floor((k + 1) * seg); i++) m = Math.max(m, hist[(histI + i) % n]);
       target[k] = clamp(m / top, 0, 1);
     }
     lvl = clamp(filt / top, 0, 1);
-    hot = filt > S.thr ? 1 : 0;
+    hot = filt > motThr() ? 1 : 0;
     beatAge = Math.min(beatAge, now - FX.trigAt);
   }
   if (S.view === 'music') beatAge = Math.min(beatAge, now - FX.trigAt);
@@ -2401,8 +2441,9 @@ const lin160 = {map: x => clamp(x / MUS_TOP, 0, 1), unmap: p => p * MUS_TOP};
 // 摇一摇的数值跨度大（20–1000），用平方根刻度：低门槛那一段更好调
 const sqrt1000 = {map: x => Math.sqrt(clamp(x, 0, 1000) / 1000), unmap: p => p * p * 1000};
 function meterCfg(view){
-  if (view === 'motion') return Object.assign({v: filt, thr: S.thr,
-    set: t => { S.thr = clamp(Math.round(t / 5) * 5, 20, 1000); }}, sqrt1000);
+  if (view === 'motion') return {v: filt, thr: S.thr,
+    map: x => SC200.toPos(x) / 300, unmap: p => SC200.toVal(p * 300),    // 左 2/3＝0–100，右 1/3＝100–200
+    set: t => { S.thr = clamp(Math.round(t), 1, 200); }};
   if (view === 'music'){
     if (S.band === 'quiet') return Object.assign({v: mE, thr: S.qThr,
       // 禁声惩罚的触发阈值：拖到哪里就是哪里，声音超过黄块就电
@@ -2422,6 +2463,11 @@ function meterDraw(){
     el.classList.toggle('over', !c.good && c.v > c.thr);
     $('#thrLab' + id).textContent = c.lab !== undefined ? c.lab : Math.round(c.thr);
     if (id === 'B') $('#thrNameB').textContent = S.band === 'quiet' ? '触发阈值' : '节奏敏感度';
+    if (id === 'M'){   // 红块：重击线（前几秒平均 × 1.8），跟着平均自动移动，不能拖
+      const hv = MOT.base * MOT_HEAVY, mk = $('#heavyMk');
+      mk.classList.toggle('hidden', !MOT.activeSince || hv <= motThr());
+      mk.style.left = c.map(hv) * 100 + '%';
+    }
   }
 }
 
@@ -2651,33 +2697,41 @@ const syncers = [];
 function syncControls(){ syncers.forEach(f => f()); }
 window.addEventListener('load', () => setTimeout(syncControls, 0));
 window.addEventListener('pageshow', () => setTimeout(syncControls, 0));
-function bindRange(id, key, fmt, onChange){
+// 分段刻度：左边 2/3 是 0–100（调得细），右边 1/3 是 100–200。滑杆内部用 0–300 的位置
+const SC200 = {
+  toPos: v => { v = clamp(v, 0, 200); return v <= 100 ? v * 2 : 200 + (v - 100); },
+  toVal: p => { p = clamp(p, 0, 300); return Math.round(p <= 200 ? p / 2 : 100 + (p - 200)); }
+};
+function bindRange(id, key, fmt, onChange, sc){
   const r = $('#'+id), lab = $('#'+id+'V');
   if (!r){ log('缺少控件 ' + id); return; }
   r.autocomplete = 'off';
-  const sync = () => { r.value = S[key]; setP(r); if (lab) lab.textContent = fmt ? fmt(S[key]) : S[key]; };
+  if (sc){ r.min = 0; r.max = 300; r.step = 1; }
+  const sync = () => { r.value = sc ? sc.toPos(S[key]) : S[key]; setP(r); if (lab) lab.textContent = fmt ? fmt(S[key]) : S[key]; };
   sync(); syncers.push(sync);
   r.addEventListener('input', () => {
-    S[key] = +r.value; setP(r); if (lab) lab.textContent = fmt ? fmt(S[key]) : S[key];
+    S[key] = sc ? sc.toVal(+r.value) : +r.value; setP(r); if (lab) lab.textContent = fmt ? fmt(S[key]) : S[key];
     save(); onChange && onChange();
   });
 }
-// 范围滑杆：一条轨道两个滑块，左右两侧显示最小/最大值
-function bindDual(id, loKey, hiKey, min, max, step, fmt, onChange){
+// 范围滑杆：一条轨道两个滑块，左右两侧显示最小/最大值；sc＝分段刻度（此时 min/max/step 不用）
+function bindDual(id, loKey, hiKey, min, max, step, fmt, onChange, sc){
   const w = $('#' + id), [lo, hi] = w.querySelectorAll('input'), [lv, hv] = w.querySelectorAll('.rv'), tr = w.querySelector('.rtrack');
+  const toPos = sc ? sc.toPos : v => v, toVal = sc ? sc.toVal : p => p;
+  if (sc){ min = 0; max = 300; step = 1; }
   for (const r of [lo, hi]){ r.min = min; r.max = max; r.step = step; r.autocomplete = 'off'; }
-  const pct = v => (v - min) / ((max - min) || 1) * 100 + '%';
+  const pct = v => (toPos(v) - min) / ((max - min) || 1) * 100 + '%';
   const paint = () => {
     tr.style.setProperty('--lo', pct(S[loKey])); tr.style.setProperty('--hi', pct(S[hiKey]));
     lv.textContent = fmt(S[loKey]); hv.textContent = fmt(S[hiKey]);
-    lo.style.zIndex = S[loKey] > (min + max) / 2 ? 3 : 1;   // 两个滑块叠在右端时，让左滑块在上面好拖回来
+    lo.style.zIndex = toPos(S[loKey]) > (min + max) / 2 ? 3 : 1;   // 两个滑块叠在右端时，让左滑块在上面好拖回来
   };
   const sync = () => {
     if (S[loKey] > S[hiKey]) [S[loKey], S[hiKey]] = [S[hiKey], S[loKey]];
-    lo.value = S[loKey]; hi.value = S[hiKey]; paint();
+    lo.value = toPos(S[loKey]); hi.value = toPos(S[hiKey]); paint();
   };
-  lo.addEventListener('input', () => { S[loKey] = Math.min(+lo.value, S[hiKey]); lo.value = S[loKey]; paint(); save(); onChange && onChange(); });
-  hi.addEventListener('input', () => { S[hiKey] = Math.max(+hi.value, S[loKey]); hi.value = S[hiKey]; paint(); save(); onChange && onChange(); });
+  lo.addEventListener('input', () => { S[loKey] = Math.min(toVal(+lo.value), S[hiKey]); lo.value = toPos(S[loKey]); paint(); save(); onChange && onChange(); });
+  hi.addEventListener('input', () => { S[hiKey] = Math.max(toVal(+hi.value), S[loKey]); hi.value = toPos(S[hiKey]); paint(); save(); onChange && onChange(); });
   sync(); syncers.push(sync);
 }
 function bindSeg(id, key, onChange){
@@ -2749,11 +2803,11 @@ for (const key of ['burstMu']){
   sync(); syncers.push(sync);
   r.addEventListener('input', () => { S[key] = bPos2ms(+r.value); setP(r); lab.textContent = S[key]; save(); });
 }
-bindRange('cool', 'cool');
+bindRange('cool', 'cool', null, null, SC200);
 // 防手抖、连发判定不再让用户调，固定用默认值
 S.smooth = 0.1; S.rearm = 0.6;
 S.mComboOn = true;   // 颤抖调教的连击始终开启
-bindDual('mBoost', 'mBoostMin', 'mBoostMax', 0, 30, 1, v => '+' + v);
+bindDual('mBoost', 'mBoostMin', 'mBoostMax', 0, 200, 1, v => '+' + v, null, SC200);
 bindDual('mSpeed', 'mFast', 'mSlow', 50, 2000, 10, v => v);
 bindSeg('mWaveSeg', 'mWave', () => { if (S.mWave === 'random') SHK.rnd = newShakeRnd(); SHK.items = null; drawMWave(); });
 bindRange('qPenWin', 'qPenWin');
