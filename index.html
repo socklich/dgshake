@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0b0b16">
+<meta name="theme-color" content="#08090a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>郊狼 3.0</title>
@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-010119';
+const BUILD = '20261125-135326';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -26,256 +26,273 @@ const BUILD = '20261125-010119';
   };
   checkUpdate(true);
 })();
+// 访问统计：不蒜子（无需注册、无 cookie 弹窗，按域名累计，网页升级后照样接着算）
+// 只在正式网址（https）上加载，本地打开调试时不计数；加载失败也不影响任何功能
+(function(){
+  if (location.protocol !== 'https:'){ document.addEventListener('DOMContentLoaded', () => { const v = document.getElementById('visits'); if (v) v.style.display = 'none'; }); return; }
+  const s = document.createElement('script');
+  s.async = true; s.referrerPolicy = 'no-referrer-when-downgrade';
+  s.src = 'https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js';
+  s.onerror = () => { const v = document.getElementById('visits'); if (v) v.style.display = 'none'; };
+  document.head.appendChild(s);
+})();
 </script>
 <style>
+/* ===== Linear 风格：近黑底、1px 细边、靛蓝强调、克制的层级 ===== */
 :root{
-  --bg:#07070f; --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.12);
-  --line:rgba(255,255,255,.14); --text:#f3f3fa; --dim:rgba(243,243,250,.55);
-  --a:#ff5fa2; --b:#5fc8ff; --acc:#a98bff; --ok:#4ee0a0; --warn:#ffb84e; --bad:#ff5a6a;
-  --r:22px;
+  --bg:#08090a; --s1:#0f1011; --s2:#151618; --s3:#1c1d20; --s4:#26272b;
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.11); --line3:rgba(255,255,255,.18);
+  --text:#f7f8f8; --dim:#8a8f98; --faint:#62666d;
+  --acc:#5e6ad2; --acc2:#7c85f0; --accbg:rgba(94,106,210,.16);
+  --a:#f2709f; --b:#4cb4e7; --ok:#4cb782; --warn:#f2a93b; --bad:#eb5757;
+  --r:12px; --rs:8px;
+  --glass:var(--s1); --glass2:var(--s2);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);
-  font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",system-ui,sans-serif;
-  -webkit-font-smoothing:antialiased;touch-action:manipulation;overscroll-behavior:none}
-body{min-height:100vh;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 112px)}
-.bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
-.bgfx i{position:absolute;width:62vmax;height:62vmax;border-radius:50%;filter:blur(70px);opacity:.55;animation:float 22s ease-in-out infinite alternate}
-.bgfx i:nth-child(1){background:#6a2cff;left:-25vmax;top:-20vmax}
-.bgfx i:nth-child(2){background:#ff2d87;right:-30vmax;top:18vh;animation-duration:28s;opacity:.4}
-.bgfx i:nth-child(3){background:#00b3ff;left:-10vmax;bottom:-35vmax;animation-duration:32s;opacity:.38}
-@keyframes float{to{transform:translate(8vmax,10vmax) scale(1.15)}}
-.glass{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);
-  backdrop-filter:blur(26px) saturate(170%);-webkit-backdrop-filter:blur(26px) saturate(170%);
-  box-shadow:0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08)}
-.card{padding:16px;margin-bottom:14px}
-h1{font-size:22px;margin:0;letter-spacing:.3px;font-weight:700}
-h2{font-size:13px;margin:0 0 12px;font-weight:600;color:var(--dim);letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+html{background:var(--bg)}
+html,body{margin:0;color:var(--text);
+  font:14px/1.45 "Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-feature-settings:"cv11","ss01";-webkit-font-smoothing:antialiased;touch-action:manipulation;overscroll-behavior:none}
+body{background:transparent;min-height:100vh;max-width:640px;margin:0 auto;
+  padding:calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 84px)}
+::selection{background:var(--accbg)}
+/* 背景：最底层几团虚化的大光斑（像镜头散景），缓慢漂移 */
+.bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:var(--bg)}
+.bgfx i{position:absolute;border-radius:50%;will-change:transform;animation:bokeh 70s ease-in-out infinite alternate}
+.bgfx i:nth-child(1){width:90vmax;height:90vmax;left:-35vmax;top:-40vmax;background:radial-gradient(closest-side,rgba(94,106,210,.30),rgba(94,106,210,0))}
+.bgfx i:nth-child(2){width:75vmax;height:75vmax;right:-35vmax;top:20vh;background:radial-gradient(closest-side,rgba(236,72,153,.20),rgba(236,72,153,0));animation-duration:46s;animation-delay:-12s}
+.bgfx i:nth-child(3){width:80vmax;height:80vmax;left:-25vmax;bottom:-45vmax;background:radial-gradient(closest-side,rgba(34,197,235,.17),rgba(34,197,235,0));animation-duration:52s;animation-delay:-20s}
+.bgfx b{position:absolute;left:0;top:0;border-radius:50%;opacity:0;will-change:transform,opacity}
+@keyframes bokeh{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(14vmin,-10vmin,0) scale(1.08)}100%{transform:translate3d(-12vmin,14vmin,0) scale(.94)}}
+/* 卡片 */
+.glass{background:rgba(15,16,17,.78);border:1px solid var(--line);border-radius:var(--r);
+  backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 4px 16px rgba(0,0,0,.25)}
+.card{padding:12px 13px;margin-bottom:8px}
+h1{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h2{font-size:13px;margin:0 0 8px;font-weight:600;color:var(--text);letter-spacing:-.005em;display:flex;align-items:center;gap:6px;min-height:22px}
 h2 .sp{flex:1}
-.top{display:flex;align-items:center;gap:10px;padding:14px 16px;margin-bottom:14px}
-.top .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--a),var(--acc) 55%,var(--b));display:grid;place-items:center;font-weight:800}
-.top .t{flex:1}
+.sd{font-size:11px;color:var(--faint);margin-left:6px;font-weight:400;letter-spacing:0;text-transform:none}
+/* 顶栏 */
+.top{padding:8px 10px;margin-bottom:8px;display:block;position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:5;
+  background:rgba(15,16,17,.82);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+.top .tr{display:flex;align-items:center;gap:7px}
+.top .logo{flex:none;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:13px;
+  background:linear-gradient(180deg,#6b76e0,#4f59c0);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset, 0 1px 2px rgba(0,0,0,.4)}
+.top .t{flex:1;min-width:0;overflow:hidden}
 .top small{display:block;color:var(--dim);font-size:12px}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;background:var(--glass2);border:1px solid var(--line);font-size:12px;white-space:nowrap}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--bad);box-shadow:0 0 10px var(--bad)}
-.dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok)}
-.dot.mid{background:var(--warn);box-shadow:0 0 10px var(--warn)}
-button{font:inherit;color:var(--text);border:1px solid var(--line);background:var(--glass2);border-radius:14px;padding:11px 14px;cursor:pointer;transition:transform .12s, background .2s}
-button:active{transform:scale(.96)}
-button.primary{background:linear-gradient(135deg,rgba(169,139,255,.85),rgba(95,200,255,.75));border-color:rgba(255,255,255,.3);font-weight:600}
+/* 徽标 / 状态点 */
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:99px;background:var(--s2);border:1px solid var(--line2);
+  font-size:11.5px;font-weight:500;color:var(--dim);white-space:nowrap;text-transform:none;letter-spacing:0}
+.pill b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 3px rgba(235,87,87,.15)}
+.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(76,183,130,.18)}
+.dot.mid{background:var(--warn);box-shadow:0 0 0 3px rgba(242,169,59,.18)}
+/* 按钮 */
+button{font:inherit;font-size:13px;font-weight:500;color:var(--text);border:1px solid var(--line2);background:var(--s2);border-radius:var(--rs);
+  padding:7px 11px;cursor:pointer;transition:background .12s,border-color .12s,color .12s,transform .08s;
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
+button:active{transform:scale(.98)}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+@media (hover:hover){
+  button:hover{background:var(--s3);border-color:var(--line3)}
+  button.primary:hover,.connb.s0:hover{background:#6c77de}
+}
+button.primary{background:var(--acc);border-color:rgba(255,255,255,.14);color:#fff;font-weight:600;box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 1px 2px rgba(0,0,0,.3)}
 button.wide{width:100%}
-.row{display:flex;gap:10px;align-items:center}
-.row>*{flex:1}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.ch{border-radius:18px;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
-.ch .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.ch .nm{font-weight:700;font-size:14px}
-.ch.A .nm{color:var(--a)} .ch.B .nm{color:var(--b)}
-.big{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
-.big small{font-size:13px;color:var(--dim);font-weight:500;margin-left:4px}
-.act{font-size:11.5px;color:var(--dim);margin-top:4px}
-.pm{display:flex;gap:6px;margin-top:10px}
-.pm button{flex:1;padding:8px 0;font-size:18px;border-radius:12px}
-label.f{display:block;margin:12px 0 0}
-label.f .lb{display:flex;justify-content:space-between;font-size:13px;color:var(--dim);margin-bottom:6px}
-label.f .lb b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:0}
-input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(90deg,var(--acc) var(--p,50%),rgba(255,255,255,.14) var(--p,50%))}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;margin-top:-9px;box-shadow:0 2px 10px rgba(0,0,0,.4)}
-.A input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--a) var(--p,50%),rgba(255,255,255,.14) var(--p,50%))}
-.B input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--b) var(--p,50%),rgba(255,255,255,.14) var(--p,50%))}
-input[type=number]{width:100%;font:inherit;color:var(--text);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:9px 10px}
-.seg{display:flex;flex-wrap:wrap;gap:6px}
-.seg button{flex:1 1 auto;padding:8px 10px;font-size:13px;border-radius:99px}
-.seg button.on{background:linear-gradient(135deg,rgba(169,139,255,.9),rgba(255,95,162,.7));border-color:rgba(255,255,255,.35)}
-.tog{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:14px}
-.sw{position:relative;width:50px;height:30px;flex:none}
-.sw input{opacity:0;width:0;height:0}
-.sw span{position:absolute;inset:0;border-radius:99px;background:rgba(255,255,255,.16);transition:.2s}
-.sw span:after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s}
-.sw input:checked+span{background:var(--ok)}
-.sw input:checked+span:after{transform:translateX(20px)}
-canvas{display:block;width:100%;border-radius:14px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07)}
-.stats{display:flex;justify-content:space-between;margin-top:8px;font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums}
-.stats b{color:var(--text)}
-details{margin-top:12px}
-summary{color:var(--dim);font-size:13px;cursor:pointer;list-style:none}
-summary::before{content:"▸ "}
-details[open] summary::before{content:"▾ "}
-.hint{font-size:11.5px;color:var(--dim);margin-top:2px;line-height:1.45}
-.note{font-size:12px;color:var(--dim);margin-top:10px;line-height:1.5}
-.warnbox{border-color:rgba(255,184,78,.35);background:rgba(255,184,78,.08)}
-.dock{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);display:flex;gap:10px;padding:10px;z-index:10}
-.dock button{padding:16px 10px;font-size:16px;font-weight:700;border-radius:16px}
-#armBtn{flex:1.3}
-#armBtn.on{background:linear-gradient(135deg,rgba(78,224,160,.9),rgba(95,200,255,.7));box-shadow:0 0 24px rgba(78,224,160,.4)}
-#holdBtn{flex:1}
-#holdBtn.on{background:rgba(255,95,162,.7)}
-#stopBtn{flex:1;background:linear-gradient(135deg,#ff4d5e,#c4113a);border-color:rgba(255,255,255,.3)}
-.flash{animation:fl .35s ease-out}
-@keyframes fl{from{box-shadow:0 0 0 0 rgba(255,95,162,.9), 0 10px 40px rgba(0,0,0,.35)}to{box-shadow:0 0 0 18px rgba(255,95,162,0), 0 10px 40px rgba(0,0,0,.35)}}
-.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translate(-50%,-140%);z-index:20;padding:11px 16px;border-radius:14px;font-size:14px;font-weight:600;background:rgba(255,184,78,.92);color:#1a1208;box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .25s;max-width:90vw;text-align:center}
-.toast.show{transform:translate(-50%,0)}
-.combo{display:flex;align-items:center;gap:14px;margin-top:12px}
-.cx{font-size:46px;font-weight:800;min-width:96px;font-variant-numeric:tabular-nums;line-height:1;background:linear-gradient(135deg,var(--b),var(--acc) 50%,var(--a));-webkit-background-clip:text;background-clip:text;color:transparent}
-.cx.pop{animation:pop .25s ease-out}
-@keyframes pop{from{transform:scale(1.35)}to{transform:scale(1)}}
-.cbar{flex:1;height:12px;border-radius:12px;background:rgba(255,255,255,.12);overflow:hidden}
-.cbar i{display:block;height:100%;width:0;border-radius:12px;background:linear-gradient(90deg,var(--b),var(--acc),var(--a));transition:width .15s}
-.cpct{font-size:13px;color:var(--dim);min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
-#log{font:11px/1.45 ui-monospace,Menlo,monospace;color:var(--dim);max-height:120px;overflow:auto;white-space:pre-wrap;margin-top:8px}
-.hidden{display:none!important}
-/* ---- 紧凑布局 ---- */
-body{padding:calc(env(safe-area-inset-top) + 10px) 10px calc(env(safe-area-inset-bottom) + 96px)}
-.card{padding:12px 13px;margin-bottom:10px}
-.top{padding:10px 12px;margin-bottom:10px;display:block}
-.top .tr{display:flex;align-items:center;gap:10px}
-.top .logo{width:30px;height:30px;border-radius:10px;font-size:14px}
-h1{font-size:17px;white-space:nowrap}
-h2{margin:0 0 8px;font-size:12px}
-.big{font-size:30px}
-.ch{padding:10px;border-radius:16px}
-.pm{margin-top:6px}.pm button{padding:5px 0;font-size:16px}
-label.f{margin:6px 0 0}
-label.f .lb{margin-bottom:0;font-size:12.5px}
-input[type=range]{height:26px}
-.tog{margin-top:8px}
-.seg button{padding:7px 8px;font-size:12.5px}
-details{margin-top:8px}
-.dock{padding:8px;gap:8px;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom) + 10px)}
-.dock button{padding:13px 8px;font-size:15px}
-button{padding:9px 12px}
-.sub{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
-.ticks{display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim);margin-top:-4px}
-/* 说明默认隐藏，点右上角 ⓘ 显示 */
-.hint{display:none}
-body.hints .hint{display:block}
-#hintBtn{flex:none;width:30px;height:30px;padding:0;border-radius:50%;font-size:14px}
-body.hints #hintBtn{background:var(--acc)}
-.mp{display:none}
-.mp.on{display:block}
-.mode button{font-size:14px;padding:9px 6px;font-weight:600}
-.minis{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--dim)}
-.minis .sw{transform:scale(.8);transform-origin:right center}
-.combo{margin-top:6px}
-.cx{font-size:34px;min-width:72px}
-.connb{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;font-size:13px;font-weight:600;white-space:nowrap}
-.connb.s0{background:linear-gradient(135deg,rgba(169,139,255,.85),rgba(95,200,255,.75));border-color:rgba(255,255,255,.3)}
-.connb.s1{background:rgba(255,184,78,.18);border-color:rgba(255,184,78,.45)}
-.connb.s2{background:rgba(78,224,160,.14);border-color:rgba(78,224,160,.45)}
+.roundb{flex:none;width:28px;height:28px;padding:0;border-radius:var(--rs);font-size:13px;display:inline-grid;place-items:center}
+.hintb{flex:none;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px 0 8px;border-radius:99px;font-size:12px;color:var(--dim)}
+.hintb .ic{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--s4);font-size:11px;color:var(--text)}
+body.hints #hintBtn{background:var(--accbg);border-color:rgba(94,106,210,.55);color:var(--acc2)}
+body.hints #hintBtn .ic{background:var(--acc);color:#fff}
+.connb{flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--rs);font-size:12.5px;font-weight:600;white-space:nowrap}
+.connb.s0{background:var(--acc);border-color:rgba(255,255,255,.14);color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.18) inset}
+.connb.s0 .dot{background:#fff;box-shadow:none;opacity:.7}
+.connb.s1{background:rgba(242,169,59,.1);border-color:rgba(242,169,59,.35);color:var(--warn)}
+.connb.s2{background:var(--s2);border-color:var(--line2)}
 .connb #batPill{font-weight:500;color:var(--dim)}
-.stp{display:flex;align-items:center;gap:6px;margin-top:4px}
-.stp button{flex:none;width:44px;height:44px;padding:0;font-size:22px;border-radius:14px;user-select:none;-webkit-user-select:none;touch-action:none}
+/* 布局 */
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* A / B 通道 */
+.ch{border-radius:10px;padding:8px 9px;background:var(--s2);border:1px solid var(--line);position:relative;overflow:hidden}
+.ch::before{content:"";position:absolute;left:0;top:0;right:0;height:2px;opacity:.85}
+.ch.A::before{background:var(--a)} .ch.B::before{background:var(--b)}
+.ch .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.ch .nm{font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;color:var(--text)}
+.ch .nm::before{content:"";width:7px;height:7px;border-radius:2px}
+.ch.A .nm::before{background:var(--a)} .ch.B .nm::before{background:var(--b)}
+.big{position:relative;font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.big small{font-size:12px;color:var(--dim);font-weight:500;margin-left:4px}
+.big .sub2{display:block;height:12px;margin-top:2px;font-size:10.5px;line-height:12px;font-weight:600;color:var(--dim);white-space:nowrap;text-align:center;letter-spacing:0}
+.tmp{margin:0 2px}
+.act{font-size:11px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums}
+.ch .act{text-align:center}
+.stp{display:flex;align-items:center;gap:4px;margin-top:2px}
+.stp button{flex:none;width:36px;height:36px;padding:0;font-size:18px;font-weight:400;border-radius:var(--rs);background:var(--s3);user-select:none;-webkit-user-select:none;touch-action:none;color:var(--dim)}
+.stp button:active{color:var(--text)}
 .stp .big{flex:1;text-align:center}
-.ch .hd{margin-bottom:2px}
-.ch .act{text-align:center;margin-top:2px}
+.pm{display:flex;gap:6px;margin-top:6px}
+.pm button{flex:1;padding:5px 0;font-size:16px}
+/* 表单 */
+label.f,.f.rng{display:block;margin:6px 0 0}
+label.f .lb,.f.rng .lb{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--dim);margin-bottom:0;white-space:nowrap;overflow:hidden}
+label.f .lb b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;font-size:12.5px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(90deg,var(--acc) var(--p,50%),var(--s4) var(--p,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#f7f8f8;margin-top:-6px;
+  border:0;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.5);transition:transform .1s}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:0 0 0 4px rgba(94,106,210,.3),0 1px 3px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:var(--s4)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:4px;background:var(--acc)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:#f7f8f8;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.A input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--a) var(--p,50%),var(--s4) var(--p,50%))}
+.B input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--b) var(--p,50%),var(--s4) var(--p,50%))}
+input[type=number]{width:100%;font:inherit;color:var(--text);background:var(--s2);border:1px solid var(--line2);border-radius:var(--rs);padding:7px 9px}
+input[type=number]:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(94,106,210,.25)}
+/* 分段选择 */
+.seg{display:flex;flex-wrap:wrap;gap:3px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.seg button{flex:1 1 auto;padding:5px 7px;font-size:12.5px;border-radius:7px;background:transparent;border-color:transparent;color:var(--dim);box-shadow:none}
+@media (hover:hover){.seg button:not(.on):hover{background:var(--s2);color:var(--text);border-color:transparent}}
+.seg button.on{background:var(--s3);border-color:var(--line2);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.04) inset}
+/* 开关 */
+.tog{display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-size:13px;font-weight:500}
+.sw{position:relative;width:32px;height:18px;flex:none;cursor:pointer}
+.sw input{opacity:0;width:0;height:0;position:absolute}
+.sw span{position:absolute;inset:0;border-radius:99px;background:var(--s4);box-shadow:0 0 0 1px var(--line2) inset;transition:background .15s}
+.sw span:after{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#d0d3d8;box-shadow:0 1px 2px rgba(0,0,0,.4);transition:transform .15s,background .15s}
+.sw input:checked+span{background:var(--acc);box-shadow:none}
+.sw input:checked+span:after{transform:translateX(14px);background:#fff}
+.sw input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}
+.minis{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12.5px;color:var(--dim)}
+/* 画布 / 数据 */
+canvas{display:block;width:100%;border-radius:var(--rs);background:var(--bg);border:1px solid var(--line)}
+.fxwrap{position:relative;height:160px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--line);background:#05050a;cursor:pointer;-webkit-user-select:none;user-select:none}
+.fxwrap canvas.glfx{width:100%;height:100%;border:0;border-radius:0;background:#05050a}
+.fxwrap.swap canvas{animation:fxin .5s ease-out}
+@keyframes fxin{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
+.fxlabel{position:absolute;left:8px;bottom:7px;font-size:11px;padding:3px 9px;border-radius:99px;background:rgba(0,0,0,.45);color:rgba(255,255,255,.9);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;pointer-events:none}
+.fxlabel.show{animation:lbl 2.4s ease-out forwards}
+@keyframes lbl{0%{opacity:0}12%{opacity:1}75%{opacity:1}100%{opacity:0}}
+.stats{display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.stats b{color:var(--text);font-weight:600}
+.meter{position:relative;height:3px;margin-top:6px;border-radius:3px;background:var(--s4);overflow:visible}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:3px;background:var(--acc);transition:width .08s linear}
+.meter b{position:absolute;top:-3px;width:2px;height:9px;margin-left:-1px;border-radius:1px;background:var(--warn)}
+.meter.over i{background:var(--bad)}
+/* 可拖动的门槛：左侧显示数值，拖动黄块调节，拖动时黄块变大 */
+.mrow{display:flex;align-items:center;gap:8px;margin-top:8px}
+.mrow .meter{flex:1;margin-top:0;height:4px;cursor:pointer;touch-action:none}
+.mrow .meter::before{content:"";position:absolute;left:-8px;right:-8px;top:-12px;bottom:-12px}
+.mthr{flex:none;font-size:11px;color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+.mthr b{color:var(--warn);font-weight:600;display:inline-block;min-width:22px}
+.mrow .meter b{top:-3px;width:10px;height:10px;margin-left:-5px;border-radius:3px;box-shadow:0 0 0 2px var(--s1);
+  transition:width .12s,height .12s,top .12s,margin-left .12s;cursor:grab;touch-action:none}
+.mrow.dragging .meter b{top:-6px;width:16px;height:16px;margin-left:-8px;border-radius:4px;cursor:grabbing;box-shadow:0 0 0 2px var(--s1),0 0 0 6px rgba(242,169,59,.18)}
+/* 折叠 */
+details{margin-top:8px}
+summary{color:var(--dim);font-size:12.5px;font-weight:500;cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px;padding:2px 0}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"";width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);margin:0 4px 0 2px;transition:transform .15s}
+details[open] summary::before{transform:rotate(45deg)}
+@media (hover:hover){summary:hover{color:var(--text)}}
+/* 文本 */
+.hint{display:none;font-size:11.5px;color:var(--dim);margin-top:3px;line-height:1.5}
+body.hints .hint{display:block}
+.note{font-size:12.5px;color:var(--dim);margin-top:10px;line-height:1.6}
+.cap{font-size:11px;color:var(--faint);margin-top:4px;line-height:1.45}
+.ticks{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);margin-top:-4px;font-variant-numeric:tabular-nums}
+.rrow{display:flex;align-items:center;gap:10px}
+.rv{flex:none;min-width:34px;font-size:12.5px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.rv.hi{text-align:right}
+.rtrack{position:relative;flex:1;height:24px}
+.rtrack::before{content:"";position:absolute;left:8px;right:8px;top:10px;height:4px;border-radius:4px;
+  background:linear-gradient(90deg,var(--s4) var(--lo),var(--acc) var(--lo),var(--acc) var(--hi),var(--s4) var(--hi))}
+.rtrack input{position:absolute;left:0;top:0;width:100%;height:24px;pointer-events:none;z-index:2}
+.rtrack input::-webkit-slider-runnable-track{background:transparent!important}
+.rtrack input::-webkit-slider-thumb{pointer-events:auto}
+.rtrack input::-moz-range-track{background:transparent}
+.rtrack input::-moz-range-progress{background:transparent}
+.rtrack input::-moz-range-thumb{pointer-events:auto}
+.tk3{position:relative;height:12px;display:block}.tk3 span{position:absolute;left:0;transform:none}.tk3 span:nth-child(2){transform:translateX(-50%)}
+.warnbox{border:1px solid rgba(242,169,59,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:rgba(242,169,59,.06);font-size:13px;line-height:1.55}
+/* 有提示要看时，设置按钮闪烁 */
+.roundb.blink{animation:blink 1.2s ease-in-out infinite;border-color:rgba(242,169,59,.8)}
+@keyframes blink{0%,100%{box-shadow:0 0 0 0 rgba(242,169,59,0);background:var(--s2)}50%{box-shadow:0 0 0 4px rgba(242,169,59,.3);background:rgba(242,169,59,.2)}}
+.sub{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+.grp{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+.grph{font-size:12px;color:var(--dim);font-weight:600;margin-bottom:2px}
+#log{font:11px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--faint);max-height:120px;overflow:auto;white-space:pre-wrap;margin-top:8px;
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--rs);padding:6px 8px}
+#log:empty{display:none}
+.hidden{display:none!important}
+/* 页面 / 底部标签栏 */
+.page{display:none}.page.on{display:block}
+.mp{display:none}.mp.on{display:block}
 .bp{display:none}.bp.on{display:block}
-.roundb{flex:none;width:30px;height:30px;padding:0;border-radius:50%;font-size:14px}
-.mask{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top) + 20px) 12px 20px;overflow:auto}
-.chkbox{width:100%;max-width:520px;margin:0;background:rgba(20,20,34,.92)}
-.ck{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.tabs{position:fixed;left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 16px));bottom:calc(env(safe-area-inset-bottom) + 8px);z-index:10;
+  display:flex;gap:4px;padding:4px;border-radius:12px;background:rgba(15,16,17,.86);
+  backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border-radius:9px;background:transparent;border-color:transparent;
+  font-size:11px;color:var(--dim);position:relative;box-shadow:none}
+.tabs button i{font-style:normal;font-size:17px;line-height:1.15;filter:grayscale(.6);opacity:.75;transition:filter .15s,opacity .15s}
+.tabs button.on{background:var(--s3);border-color:var(--line2);color:var(--text)}
+.tabs button.on i{filter:none;opacity:1}
+@media (hover:hover){.tabs button:not(.on):hover{background:var(--s2);border-color:transparent;color:var(--text)}}
+.tabs button.mode::after{content:"";position:absolute;top:6px;right:calc(50% - 18px);width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--s1)}
+/* 力度卡头部徽标 */
+.armp.on{background:rgba(76,183,130,.12);border-color:rgba(76,183,130,.4);color:var(--ok)}
+.armp.out{background:rgba(242,112,159,.16);border-color:rgba(242,112,159,.5);color:var(--a)}
+#strCard h2 .pill{margin-left:4px}
+#escPill{color:var(--warn)!important;border-color:rgba(242,169,59,.35);background:rgba(242,169,59,.08)}
+/* 连击计数 */
+.combo{display:flex;align-items:center;gap:10px;margin-top:4px}
+.cx{font-size:26px;font-weight:600;letter-spacing:-.02em;min-width:56px;font-variant-numeric:tabular-nums;line-height:1;color:var(--text)}
+.cx.pop{animation:pop .25s ease-out}
+@keyframes pop{from{transform:scale(1.2)}to{transform:scale(1)}}
+.cbar{flex:1;height:4px;border-radius:4px;background:var(--s4);overflow:hidden}
+.cbar i{display:block;height:100%;width:0;border-radius:4px;background:var(--acc);transition:width .15s}
+.cpct{font-size:12px;color:var(--dim);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
+/* 歌曲 */
+/* 提示 / 弹窗 */
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translate(-50%,-160%);z-index:20;padding:9px 14px 9px 30px;border-radius:10px;
+  font-size:13px;font-weight:500;background:var(--s3);color:var(--text);border:1px solid var(--line3);
+  box-shadow:0 12px 40px rgba(0,0,0,.55);transition:transform .25s cubic-bezier(.2,.8,.2,1);max-width:90vw;text-align:left}
+.toast::before{content:"";position:absolute;left:12px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--warn)}
+.toast.show{transform:translate(-50%,0)}
+.mask{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top) + 40px) 12px 20px;overflow:auto}
+.chkbox{width:100%;max-width:520px;margin:0;background:var(--s1);border-color:var(--line2);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.ck{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
 .ck:last-child{border-bottom:0}
 .ck .ic{flex:none;width:22px;text-align:center}
 .ck b{display:block;font-weight:600}
-.ck .fx{color:var(--dim);font-size:12.5px;margin-top:2px;line-height:1.5}
+.ck .fx{color:var(--dim);font-size:12px;margin-top:2px;line-height:1.5}
 .ck.bad b{color:var(--bad)} .ck.warn b{color:var(--warn)}
-.top .tr{gap:7px}.top .t{min-width:0;overflow:hidden}.top h1{overflow:hidden;text-overflow:ellipsis}
-/* ---- 更紧凑 ---- */
-body{padding:calc(env(safe-area-inset-top) + 6px) 8px calc(env(safe-area-inset-bottom) + 80px)}
-.card{padding:9px 11px;margin-bottom:7px;border-radius:18px}
-.top{padding:8px 10px;margin-bottom:7px}
-h2{margin:0 0 5px;font-size:11.5px;letter-spacing:.8px}
-.minis{margin-top:5px}
-.grid2{gap:7px}
-.ch{padding:7px 8px;border-radius:14px}
-.big{font-size:26px}
-.stp{margin-top:2px;gap:4px}
-.stp button{width:38px;height:38px;font-size:20px;border-radius:12px}
-.act{font-size:11px;margin-top:1px}
-label.f{margin:3px 0 0}
-label.f .lb{font-size:12px}
-input[type=range]{height:24px}
-input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-7px}
-.seg{gap:5px}
-.seg button{padding:6px 6px;font-size:12.5px}
-.mode button{padding:7px 6px;font-size:13.5px}
-.tog{margin-top:5px;font-size:13.5px}
-.sw{width:44px;height:26px}
-.sw span:after{width:20px;height:20px}
-.sw input:checked+span:after{transform:translateX(18px)}
-details{margin-top:5px}
-summary{font-size:12.5px}
-.stats{margin-top:4px;font-size:12px}
-.sub{margin-top:7px;padding-top:6px}
-.combo{margin-top:2px;gap:10px}
-.cx{font-size:28px;min-width:60px}
-.cbar{height:9px}
-.dock{padding:6px;gap:6px;bottom:calc(env(safe-area-inset-bottom) + 6px);left:8px;right:8px;border-radius:18px}
-.dock button{padding:11px 6px;font-size:15px;border-radius:13px}
-button{padding:8px 11px}
-#sensorBtn,#micBtn{padding:8px}
-.sd{font-size:10.5px;color:var(--dim);opacity:.85;margin-left:5px;font-weight:400;letter-spacing:0;text-transform:none}
-label.f .lb{white-space:nowrap;overflow:hidden}
-.cap{font-size:10.5px;color:var(--dim);margin-top:3px;line-height:1.35}
-.fly{position:fixed;z-index:25;pointer-events:none;font-weight:800;font-variant-numeric:tabular-nums;
-  background:linear-gradient(135deg,#ffd36e,#ff5fa2 60%,#a98bff);-webkit-background-clip:text;background-clip:text;color:transparent;
-  text-shadow:0 0 1px rgba(0,0,0,.01);animation:flyup .95s ease-out forwards;will-change:transform,opacity}
-.fly.jolt{background:linear-gradient(135deg,#fff,#5fc8ff);-webkit-background-clip:text;background-clip:text}
-@keyframes flyup{0%{opacity:0;transform:translate(-50%,6px) scale(.7)}12%{opacity:.85;transform:translate(-50%,0) scale(1.08)}
-  100%{opacity:0;transform:translate(-50%,-46px) scale(.95)}}
-.page{display:none}.page.on{display:block}
-.tabs{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 6px);z-index:10;display:flex;gap:6px;padding:5px;border-radius:20px}
-.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border-radius:15px;background:transparent;border-color:transparent;font-size:11.5px;color:var(--dim);position:relative}
-.tabs button i{font-style:normal;font-size:19px;line-height:1.1}
-.tabs button.on{background:rgba(255,255,255,.12);border-color:var(--line);color:var(--text)}
-.tabs button.mode::after{content:"";position:absolute;top:5px;right:calc(50% - 20px);width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
-.armp{text-transform:none;letter-spacing:0}
-.armp.on{background:rgba(78,224,160,.18);border-color:rgba(78,224,160,.5);color:var(--ok)}
-.armp.out{background:rgba(255,95,162,.35);border-color:rgba(255,95,162,.6);color:#fff}
-#strCard h2 .pill{margin-left:4px}
-.grp{margin-top:8px;padding-top:6px;border-top:1px solid var(--line)}
-.grph{font-size:12.5px;color:var(--dim);font-weight:600;margin-bottom:2px}
-.qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.qbtn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 2px;border-radius:14px;font-size:11px;line-height:1.25}
-.qbtn i{font-style:normal;font-size:18px}
-.qbtn b{font-size:11px;color:var(--dim);font-weight:500}
-.qbtn.on b{color:var(--ok)}
+/* 动效 */
+.flash{animation:fl .4s ease-out}
+@keyframes fl{from{box-shadow:0 0 0 1px rgba(124,133,240,.9),0 0 0 0 rgba(94,106,210,.45)}to{box-shadow:0 0 0 1px rgba(124,133,240,0),0 0 0 10px rgba(94,106,210,0)}}
 .hl{animation:hl 1.4s ease-out}
-@keyframes hl{0%{box-shadow:0 0 0 2px rgba(255,211,110,.9),0 10px 40px rgba(0,0,0,.35)}100%{box-shadow:0 0 0 2px rgba(255,211,110,0),0 10px 40px rgba(0,0,0,.35)}}
-.fxwrap{position:relative;margin-top:6px;height:128px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#05050a;cursor:pointer}
-.fxwrap canvas.glfx{display:block;width:100%;height:100%;border:0;border-radius:0;background:#05050a}
-.fxwrap.swap canvas{animation:fxin .6s ease-out}
-@keyframes fxin{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
-.fxlabel{position:absolute;left:8px;bottom:7px;font-size:11px;padding:3px 8px;border-radius:99px;background:rgba(0,0,0,.35);color:rgba(255,255,255,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .5s;pointer-events:none}
-.fxlabel.show{animation:lbl 2.6s ease-out forwards}
-@keyframes lbl{0%{opacity:0}12%{opacity:1}75%{opacity:1}100%{opacity:0}}
-.meter{position:relative;height:5px;margin-top:6px;border-radius:5px;background:rgba(255,255,255,.08);overflow:visible}
-.meter i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:5px;background:linear-gradient(90deg,#5fc8ff,#a98bff,#ff5fa2);transition:width .08s linear}
-.meter b{position:absolute;top:-3px;width:2px;height:11px;margin-left:-1px;border-radius:2px;background:#ffd36e;box-shadow:0 0 6px #ffd36e}
-.meter.over i{background:linear-gradient(90deg,#ff5fa2,#ff4d5e);box-shadow:0 0 10px rgba(255,77,94,.7)}
-.big{position:relative}
-.big .sub2{display:block;height:12px;margin-top:1px;font-size:10.5px;line-height:12px;font-weight:600;color:var(--dim);white-space:nowrap;text-align:center}
-.tmp{margin:0 2px}.tmp.cmb{font-weight:500;opacity:.85}
-.songrow{display:flex;align-items:center;gap:8px;margin-top:6px}
-.songpick{display:inline-flex;align-items:center;padding:7px 12px;border-radius:12px;font-size:13px;font-weight:600;background:linear-gradient(135deg,rgba(169,139,255,.8),rgba(255,95,162,.7));border:1px solid rgba(255,255,255,.25);cursor:pointer}
-.songbox{display:flex;align-items:center;gap:8px;margin-top:6px;padding:6px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
-.songname{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.songprog{height:3px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:4px;overflow:hidden}
-.songprog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5fc8ff,#ff5fa2)}
-#quickCard.dim{opacity:.45}
-.tk3{position:relative;height:12px;display:block}.tk3 span{position:absolute;left:0;transform:none}.tk3 span:nth-child(2){transform:translateX(-50%)}
+@keyframes hl{0%{box-shadow:0 0 0 1px var(--acc2),0 0 0 4px rgba(94,106,210,.3)}100%{box-shadow:0 0 0 1px rgba(124,133,240,0),0 0 0 4px rgba(94,106,210,0)}}
+.fly{position:fixed;z-index:25;pointer-events:none;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;
+  color:rgba(247,248,248,.75);text-shadow:0 1px 6px rgba(0,0,0,.6);opacity:0;animation:flyup 1.25s ease-out forwards;will-change:transform,opacity}
+@keyframes flyup{0%{opacity:0;transform:translateY(6px) scale(.85)}15%{opacity:.5;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-34px) scale(.95)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
-<div class="bgfx"><i></i><i></i><i></i></div>
+<div class="bgfx" id="bgfx"><i></i><i></i><i></i></div>
 
 <header class="top glass">
   <div class="tr">
-    <div class="logo">⚡</div>
-    <div class="t" style="flex:1"><h1>郊狼 3.0</h1></div>
+    <button id="hintBtn" class="hintb" title="展开 / 收起每个设置下面的详细说明"><span class="ic">ⓘ</span><span id="hintTxt">说明：关</span></button>
+    <span style="flex:1"></span>
     <button id="connBtn" class="connb s0"><span id="connDot" class="dot"></span><span id="connTxt">召唤小狼</span><span id="batPill" class="hidden"></span></button>
     <button id="chkBtn" class="roundb" title="没反应？点我排查">🩺</button>
-    <button id="hintBtn" title="显示/隐藏详细玩法说明">ⓘ</button>
+    <button id="setBtn" class="roundb" title="设置">⚙️</button>
   </div>
   <div id="pickBox" class="hidden" style="margin-top:8px">
     <div class="note" style="margin:0 0 6px">好几只小狼都认识你，今天要哪一只？</div>
@@ -283,23 +300,20 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   </div>
 </header>
 
-<div id="noBle" class="card glass warnbox hidden">
-  ⚠️ 这个浏览器叫不来小狼（不支持网页蓝牙）。iPhone 请用 <b>Bluefy</b> 打开；安卓换一个支持网页蓝牙的浏览器，比如 Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器（应用商店能装到哪个用哪个）。
-</div>
 
 <!-- 力度（所有页面都显示） -->
 <section class="card glass" id="strCard">
-  <h2>力度<small class="sd">开关一开就开始玩</small><span class="sp"></span><span class="pill hidden" id="escPill" style="text-transform:none;letter-spacing:0;color:#ffd36e">🔥+0</span><span class="pill armp" id="armPill">待命</span><span class="pill">已电 <b id="trigCnt" style="margin-left:4px">0</b> 下</span></h2>
-  <div class="hint">A、B 是小狼的两路电极。打开哪一路的开关，那一路就开始听你的指挥；两路都关＝立刻收手。点 ＋/− 一档一档加，按住不放会越加越快。下面「手感」里的百分比，都是在这里的力度上再打折扣。</div>
+  <h2>力度<small class="sd">开关一开就开始玩</small><span class="sp"></span><span class="pill hidden" id="escPill">⏱×1</span><span class="pill armp" id="armPill">待命</span><span class="pill">已电 <b id="trigCnt" style="margin-left:4px">0</b> 下</span></h2>
+  <div class="hint">A、B 是小狼的两路电极。打开哪一路的开关，那一路就开始听你的指挥；两路都关＝立刻收手。点 ＋/− 一档一档加，按住不放会越加越快。下面「波形」里的百分比，都是在这里的力度上再打折扣。</div>
   <div class="grid2">
     <div class="ch A">
       <div class="hd"><span class="nm">A 路</span><label class="sw"><input type="checkbox" id="chA"><span></span></label></div>
-      <div class="stp"><button data-d="A-">−</button><div class="big"><span id="strAv">0</span><span class="sub2"><small class="tmp" id="tmpA"></small><small class="tmp cmb" id="cmbA"></small></span></div><button data-d="A+">＋</button></div>
+      <div class="stp"><button data-d="A-">−</button><div class="big"><span id="strAv">0</span><span class="sub2"><small class="tmp" id="tmpA"></small></span></div><button data-d="A+">＋</button></div>
       <div class="act">此刻 <span id="actA">--</span> · 封顶 <span id="limA">200</span></div>
     </div>
     <div class="ch B">
       <div class="hd"><span class="nm">B 路</span><label class="sw"><input type="checkbox" id="chB"><span></span></label></div>
-      <div class="stp"><button data-d="B-">−</button><div class="big"><span id="strBv">0</span><span class="sub2"><small class="tmp" id="tmpB"></small><small class="tmp cmb" id="cmbB"></small></span></div><button data-d="B+">＋</button></div>
+      <div class="stp"><button data-d="B-">−</button><div class="big"><span id="strBv">0</span><span class="sub2"><small class="tmp" id="tmpB"></small></span></div><button data-d="B+">＋</button></div>
       <div class="act">此刻 <span id="actB">--</span> · 封顶 <span id="limB">200</span></div>
     </div>
   </div>
@@ -307,60 +321,56 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 
 <!-- ===== 晃动页 ===== -->
 <section class="card glass page" data-p="motion" id="motionCard">
-  <h2>📳 摇一摇<small class="sd">手机一晃，那边就挨一下</small></h2>
-    <canvas id="motionCv" height="84" style="margin-top:6px"></canvas>
-    <div class="meter" id="meterM"><i></i><b></b></div>
-    <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span>门槛 <b id="thrV2">0</b></span><span><b id="hzV">0</b> Hz</span></div>
-    <div class="seg" id="srcSeg" style="margin-top:8px">
-      <button data-v="rot">上下晃动</button><button data-v="acc">前后晃</button><button data-v="both">都算</button>
-    </div>
-    <div class="cap">上下晃动＝上下甩 / 转动手机 · 前后晃＝直线晃动或拍打 · 都算＝哪个猛用哪个</div>
-    <div class="hint">上下晃动读的是陀螺仪的旋转速度（手机上下甩、翻转都算）；前后晃读的是加速度（拍桌子、敲手机也算）。不确定就选「都算」。</div>
-    <label class="f"><div class="lb"><span>敏感门槛<small class="sd">越低越容易挨电</small></span><b id="thrV">200</b></div><input type="range" id="thr" min="20" max="1000" step="5"><div class="hint">图里的曲线冲过黄色虚线，就电一下。门槛太低会连呼吸都算，太高就得使劲甩。</div></label>
-    <label class="f"><div class="lb"><span>每下电多久 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstV">75</b></div><input type="range" id="burst" min="0" max="1000" step="1"><div class="ticks tk3"><span>20</span><span style="left:75%">200</span><span style="right:0;left:auto">1000 ms</span></div><div class="hint">每晃一下，电击持续多长时间（播放下面「手感」的开头这么长一段）。想要一下一下清清楚楚，就别长过两次晃动的间隔。</div></label>
-    <details>
-      <summary>进阶手法 <small class="sd">防手抖 / 冷却 / 连发</small></summary>
-      <label class="f"><div class="lb"><span>防手抖<small class="sd">大＝稳但迟钝</small></span><b id="smoothV">0.1</b></div><input type="range" id="smooth" min="0" max="0.95" step="0.05"><div class="hint">把细小的抖动抹平。调大不容易误伤，但反应会慢半拍；想跟快节奏就保持在 0.2 以下。</div></label>
+    <canvas id="motionCv" height="84"></canvas>
+    <div class="mrow" id="meterMRow"><span class="mthr">晃动阈值 <b id="thrLabM">200</b></span><div class="meter" id="meterM"><i></i><b></b></div></div>
+    <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span><b id="hzV">0</b> Hz</span><span id="mComboMini"></span></div>
+    <div class="hint">拖动黄块调晃动阈值：晃动冲过阈值就电一下。太低连呼吸都算，太高就得使劲甩。</div>
+      <div class="f rng" id="mSpeed"><div class="lb"><span>快慢分界 (ms)<small class="sd">两下间隔：左边以内算快，右边以上算慢</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
+      <div class="f rng" id="mBoost"><div class="lb"><span>重击加力<small class="sd">每次在范围里随机加</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
+    <div class="grp">
       <label class="f"><div class="lb"><span>冷却 (ms)<small class="sd">两下至少隔多久</small></span><b id="coolV">60</b></div><input type="range" id="cool" min="0" max="1000" step="10"><div class="hint">挨完一下，至少喘口气这么久才会有下一下。</div></label>
-      <label class="f"><div class="lb"><span>连发判定<small class="sd">大＝更容易连着挨</small></span><b id="rearmV">0.60</b></div><input type="range" id="rearm" min="0.2" max="0.95" step="0.05"><div class="hint">猛甩时如果几下只电了一下，就调大（0.8）；轻轻一晃却电好几下，就调小。</div></label>
-    </details>
+    </div>
+</section>
+
+<!-- 颤抖调教的波形：只决定每一下的力度形状，颗粒还是跟着晃动快慢变 -->
+<section class="card glass page" data-p="motion" id="mWaveCard">
+  <h2>💗 波形<small class="sd">每一下的力度形状</small></h2>
+  <div class="seg" id="mWaveSeg">
+    <button data-v="auto">✨ 自动</button><button data-v="constant">持续猛烈</button><button data-v="ramp">渐进加压</button><button data-v="pulse">间歇脉冲</button><button data-v="sine">呼吸同步</button><button data-v="random">🎲 随机混乱</button><button data-v="o_breath">呼吸</button><button data-v="o_tide">潮汐</button>
+  </div>
+  <div class="cap">自动＝快晃先猛后衰、慢晃平稳持续 · 其他形状会压缩/拉伸到每一下的长度里播放 · 颗粒粗细始终跟着晃动快慢走 · 和声控调教的波形分开设置</div>
+  <canvas id="mWaveCv" height="46" style="margin-top:8px"></canvas>
 </section>
 
 <!-- ===== 节拍页 ===== -->
 <section class="card glass page" data-p="music" id="musicCard">
-  <h2>🎵 听声音<small class="sd">跟着音乐来，或者不许出声</small></h2>
-    <canvas id="beatCv" height="84" style="margin-top:6px"></canvas>
-    <div class="meter" id="meterB"><i></i><b></b></div>
-    <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">门槛</span> <b id="beThrV">0</b></span><span>拍数 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
+    <canvas id="beatCv" height="84"></canvas>
+    <div class="mrow" id="meterBRow"><span class="mthr"><span id="thrNameB">音量阈值</span> <b id="thrLabB">6</b></span><div class="meter" id="meterB"><i></i><b></b></div></div>
+    <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">节奏捕捉中</span> <b id="beThrV"></b></span><span>拍数 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
     <div class="hint">用麦克风听歌。最好用另一台手机或音箱放歌，同一台手机边放边听可能会被系统打断。</div>
-    <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 音乐节奏</button><button data-v="quiet">🤫 别出声</button></div>
-    <div class="cap">音乐节奏＝放首歌，跟着拍子一下一下来 · 别出声＝不许出声，一出声就挨电</div>
-    <div class="hint">音乐节奏会听几秒算出 BPM，然后预判下一拍、提前出手，准准地踩在拍子上，偶尔漏听也不会断。别出声会先安静地听一会儿记住环境噪音，之后谁发出比这明显大的声音（说话、喘息、叫出声），就电一下；一直出声就隔一会儿再电一下，直到安静下来。</div>
+    <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 节奏跟随</button><button data-v="quiet">🤫 禁声惩罚</button></div>
+    <div class="cap">节奏跟随＝跟随音乐节奏电击 · 禁声惩罚＝禁止发声，一出声就电</div>
+    <div class="hint">节奏跟随会听几秒算出 BPM，然后预判下一拍、提前出手，准准地踩在拍子上，偶尔漏听也不会断。禁声惩罚会先安静地听一会儿记住环境噪音，之后谁发出比这明显大的声音（说话、喘息、叫出声），就电一下；一直出声就隔一会儿再电一下，直到安静下来。</div>
     <div class="bp" data-b="auto">
-      <div class="songrow">
-        <label class="songpick"><input type="file" id="songFile" accept="audio/*" hidden>🎵 放手机里的歌</label>
-        <span class="sd" style="flex:1;text-align:right">不放就用麦克风听</span>
-      </div>
-      <div id="songBox" class="songbox hidden">
-        <button id="songPlay" class="roundb">▶︎</button>
-        <div style="flex:1;min-width:0"><div id="songName" class="songname">—</div><div class="songprog"><i id="songBar"></i></div></div>
-        <span class="sd" id="songSrcTag"></span>
-      </div>
-      <div class="cap">网页没法听到别的 App 放的歌；想要最准，就在这里选一首手机里的歌由网页来放（直接分析，不经过麦克风）。</div>
-      <label class="f"><div class="lb"><span>敏感度<small class="sd">高＝节奏不明显也跟着电</small></span><b id="musSensV">5</b></div><input type="range" id="musSens" min="1" max="10" step="1"><div class="hint">越高越容易出手：前奏、鼓点不清楚的歌也会跟；越低越挑剔，只在节奏很明确时才电。</div></label>
+      <label class="f"><div class="lb"><span>节奏敏感度<small class="sd">高＝节奏不清楚也跟着电</small></span><b id="musSensV">5</b></div><input type="range" id="musSens" min="1" max="10" step="1"><div class="cap">听出来的拍子要多确定才出手（统计里的「节奏捕捉」）；声音要多大才电，看上面的音量阈值。</div></label>
+      <div class="tog"><span>分声部输出<small class="sd">低音粗、中音细、高音最细最短</small></span><label class="sw"><input type="checkbox" id="musLayers"><span></span></label></div>
+      <div class="tog" id="musSwapRow"><span>A/B 随机互换<small class="sd">两路都开时，声部隔几拍换边</small></span><label class="sw"><input type="checkbox" id="musSwap"><span></span></label></div>
+      <div class="hint">分声部：低音（鼓点、贝斯）颗粒大、时长适中；中音（人声、军鼓）颗粒偏短、时长较短；高音（镲、沙锤）颗粒最短、时长最短。每个声部电多久跟着它最近一个音能响多久走；歌进入高潮时整体更重。A、B 两路都开时，低音走一路、高音走另一路，中音补到空着的那一路，并且每隔几拍随机互换。关掉就回到所有声部合成一段、两路同样输出。</div>
       <div class="cap" id="musAutoInfo">每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。</div>
-      <div class="tog"><span>叠加加料<small class="sd">越挨越重 / 越激动 / 随机惊喜</small></span><label class="sw"><input type="checkbox" id="musicExtras"><span></span></label></div>
-      <div class="seg" id="multSeg" style="margin-top:6px"><button data-v="0.5">两拍一下</button><button data-v="1">一拍一下</button><button data-v="2">半拍一下</button></div>
+      <div class="seg" id="multSeg" style="margin-top:6px"><button data-v="0.5">双拍电击</button><button data-v="1">单拍电击</button><button data-v="2">半拍电击</button></div>
       <div class="cap">多久来一下；节奏听成快一倍或慢一倍时，也用这里纠正</div>
       <label class="f"><div class="lb"><span>抢拍 (ms)<small class="sd">觉得慢半拍就调大</small></span><b id="leadV">120</b></div><input type="range" id="lead" min="0" max="400" step="10"><div class="hint">从手机发出指令到小狼真正放电要 0.1–0.2 秒，所以要提前这么多出手，电击才正好砸在鼓点上。电得比鼓点晚 → 调大；早了 → 调小。</div></label>
     </div>
     <div class="bp" data-b="quiet">
-      <div class="grid2">
-        <label class="f"><div class="lb"><span>耳朵灵敏<small class="sd">小＝一点声就电</small></span><b id="sensV">1.50</b></div><input type="range" id="sens" min="1.1" max="3" step="0.05"><div class="hint">比安静时响几倍算“出声”。1.2 连喘气都算，2 以上要说话才算。</div></label>
-        <label class="f"><div class="lb"><span>连电间隔 (ms)<small class="sd">一直出声多久电一次</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">还在出声的话，每隔这么久再电一下，直到安静。</div></label>
-      </div>
+      <label class="f"><div class="lb"><span>连电间隔 (ms)<small class="sd">一直出声多久电一次</small></span><b id="beatGapV">200</b></div><input type="range" id="beatGap" min="80" max="1000" step="10"><div class="hint">还在出声的话，每隔这么久再电一下，直到安静。</div></label>
       <button id="quietRelearn" class="wide" style="margin-top:6px">🤫 重新记住安静的样子</button>
-        <label class="f"><div class="lb"><span>每下电多久 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="0" max="1000" step="1"><div class="ticks tk3"><span>20</span><span style="left:75%">200</span><span style="right:0;left:auto">1000 ms</span></div><div class="hint">出声时每下电多久。</div></label>
+        <label class="f"><div class="lb"><span>单次电击时长 (ms)<small class="sd">短＝刺一下 长＝麻一阵</small></span><b id="burstMuV">150</b></div><input type="range" id="burstMu" min="0" max="1000" step="1"><div class="ticks tk3"><span>20</span><span style="left:75%">200</span><span style="right:0;left:auto">1000 ms</span></div><div class="hint">出声时每下电多久。</div></label>
+    <div class="grp">
+      <div class="grid2">
+        <label class="f"><div class="lb"><span>惩罚时间窗 (s)<small class="sd">多久内算连着</small></span><b id="qPenWinV">3</b></div><input type="range" id="qPenWin" min="1" max="15" step="0.5"></label>
+        <label class="f"><div class="lb"><span>封顶次数<small class="sd">1＝不叠加</small></span><b id="qPenCapV">3</b></div><input type="range" id="qPenCap" min="1" max="10" step="1"></label>
+      </div>
+      <div class="cap">时间窗里第 2 次出声：这一下时长 ×2、颗粒 ×0.9；第 3 次：×3、颗粒 ×0.8……叠到封顶次数为止。</div>
     </div>
 
 </section>
@@ -368,122 +378,44 @@ label.f .lb{white-space:nowrap;overflow:hidden}
 
 
 
-
-<!-- 加料快捷入口：点一下跳到设置里对应的位置 -->
-<section class="card glass page" data-p="motion music" id="quickCard">
-  <h2>加料<small class="sd" id="quickNote">点一下去设置里调</small></h2>
-  <div class="qgrid">
-    <button class="qbtn" data-go="waveCard"><i>💗</i><span>手感</span><b id="qWave">猜不到</b></button>
-    <button class="qbtn" data-go="comboCard"><i>🔥</i><span>越挨越重</span><b id="qCombo">开</b></button>
-    <button class="qbtn" data-go="escCard"><i>🌡️</i><span>越激动越重</span><b id="qEsc">开</b></button>
-    <button class="qbtn" data-go="rjCard"><i>🎲</i><span>随机惊喜</span><b id="qRj">关</b></button>
-  </div>
-</section>
 
 <!-- ===== 设置页 ===== -->
-<!-- 手感（波形） -->
-<section class="card glass page" data-p="set" id="waveCard">
-  <h2>💗 手感<small class="sd">每一下是什么滋味</small></h2>
-  <div class="hint">每次电击的“形状”，每格 25ms。图上柱子越高越重，蓝线是颗粒感。</div>
+<!-- 波形（声控调教页底部；禁声惩罚、关掉分声部的节奏跟随用它） -->
+<section class="card glass page" data-p="music" id="waveCard">
+  <h2>💗 波形<small class="sd">每一下是什么滋味</small></h2>
+  <div class="cap" id="waveNote">节奏跟随开着「分声部输出」时，每一拍的波形自动生成，不用这里的设置。</div>
+  <div class="hint">每次电击的“形状”，每格 25ms。图上柱子越高越重，蓝线是颗粒密度。</div>
   <div class="seg" id="presetSeg">
-    <button data-v="constant">一直狠</button><button data-v="ramp">慢慢加</button><button data-v="pulse">一顿一顿</button><button data-v="sine">一呼一吸</button><button data-v="random">🎲 猜不到</button><button data-v="o_breath">官方·呼吸</button><button data-v="o_tide">官方·潮汐</button>
+    <button data-v="constant">持续猛烈</button><button data-v="ramp">渐进加压</button><button data-v="pulse">间歇脉冲</button><button data-v="sine">呼吸同步</button><button data-v="random">🎲 随机混乱</button><button data-v="o_breath">呼吸</button><button data-v="o_tide">潮汐</button>
   </div>
-  <div class="cap">一直狠＝全程满力 · 慢慢加＝由轻到重 · 一顿一顿＝一开一停 · 一呼一吸＝起起伏伏 · 猜不到＝每次都不一样 · 官方＝和郊狼官方 App 内置的一模一样（每次触发接着上次的位置往下放）</div>
+  <div class="cap">持续猛烈＝全程满力 · 渐进加压＝由轻到重 · 间歇脉冲＝一开一停 · 呼吸同步＝起起伏伏 · 随机混乱＝每次都不一样 · 呼吸 / 潮汐＝和郊狼官方 App 内置的一模一样（每次触发接着上次的位置往下放）</div>
   <canvas id="waveCv" height="46" style="margin-top:8px"></canvas>
-  <label class="f"><div class="lb"><span>颗粒感<small class="sd">小＝酥麻 大＝一下下敲</small></span><b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲之间的间隔。左半段 10–200ms 细细调（越小越密越麻），右半段 200–1000ms 是一下一下的敲打感。</div></label>
-  <div class="grp"><div class="grph">更多 <small class="sd">一轮多长</small></div>
-    <label class="f"><div class="lb"><span>一轮多长 (ms)<small class="sd">完整走一遍</small></span><b id="cycV">500</b></div><input type="range" id="cyc" min="100" max="3000" step="25"><div class="hint">完整的形状走一遍要多久。每次电击只播放开头那一段（长度由“每下电多久”决定）。</div></label>
+  <label class="f"><div class="lb"><span>颗粒密度<small class="sd">小＝酥麻 大＝一下下敲</small></span><b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲之间的间隔。左半段 10–200ms 细细调（越小越密越麻），右半段 200–1000ms 是一下一下的敲打感。</div></label>
+  <div class="grp"><div class="grph">更多 <small class="sd">单轮时长</small></div>
+    <label class="f"><div class="lb"><span>单轮时长 (ms)<small class="sd">完整走一遍</small></span><b id="cycV">500</b></div><input type="range" id="cyc" min="100" max="3000" step="25"><div class="hint">完整的形状走一遍要多久。每次电击只播放开头那一段（长度由“单次电击时长”决定）。</div></label>
   </div>
 </section>
 
-<!-- 越挨越重 -->
-<section class="card glass page" data-p="set" id="comboCard">
-    <div class="tog" style="margin-top:0"><span>🔥 越挨越重<small class="sd">连着来，一下比一下狠</small> <small class="sd" id="comboMini"></small></span><label class="sw"><input type="checkbox" id="comboOn"><span></span></label></div>
-    <div class="hint">一下接一下不停时，力度逐级往上加；停下来喘口气，就一级一级退回去。</div>
-    <div class="grp">
-      <div class="grph">加码规则 <small class="sd">起手 / 几下到满 / 喘息</small></div>
-      <div class="grid2">
-        <label class="f"><div class="lb"><span>起手 %<small class="sd">第一下</small></span><b id="comboStartV">30</b></div><input type="range" id="comboStart" min="5" max="100" step="5"><div class="hint">第一下只给多少力。</div></label>
-        <label class="f"><div class="lb"><span>几下到满<small class="sd">加码速度</small></span><b id="comboStepsV">8</b></div><input type="range" id="comboSteps" min="2" max="40" step="1"><div class="hint">连着第几下用到全力。</div></label>
-      </div>
-      <label class="f"><div class="lb"><span>喘息时间 (ms)<small class="sd">超过就开始退</small></span><b id="comboWinV">600</b></div><input type="range" id="comboWin" min="150" max="3000" step="50"><div class="hint">两下之间隔得比这短才算“连着”；停得比这久，每过这么久退一级。</div></label>
-    </div>
-</section>
-
-<!-- 越激动越重 -->
-<section class="card glass page" data-p="set" id="escCard">
-  <h2>🌡️ 越激动越重<small class="sd">动静大了就加码</small><span class="sp"></span><span class="pill" id="escStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="escOn"><span></span></label></h2>
-  <div class="cap">一直盯着最近的动静（晃得多猛 / 声音多大）：最近一段比之前明显更激动，力度就随机加一级并保持住；平静回刚才的水平就撤回；之后又更激动，再加一级。三种玩法都生效。</div>
-  <div class="hint">只加在力度不为 0 的那一路，不会超过封顶。刚开始要先观察「最近＋之前」那么长时间才会判断。</div>
-  <div class="grp">
-    <div class="grph">调节参数 <small class="sd">加多少 / 多敏感 / 怎么比</small></div>
-    <div class="grid2">
-      <label class="f"><div class="lb"><span>每级最少 +<small class="sd">随机下限</small></span><b id="escAddMinV">5</b></div><input type="range" id="escAddMin" min="1" max="40" step="1"><div class="hint">每加一级，力度最少加多少。</div></label>
-      <label class="f"><div class="lb"><span>每级最多 +<small class="sd">随机上限</small></span><b id="escAddMaxV">10</b></div><input type="range" id="escAddMax" min="1" max="40" step="1"><div class="hint">每加一级，力度最多加多少（在最少～最多之间随机）。</div></label>
-    </div>
-    <label class="f"><div class="lb"><span>激动门槛 %<small class="sd">高出多少算更激动</small></span><b id="escPctV">25</b></div><input type="range" id="escPct" min="5" max="150" step="5"><div class="hint">最近的平均比之前高出这么多百分比，才算“更激动了”。越小越容易加码。</div></label>
-    <div class="grid2">
-      <label class="f"><div class="lb"><span>最近 (s)<small class="sd">看最近多久</small></span><b id="escRecentV">5</b></div><input type="range" id="escRecent" min="2" max="15" step="1"><div class="hint">用最近多少秒的平均值代表“现在”。短＝反应快，长＝更稳。</div></label>
-      <label class="f"><div class="lb"><span>之前 (s)<small class="sd">跟之前多久比</small></span><b id="escBaseV">10</b></div><input type="range" id="escBase" min="5" max="30" step="1"><div class="hint">跟再往前多少秒的平均值比较。</div></label>
-    </div>
-    <div class="grid2">
-      <label class="f"><div class="lb"><span>每级间隔 (s)<small class="sd">至少隔多久</small></span><b id="escGapV">6</b></div><input type="range" id="escGap" min="2" max="30" step="1"><div class="hint">加完一级后至少等这么久才可能再加；这段时间里也会记下新的“激动水平”。</div></label>
-      <label class="f"><div class="lb"><span>最多几级<small class="sd">叠加上限</small></span><b id="escMaxV">8</b></div><input type="range" id="escMax" min="1" max="15" step="1"><div class="hint">最多叠几级。总加码＝每级加的数相加。</div></label>
-    </div>
-  </div>
-</section>
-
-<!-- 随机惊喜 -->
-<section class="card glass page" data-p="set" id="rjCard">
-  <h2>🎲 随机惊喜<small class="sd">冷不丁加重电一下</small><span class="sp"></span><span class="pill" id="rjStat" style="text-transform:none;letter-spacing:0">关</span><label class="sw" style="margin-left:6px"><input type="checkbox" id="rjOn"><span></span></label></h2>
-  <div class="hint">打开后，每隔一段猜不到的时间自动来一次“惊喜”：冷不丁加重力度电一下，这段时间里原本的每一下也跟着变重，结束后恢复。只在小狼在线、通道打开时才会来；力度为 0 的那一路不会被偷袭，也不会超过封顶。</div>
-  <div class="grid2">
-    <label class="f"><div class="lb"><span>最快 (s)<small class="sd">多久来一次</small></span><b id="rjGapMinV">3</b></div><input type="range" id="rjGapMin" min="1" max="120" step="1"></label>
-    <label class="f"><div class="lb"><span>最慢 (s)<small class="sd">多久来一次</small></span><b id="rjGapMaxV">10</b></div><input type="range" id="rjGapMax" min="1" max="120" step="1"></label>
-  </div>
-  <div class="grid2">
-    <label class="f"><div class="lb"><span>最少加 +<small class="sd">临时加码</small></span><b id="rjAddMinV">5</b></div><input type="range" id="rjAddMin" min="0" max="60" step="1"></label>
-    <label class="f"><div class="lb"><span>最多加 +<small class="sd">临时加码</small></span><b id="rjAddMaxV">15</b></div><input type="range" id="rjAddMax" min="0" max="60" step="1"></label>
-  </div>
-  <div class="grid2">
-    <label class="f"><div class="lb"><span>最短 (s)<small class="sd">每次多久</small></span><b id="rjDurMinV">0.3</b></div><input type="range" id="rjDurMin" min="0.1" max="10" step="0.1"></label>
-    <label class="f"><div class="lb"><span>最长 (s)<small class="sd">每次多久</small></span><b id="rjDurMaxV">1.5</b></div><input type="range" id="rjDurMax" min="0.1" max="10" step="0.1"></label>
-  </div>
-  <div class="hint">三组都是「最少～最多」之间每次随机取：等多久、加多少力（直接加在力度数值上）、持续多久。</div>
-</section>
-
-<section class="card glass page" data-p="set">
-  <h2>🐺 小狼<small class="sd">连接相关，一般不用动</small></h2>
-  <div class="minis" style="margin-top:0"><span id="devName" style="flex:1">找名字 47L121 开头的小狼</span>自动召唤<small class="sd" style="margin-right:4px">开页就连</small><label class="sw"><input type="checkbox" id="autoConn"><span></span></label></div>
-  <div class="hint">打开页面自动连上认识的那只小狼；掉线了也会自己追回来。</div>
-  <div class="sub">
-  <div class="grp" id="diagBox" style="margin-top:0">
-    <div class="grph">疑难杂症 <small class="sd">没反应时来这里看看</small></div>
-    <div class="seg" id="wmSeg" style="margin-top:8px">
-      <button data-v="auto">发送：自动</button><button data-v="resp">稳妥模式</button><button data-v="noresp">快速模式</button>
-    </div>
-    <div class="cap">一般放着「自动」就好；小狼连上了却毫无反应，再换着试试</div>
-    <div id="diagTxt" style="font:11px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);margin-top:6px;word-break:break-all"></div>
-  </div>
-  </div>
-</section>
-
-<section class="card glass page" data-p="set">
-  <h2>📖 玩法 &amp; 日志<small class="sd" id="buildV"></small></h2>
+<div id="toast" class="toast"></div>
+<div id="setMask" class="mask hidden">
+  <div class="card glass chkbox">
+    <h2>⚙️ 设置<small class="sd" id="buildV"></small><span class="sp"></span><button id="setClose" class="roundb">✕</button></h2>
+    <div class="cap" id="visits" style="margin:-2px 0 10px">累计打开 <b id="busuanzi_value_site_pv">–</b> 次 · 访客 <b id="busuanzi_value_site_uv">–</b> 人<span class="sd">所有版本一起算</span></div>
+    <div id="noBle" class="warnbox hidden">⚠️ 这个浏览器叫不来小狼（不支持网页蓝牙）。iPhone 请用 <b>Bluefy</b> 打开；安卓换一个支持网页蓝牙的浏览器，比如 Chrome、Edge、Opera、三星浏览器、UC 浏览器、百度浏览器（应用商店能装到哪个用哪个）。</div>
+    <div class="grph" style="margin-top:4px">📖 玩法</div>
   <div class="note" style="margin-top:0">
-    1. 右上角「召唤小狼」连上设备。<br>
-    2. 底部选玩法：「摇一摇」晃手机电；「听声音」跟着音乐电，或者玩「别出声」——一出声就挨电。<br>
+    1. 点「召唤小狼」连上设备。<br>
+    2. 底部选玩法：「颤抖调教」晃手机电；「声控调教」跟随音乐节奏电，或者玩「禁声惩罚」——一出声就电。<br>
     3. 先把 A/B 力度调到低档，再打开开关——开关一开就开始；全关＝立刻停。<br>
-    4. 想加点料：打开「越挨越重」「随机惊喜」，在「手感」里换口味。<br>
-    5. 切出页面会自动暂停，回来接着玩；没反应就点右上角 🩺。
+    4. 颤抖调教会按晃动节奏自动变化，重晃会临时加力；禁声惩罚有惩罚时刻，可以在页面底部的「波形」里换口味。<br>
+    5. 切出页面会自动暂停，回来接着玩；没反应就点 🩺。
   </div>
   <div class="note" style="color:var(--warn)">
     ⚠️ 安全第一：从低档慢慢往上加；电极别跨过心脏（不要一片在胸前一片在背后）；有心脏病、起搏器、癫痫或怀孕请勿使用。玩之前约好安全词，对方一说停，马上关掉通道。
   </div>
   <div id="log"></div>
-</section>
-
-<div id="toast" class="toast"></div>
+  </div>
+</div>
 <div id="chkMask" class="mask hidden">
   <div class="card glass chkbox">
     <h2>🩺 小狼怎么没反应？<span class="sp"></span><button id="chkClose" class="roundb">✕</button></h2>
@@ -495,9 +427,8 @@ label.f .lb{white-space:nowrap;overflow:hidden}
   </div>
 </div>
 <nav class="tabs glass" id="tabBar">
-  <button data-t="motion"><i>📳</i><span>摇一摇</span></button>
-  <button data-t="music"><i>🎵</i><span>听声音</span></button>
-  <button data-t="set"><i>⚙️</i><span>设置</span></button>
+  <button data-t="motion"><i>📳</i><span>颤抖调教</span></button>
+  <button data-t="music"><i>🎵</i><span>声控调教</span></button>
 </nav>
 
 <script>
@@ -523,12 +454,11 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* ================= 设置 ================= */
 const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
-  src:'rot', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:10, mode:'motion', burstMu:150, view:'motion',
-  comboOn:true, comboStart:30, comboSteps:8, comboWin:600,
+  src:'both', thr:250, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:13, mode:'motion', burstMu:150, view:'motion',
+  mComboOn:true, mWave:'auto', mFast:150, mSlow:800, mBoostMin:2, mBoostMax:5, qPenWin:3, qPenCap:3,
   autoConn:true, lastDev:'', bfOn:false,
   fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
-  escOn:true, musicExtras:false, musSens:5, escAddMin:5, escAddMax:10, escPct:25, escRecent:5, escBase:10, escGap:6, escMax:8,
-  rjOn:true, rjType:'jolt', rjGapMin:3, rjGapMax:10, rjAddMin:5, rjAddMax:15, rjDurMin:0.3, rjDurMax:1.5,
+  musLayers:true, musSwap:true, musSens:5, musThr:6, goodDevs:[], badDevs:[],
   band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'random', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
@@ -550,10 +480,12 @@ if (S.band === 'full') S.band = 'auto';
 if (S.band === 'bass') S.band = 'quiet';
 if ((S.ver|0) < 7){ S.bfOn = false; }
 if ((S.ver|0) < 8){ S.comboOn = true; }
+// v12：连击拆到颤抖调教 / 禁声惩罚里各自一份，沿用旧的全局设置作为两边的初始值
+if ((S.ver|0) < 12){ for (const k of ['m']) for (const f of ['On']) if (S['combo' + f] !== undefined) S[k + 'Combo' + f] = S['combo' + f]; }
 if ((S.ver|0) < 6){ if (S.softA === 30) S.softA = 200; if (S.softB === 30) S.softB = 200; }
 if ((S.ver|0) < 9){ S.preset = 'random'; }
-if ((S.ver|0) < 10){ S.rjOn = true; }
-S.ver = 10;
+if ((S.ver|0) < 13){ S.fxStyle = S.fxStyle === 3 ? 2 : S.fxStyle === 2 ? 0 : S.fxStyle; }
+S.ver = 13;
 S.fxOn = true;
 S.minI = 0; S.maxI = 100;   // 最轻/最重 已移除，固定全范围   // 视觉效果固定开启（只有极光流带一种）
 S.bfOn = false; S.softA = 200; S.softB = 200; // 旧设置迁移到跟手参数
@@ -580,7 +512,8 @@ function log(msg){
 let device = null, wChar = null, connected = false, writing = false;
 let reconnectTries = 0, userDisconnect = false;
 
-if (!navigator.bluetooth) $('#noBle').classList.remove('hidden');
+// 浏览器不支持网页蓝牙：提示放在设置弹窗里，设置按钮闪烁，直到用户点开看过
+if (!navigator.bluetooth){ $('#noBle').classList.remove('hidden'); $('#setBtn').classList.add('blink'); }
 
 let connState = 0;
 function setConn(state, txt){
@@ -593,7 +526,7 @@ function setConn(state, txt){
 
 const NAME_PREFIX = '47L121';
 let lastConnErr = null, showAllNext = false;
-let autoTimer = 0, autoTries = 0;
+let autoTimer = 0;
 
 async function connect(){
   if (!navigator.bluetooth) return runSelfCheck(true);
@@ -621,7 +554,7 @@ async function connect(){
       ? '\n\n安卓请检查：①用浏览器打开（不要在微信/QQ 里直接打开）②手机蓝牙和「位置信息」都已打开 ③浏览器已获得「附近的设备」/位置权限 ④郊狼没有同时连着 iPhone 或官方 App（它只能连一台，连着时搜不到）'
       : '\n\n请确认郊狼已开机、没有被其他手机或官方 App 连着。';
     else tip = '\n\n设备可能被其他手机/官方 App 占用，或信号太弱。关掉其他连接后重试。';
-    if (step === 'getPrimaryService 180C') toast('这个设备不是郊狼（没有郊狼的服务），换一个试试');
+    if (step === 'getPrimaryService 180C'){ toast('这个设备不是郊狼（没有郊狼的服务），换一个试试'); if (device){ markBad(device.id); device = null; } }
     lastConnErr = {step, name: e.name, msg: e.message};
     if (/cancel/i.test(e.message)) return;          // 用户取消：只提示，不弹自检
     runSelfCheck(true);                             // 其他失败：自动打开自检
@@ -635,54 +568,117 @@ async function useDevice(d){
   if (!d._hooked){ d.addEventListener('gattserverdisconnected', onDisconnected); d._hooked = true; }
   userDisconnect = false;
   $('#pickBox').classList.add('hidden');
-  $('#devName').textContent = '今天这只：' + (d.name || d.id);
   await openGatt();
-  S.lastDev = d.id; save();
+  S.lastDev = d.id; markGood(d.id);
 }
 
 function gattTimeout(p, ms){
   return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('连接超时（设备可能没开机或不在附近）')), ms))]);
 }
 
-// 自动连接：用 getDevices() 取之前授权过的设备，只有一台符合时直接连；多台时让用户选
+// 自动连接：用 getDevices() 取之前授权过的设备。
+// 安卓上不少机型读不到郊狼的蓝牙名字（显示 unknown，只有地址），所以没名字的已授权设备也会自动试：
+// 先听几秒广播按信号强弱排序，再逐个连接，用「有没有郊狼的 180C 服务」判断是不是小狼。
+// 试成功的记进 goodDevs（下次优先），确认不是郊狼的记进 badDevs（以后跳过）。
+const isCoyoteName = n => (n || '').startsWith(NAME_PREFIX);
+const devLabel = d => (d.name || d._advName || '无名设备') + ' · ' + String(d.id).slice(-4);
+function markGood(id){
+  S.goodDevs = [id].concat((S.goodDevs || []).filter(x => x !== id)).slice(0, 8);
+  S.badDevs = (S.badDevs || []).filter(x => x !== id); save();
+}
+function markBad(id){
+  if ((S.goodDevs || []).includes(id) || (S.badDevs || []).includes(id)) return;
+  S.badDevs = (S.badDevs || []).concat(id).slice(-30); save();
+}
+let autoGen = 0, autoRound = 0;
 async function autoConnect(){
   if (!S.autoConn || connected || !navigator.bluetooth) return;
   if (typeof navigator.bluetooth.getDevices !== 'function'){
-    log('自动连接：此浏览器不支持 getDevices()，请手动点「连接郊狼」');
+    log('自动连接：此浏览器不支持 getDevices()，请手动点「召唤小狼」');
     return;
   }
   let list;
   try { list = await navigator.bluetooth.getDevices(); }
   catch(e){ log('自动连接：读取已授权设备失败 ' + e.message); return; }
-  const m = list.filter(d => (d.name || '').startsWith(NAME_PREFIX));
-  if (!m.length){ log('自动连接：还没有授权过的郊狼，先手动连接一次'); return; }
-  if (m.length > 1){ showPicker(m); return; }
-  log('自动连接：找到 ' + (m[0].name || m[0].id));
-  autoTries = 0;
-  tryAuto(m[0]);
+  const good = S.goodDevs || [], bad = S.badDevs || [];
+  // 候选：名字是 47L121 开头的 / 以前连成功过的 / 没名字且没被排除的（有别的名字的，比如 47L120 无线传感器，不试）
+  const cands = list.filter(d => isCoyoteName(d.name) || good.includes(d.id) || d.id === S.lastDev || (!d.name && !bad.includes(d.id)));
+  if (!cands.length){ log('自动连接：还没有授权过的郊狼，先手动召唤一次'); return; }
+  const known = cands.filter(d => isCoyoteName(d.name) || good.includes(d.id) || d.id === S.lastDev);
+  if (known.length > 1 && !known.some(d => d.id === S.lastDev)){ showPicker(known); return; }
+  log('自动连接：候选 ' + cands.map(devLabel).join('、'));
+  startAuto(cands);
 }
-
-async function tryAuto(d){
-  if (connected || !S.autoConn) return;
-  autoTries++;
-  try{
-    setConn(1, autoTries > 1 ? `等待设备… (${autoTries})` : '自动连接中…');
-    // 支持的话先等设备广播（设备不在范围时 connect 可能卡住）
-    if (d.watchAdvertisements && !d.watchingAdvertisements){
-      try { await d.watchAdvertisements(); } catch(e){}
-    }
-    await gattTimeout(useDevice(d), 8000);
-    if (d.unwatchAdvertisements) try { d.unwatchAdvertisements(); } catch(e){}
-    toast('小狼自己跑回来了 🐺');
-  }catch(e){
-    if (connected) return;
-    try { d.gatt.disconnect(); } catch(_){}
-    if (autoTries === 1) log('自动连接未成功：' + e.message + '，继续在后台重试');
-    if (autoTries < 40){ setConn(1, `等待设备… (${autoTries})`); autoTimer = setTimeout(() => tryAuto(d), 3000); }
-    else { setConn(0, '未连接'); log('自动连接放弃，请手动连接'); }
+function startAuto(cands){
+  stopAutoRetry();
+  autoRound = 0;
+  autoLoop(cands, autoGen);
+}
+// 听一会儿广播：返回 {id → 最强 rssi}；浏览器不支持时返回 null
+async function scanAds(devs, ms){
+  const ws = devs.filter(d => typeof d.watchAdvertisements === 'function');
+  if (!ws.length) return null;
+  const rssi = new Map(), hs = [];
+  const ac = typeof AbortController === 'function' ? new AbortController() : null;
+  for (const d of ws){
+    const h = e => {
+      rssi.set(d.id, Math.max(rssi.has(d.id) ? rssi.get(d.id) : -999, e.rssi == null ? -100 : e.rssi));
+      if (e.name) d._advName = e.name;
+      if (e.uuids && e.uuids.some(u => String(u).toLowerCase() === SVC)) d._advSvc = true;
+    };
+    d.addEventListener('advertisementreceived', h); hs.push([d, h]);
+    try { if (!d.watchingAdvertisements) await d.watchAdvertisements(ac ? {signal: ac.signal} : undefined); } catch(e){}
   }
+  await new Promise(r => setTimeout(r, ms));
+  if (ac) ac.abort();
+  for (const [d, h] of hs){
+    d.removeEventListener('advertisementreceived', h);
+    if (d.unwatchAdvertisements) try { d.unwatchAdvertisements(); } catch(e){}
+  }
+  return rssi;
 }
-function stopAutoRetry(){ clearTimeout(autoTimer); autoTimer = 0; autoTries = 99; }
+async function autoLoop(cands, gen){
+  const alive = () => gen === autoGen && !connected && S.autoConn;
+  if (!alive()) return;
+  autoRound++;
+  setConn(1, autoRound > 1 ? `等待设备… (${autoRound})` : '自动连接中…');
+  const good = S.goodDevs || [];
+  let order = cands.filter(d => !(S.badDevs || []).includes(d.id) || good.includes(d.id));
+  if (!order.length){ setConn(0, '未连接'); log('自动连接：已授权的设备都不是郊狼，请手动召唤'); return; }
+  // 只有一台、且有名字时不用扫描；否则先听 2.5 秒广播，按信号排序、去掉广播出别的名字的设备
+  let rssi = null;
+  if (order.length > 1 || !order[0].name) rssi = await scanAds(order, 2500);
+  if (!alive()) return;
+  if (rssi && rssi.size){
+    const heard = order.filter(d => rssi.has(d.id) && !(d._advName && !isCoyoteName(d._advName) && !good.includes(d.id)));
+    if (heard.length) order = heard;
+  }
+  const score = d => (d.id === S.lastDev ? 1e6 : 0) + (good.includes(d.id) ? 1e5 : 0) + (isCoyoteName(d.name || d._advName) ? 1e4 : 0)
+    + (d._advSvc ? 1e3 : 0) + (rssi && rssi.has(d.id) ? 200 + rssi.get(d.id) : 0);
+  order.sort((a, b) => score(b) - score(a));
+  if (autoRound === 1 && order.length > 1)
+    log('自动连接：按顺序尝试 ' + order.map(d => devLabel(d) + (rssi && rssi.has(d.id) ? ` (${rssi.get(d.id)}dBm)` : '')).join(' → '));
+  for (const d of order){
+    if (!alive()) return;
+    try{
+      if (order.length > 1) setConn(1, '试 ' + devLabel(d));
+      await gattTimeout(useDevice(d), 8000);
+      return;
+    }catch(e){
+      if (connected) return;
+      try { d.gatt.disconnect(); } catch(_){}
+      if (device === d) device = null;      // 没连上的不要留作「当前设备」，否则回到前台时会去重连它
+      if (step === 'getPrimaryService 180C' && /NotFound/i.test(e.name || '') && !isCoyoteName(d.name)){
+        markBad(d.id); cands = cands.filter(x => x !== d);
+        log(`自动连接：${devLabel(d)} 不是郊狼，以后跳过`);
+      } else if (autoRound === 1) log(`自动连接：${devLabel(d)} 未成功（${e.message}），继续在后台重试`);
+    }
+  }
+  if (!alive()) return;
+  if (autoRound < 40){ setConn(1, `等待设备… (${autoRound})`); autoTimer = setTimeout(() => autoLoop(cands, gen), 3000); }
+  else { setConn(0, '未连接'); log('自动连接放弃，请手动召唤'); }
+}
+function stopAutoRetry(){ clearTimeout(autoTimer); autoTimer = 0; autoGen++; }
 
 function showPicker(list){
   const box = $('#pickBox'), el = $('#pickList');
@@ -690,7 +686,7 @@ function showPicker(list){
   list.forEach(d => {
     const b = document.createElement('button');
     b.textContent = (d.name || '郊狼') + (d.id === S.lastDev ? ' · 上次' : '') + ' · ' + String(d.id).slice(-4);
-    b.onclick = () => { stopAutoRetry(); autoTries = 0; tryAuto(d); };
+    b.onclick = () => startAuto([d]);
     el.appendChild(b);
   });
   box.classList.remove('hidden');
@@ -715,8 +711,9 @@ async function openGatt(){
   connected = true; reconnectTries = 0;
   diag.mode = ''; pickWrite();
   setConn(2, '小狼在线');
+  $('#chkMask').classList.add('hidden'); $('#toast').classList.remove('show');   // 连上了：收起排查窗口和提示条
   setTimeout(updateArm, 0);
-  log(`已连接 ${device.name} · 150A 属性[${diag.props}] · 写入方式 ${diag.mode}`);
+  log(`已连接 ${device.name || device.id} · 150A 属性[${diag.props}] · 写入方式 ${diag.mode}`);
   if (S.bfOn) await writeBF();
   else log('未写入 BF：沿用设备里已有的软上限和平衡参数');
   // 电量读取放在发送循环之前，避免和 B0 写入并发（安卓 Chrome 对并发 GATT 操作会报错）
@@ -744,7 +741,7 @@ async function initBattery(server){
 function onDisconnected(){
   const was = connected;
   if (!was && reconnectTries === 0) return; // 连接中途失败（不是掉线），交给调用方处理
-  connected = false; wChar = null; txQueue.length = 0; slotMap.clear(); slotFreq.clear();
+  connected = false; wChar = null; txQueue.length = 0; clearSlots();
   setArm(false); holding = false; burstUntil = 0;
   setConn(0, '已断开');
   log('设备断开');
@@ -856,19 +853,14 @@ function renderStrength(){
   }
   renderTmp();
 }
-// 主数值旁的灰色小字：越激动越重 / 随机惊喜 临时加的力度（+x），越挨越重当前的力度百分比
+// 主数值旁的灰色小字：重击临时加的力度（+x）
 function renderTmp(){
-  const now = performance.now();
-  const cl = typeof comboLevel === 'function' ? comboLevel(now) : 0;
-  const cg = S.comboOn && cl ? Math.round(comboGainOf(cl) * 100) : 0;
   for (const c of ['A','B']){
     const base = S['str'+c];
     const add = typeof effStr === 'function' ? effStr(c) - base : 0;
     const t1 = add > 0 ? '+' + add : '';
-    const t2 = cg && base > 0 && S['ch'+c] ? '🔥' + cg + '%' : '';
-    const e1 = $('#tmp'+c), e2 = $('#cmb'+c);
+    const e1 = $('#tmp'+c);
     if (e1.textContent !== t1) e1.textContent = t1;
-    if (e2.textContent !== t2) e2.textContent = t2;
   }
 }
 setInterval(renderTmp, 200);
@@ -960,12 +952,15 @@ let burstUntil = 0, holding = false, armed = false, gain = 1;
 let nextSlot = 0, lastTickT = 0;           // nextSlot = 下一帧第一个槽的编号
 const slotMap = new Map();                 // 槽编号 -> 强度 0-100（频率字节另存）
 const slotFreq = new Map();
+// 分通道的时间槽（分声部输出时，不同声部写进不同通道）；输出时与共用槽取较强的一方
+const chSlot = {A: {m: new Map(), f: new Map()}, B: {m: new Map(), f: new Map()}};
+function clearSlots(){ slotMap.clear(); slotFreq.clear(); for (const c of 'AB'){ chSlot[c].m.clear(); chSlot[c].f.clear(); } }
 const txQueue = [];                        // 待写帧，保证顺序、不丢帧
 
 function startLoop(){
   if (loopOn) return;
   loopOn = true; loopT0 = performance.now(); loopN = 0;
-  lastTickT = loopT0; nextSlot = 0; slotMap.clear(); slotFreq.clear();
+  lastTickT = loopT0; nextSlot = 0; clearSlots();
   schedule();
 }
 function schedule(){
@@ -980,32 +975,44 @@ function schedule(){
 }
 
 // 把一段波形写进时间槽（与已有内容取最大值）
-function placeItems(atTime, items, g){
+function placeItems(atTime, items, g, ch, replace){   // ch：'A' / 'B' 只写这一路；不传＝两路共用；replace：先清掉从这里往后还没放的
   const phase = clamp(Math.floor((atTime - lastTickT) / 25), 0, 3);
   const start = nextSlot + phase;
+  const m = ch ? chSlot[ch].m : slotMap, fm = ch ? chSlot[ch].f : slotFreq;
+  if (replace) for (const k of [...m.keys()]) if (k >= start){ m.delete(k); fm.delete(k); }
   for (let i=0; i<items.length; i++){
     const [f, I] = items[i];
     const v = clamp(Math.round(I * g), 0, 100), k = start + i;
-    if (!slotMap.has(k) || slotMap.get(k) < v){ slotMap.set(k, v); slotFreq.set(k, f); }
+    if (!m.has(k) || m.get(k) < v){ m.set(k, v); fm.set(k, f); }
   }
 }
-function placeBurst(atTime, durMs, g){
+// 频率字节 → 脉冲间隔 ms（encFreq 的反过程）
+function decFreq(b){ return b <= 100 ? b : b <= 200 ? (b - 100) * 5 + 100 : (b - 200) * 10 + 600; }
+function placeBurst(atTime, durMs, g, grain){   // grain：颗粒缩放（<1＝更细），不传＝原样
   const n = Math.max(1, Math.round(durMs / 25));
   if (S.preset === 'random') buildWave();
-  const items = [];
+  let items = [];
   if (OFFICIAL_WAVES[S.preset]){ for (let i=0; i<n; i++){ items.push(wave[officialPos % wave.length]); officialPos++; } }
   else for (let i=0; i<n; i++) items.push(wave[i % wave.length]);
+  if (grain && grain !== 1) items = items.map(([f, I]) => [encFreq(Math.max(10, decFreq(f) * grain)), I]);
   placeItems(atTime, items, g);
 }
-// 音乐节奏模式：按当前音乐自动生成这一拍的波形
-//  · 时长 = 拍长的 40%（60–320ms），快歌短促、慢歌饱满
-//  · 颗粒 = 由音色明亮度（频谱重心）和速度决定：明亮/快 → 细密酥麻，低沉/慢 → 粗重敲击
-//  · 形状 = 鼓点一样“先猛后衰”，重拍（起音更强）更重
+// 节奏跟随：按当前音乐自动生成这一拍的波形
+// 分声部输出（默认）：把这一拍里出现的声部各自生成一段电击
+//  · 低音（30–200Hz，鼓点/贝斯）：颗粒最大（80–110ms），时长适中
+//  · 中音（200–2000Hz，人声/军鼓）：颗粒偏短（33–45ms），时长较短，形状更平（像人声一样拖着）
+//  · 高音（2–10kHz，镲/沙锤/齿音）：颗粒最短（12–18ms），时长最短，快起快落
+//  · 时长＝最近测到的这个声部一个音能持续多久（还在响就按已经响了多久），再限制在各自范围里
+//  · 整体比前 20 秒明显更响（高潮）时，所有声部都更重
+//  · 双通道：低音一路、高音一路，中音跟着有空的那一路；隔几拍随机把 A/B 互换
 let musCentroid = 1500, musAccent = 1;
-const MUS = {dur: 0, pf: 0};
-function musicBurst(now){
+const MUS = {dur: 0, pf: 0, layers: []};
+const BAND_NAME = ['低音', '中音', '高音'];
+let musSwap = false, musSwapIn = 8;
+function musicBurst(now, mult){
+  if (S.musLayers) return musicLayers(now, mult || 1);
   const iv = beatInterval() || 500;
-  const dur = clamp(iv * 0.4, 60, 320);
+  const dur = clamp(iv * 0.4, 60, 320) * (mult || 1);
   const bright = clamp((musCentroid - 600) / 3400, 0, 1);          // 0 低沉 … 1 明亮
   const fast = clamp((60000 / iv - 70) / 90, 0, 1);                 // 0 慢 … 1 快
   const pf = Math.round(70 - 55 * (0.6 * bright + 0.4 * fast));      // 15–70ms
@@ -1016,15 +1023,47 @@ function musicBurst(now){
     const decay = Math.pow(1 - i / n, 1.4);
     items.push([fb, Math.round(100 * acc * (0.35 + 0.65 * decay))]);
   }
-  MUS.dur = Math.round(n * 25); MUS.pf = pf;
+  MUS.dur = Math.round(n * 25); MUS.pf = pf; MUS.layers = [];
   placeItems(now, items, 1);
   return MUS.dur;
+}
+function musicLayers(now, mult){
+  const iv = beatInterval() || 500;
+  const fast = clamp((60000 / iv - 70) / 90, 0, 1);                 // 0 慢 … 1 快：快歌颗粒都细一点
+  const lift = 0.8 + 0.2 * musClimax;                                 // 高潮更重
+  const st = [0, 1, 2].map(k => bandStrength(k, iv));
+  let act = [0, 1, 2].filter(k => st[k] >= 0.35);
+  if (!act.length) act = [st.indexOf(Math.max(...st))];              // 都不明显：只出最突出的那个声部
+  const lenOf = k => bandOn[k] ? Math.max(bandLen[k], now - bandOnAt[k]) : bandLen[k];
+  const span = (lo, hi) => [lo, Math.max(lo, hi)];
+  const spec = [
+    {pf: Math.round(110 - 30 * fast), r: span(100, Math.min(450, iv * 0.7)), shape: 1.4, floor: 0.35},
+    {pf: Math.round(45 - 12 * fast),  r: span(60,  Math.min(300, iv * 0.5)), shape: 0.7, floor: 0.5},
+    {pf: Math.round(18 - 6 * fast),   r: span(40,  Math.min(160, iv * 0.3)), shape: 2.2, floor: 0.2},
+  ];
+  // 通道分配：两路都开时声部分开走，隔 4–12 拍随机互换 A/B
+  const two = S.chA && S.chB;
+  if (two && S.musSwap && --musSwapIn <= 0){ musSwap = !musSwap; musSwapIn = 4 + Math.floor(Math.random() * 9); }
+  const X = musSwap ? 'B' : 'A', Y = musSwap ? 'A' : 'B';
+  const route = k => !two ? undefined : k === 0 ? X : k === 2 ? Y : (act.includes(2) ? X : Y);
+  let maxDur = 0; MUS.layers = [];
+  for (const k of act){
+    const sp = spec[k], d = clamp(lenOf(k), sp.r[0], sp.r[1]) * mult;
+    const n = Math.max(2, Math.round(d / 25)), fb = encFreq(sp.pf);
+    const I0 = 100 * (0.5 + 0.5 * st[k]) * lift, items = [];
+    for (let i = 0; i < n; i++){ const decay = Math.pow(1 - i / n, sp.shape); items.push([fb, Math.round(I0 * (sp.floor + (1 - sp.floor) * decay))]); }
+    placeItems(now, items, 1, route(k));
+    maxDur = Math.max(maxDur, n * 25);
+    MUS.layers.push({k, dur: n * 25, pf: sp.pf, ch: route(k) || ''});
+  }
+  MUS.dur = maxDur; MUS.pf = spec[act[0]].pf;
+  return maxDur;
 }
 
 function tick(){
   const now = performance.now();
   lastTickT = now;
-  if (!connected || !wChar){ nextSlot += 4; slotMap.clear(); slotFreq.clear(); return; }
+  if (!connected || !wChar){ nextSlot += 4; clearSlots(); return; }
 
   // 按住：持续填充本帧
   if (holding){
@@ -1053,17 +1092,23 @@ function tick(){
   } else { b[1] = 0; }
 
   let active = false;
-  const fill = (off, en) => {
+  const fill = (off, en, c) => {
+    const cm = chSlot[c];
     for (let i=0; i<4; i++){
       const k = nextSlot + i;
       if (!en){ b[off+i] = 10; b[off+4+i] = 101; continue; } // 101 = 该通道本次不输出
-      if (slotMap.has(k)){ b[off+i] = slotFreq.get(k); b[off+4+i] = slotMap.get(k); active = active || slotMap.get(k) > 0; }
+      let v = slotMap.has(k) ? slotMap.get(k) : -1, f = slotFreq.get(k);
+      if (cm.m.has(k) && cm.m.get(k) > v){ v = cm.m.get(k); f = cm.f.get(k); }
+      if (v >= 0){ b[off+i] = f; b[off+4+i] = v; active = active || v > 0; }
       else { b[off+i] = 10; b[off+4+i] = 0; }
     }
   };
-  fill(4, S.chA);
-  fill(12, S.chB);
-  for (let i=0; i<4; i++){ slotMap.delete(nextSlot+i); slotFreq.delete(nextSlot+i); }
+  fill(4, S.chA, 'A');
+  fill(12, S.chB, 'B');
+  for (let i=0; i<4; i++){
+    const k = nextSlot + i; slotMap.delete(k); slotFreq.delete(k);
+    for (const c of 'AB'){ chSlot[c].m.delete(k); chSlot[c].f.delete(k); }
+  }
   nextSlot += 4;
 
   diag.last = Array.from(b, x => x.toString(16).padStart(2,'0')).join(' ');
@@ -1148,16 +1193,13 @@ function onMotion(e){
 
 /* ================= 连击 ================= */
 let combo = 0, comboLast = 0;
-function comboLevel(now){ // 计入衰减后的当前连击级数
-  if (!combo) return 0;
-  return Math.max(0, combo - Math.floor((now - comboLast) / S.comboWin));
-}
-// 音乐节奏模式下默认“纯净”：不叠加 越挨越重 / 越激动越重 / 随机惊喜（可在节拍页打开）
-function extrasOn(){ return !(S.mode === 'music' && S.band === 'auto' && !S.musicExtras); }
-function comboGainOf(c){
-  if (!S.comboOn || c <= 0 || !extrasOn()) return 1;
-  const s0 = S.comboStart / 100;
-  return s0 + (1 - s0) * Math.min(1, (c - 1) / Math.max(1, S.comboSteps - 1));
+// 连击按玩法各自一份配置：颤抖调教＝m，禁声惩罚＝q，节奏跟随没有连击
+function comboKey(){ return S.mode === 'motion' ? 'm' : ''; }       // 只有颤抖调教有连击
+const comboCfg = f => { const k = comboKey(); return k ? S[k + 'Combo' + f] : undefined; };
+function comboLevel(now){ // 计入衰减后的当前连击级数：停超过喘息时间后每秒退一级
+  if (!combo || !comboKey()) return 0;
+  const idle = now - comboLast - (comboKey() === 'm' ? 1.5 : comboCfg('WinS')) * 1000;   // 颤抖：停 1.5 秒以上就开始退
+  return idle <= 0 ? combo : Math.max(0, combo - 1 - Math.floor(idle / 1000));
 }
 
 // level: 0-1，供“晃动越猛→越强”使用；src: 'motion' | 'music'
@@ -1168,9 +1210,11 @@ function trigger(level, now, src){
   else if (!S.chA && !S.chB) toast('想电一下，但 A/B 开关都关着');
   else if ((!S.chA || S.strA === 0) && (!S.chB || S.strB === 0)) toast('想电一下，但力度是 0 —— 先用 ＋ 加点');
   combo = comboLevel(now) + 1; comboLast = now;
-  gain = comboGainOf(combo);
+  gain = 1;                                // 力度始终 100%，连击只改波形（颤抖）或只计数（禁声）
   let dur;
-  if (src === 'music' && S.band === 'auto') dur = musicBurst(now);
+  if (src === 'music' && S.band === 'auto') dur = musicBurst(now, 1);
+  else if (src === 'motion' && S.mComboOn) dur = shakeBurst(now, 1);
+  else if (S.mode === 'music' && S.band === 'quiet') dur = quietBurst(now);
   else { dur = S.mode === 'music' ? S.burstMu : S.burst; placeBurst(now, dur, gain); }
   renderCombo(true);
   burstUntil = Math.max(burstUntil, now + dur);
@@ -1182,164 +1226,158 @@ function trigger(level, now, src){
 
 function renderCombo(pop){
   const c = comboLevel(performance.now());
-  $('#comboMini').textContent = S.comboOn && c ? `×${c} · ${Math.round(comboGainOf(c) * 100)}%` : '';
-  if (pop && S.comboOn && c) flyText('×' + c, c);
+  const on = !!comboCfg('On');
+  const txt = !on || !c ? '' : comboKey() === 'm' ? `连击 ×${c} · ${SHK.fast ? '快' : '慢'}` : `×${c}`;
+  for (const k of ['m']){ const el = $('#' + k + 'ComboMini'); const t = k === comboKey() ? txt : ''; if (el.textContent !== t) el.textContent = t; }
+  if (pop && on && c) flyText(FLY_ICONS[Math.floor(Math.random() * FLY_ICONS.length)] + ' x' + c, c);
 }
-// 类似游戏伤害数字：在屏幕上方随机位置跳出、上浮、淡出
-let flyLastX = 0.5;
+/* ---------- 颤抖调教 · 连击：按晃动节奏生成每一下 ----------
+ * 间隔：最近几下的平均间隔；突然变快（这次间隔 < 平均的 60%）就立刻按这次的算，不等平均慢慢追上
+ * 快慢：间隔 ≤「快慢分界」左值算最快，≥右值算最慢，中间平滑过渡
+ *   快 → 颗粒 12ms、时长短（间隔的 60%，40–300ms）、快起快落
+ *   慢 → 颗粒 140ms、时长填满到下一下（间隔的 90%；间隔超过 3 秒就当重新开始）、持续不衰减
+ * 每次触发都会覆盖还没放完的上一段，所以慢晃中突然快晃能立刻切成短促细腻
+ * 重击：这一下晃动幅度 > 最近几下平均的 1.6 倍 → 这一下临时加力（重击加力范围内随机） */
+const SHK_HEAVY = 1.6;
+const SHK = {last: 0, iv: 0, mag: 0, n: 0, add: 0, addUntil: 0, pf: 0, dur: 0, fast: false};
+const shakeAdd = now => SHK.addUntil > now ? SHK.add : 0;
+// 颤抖调教的波形：第 i 格（共 n 格）的力度 0–1；形状压缩/拉伸到这一下的长度
+function shakeEnv(i, n, shape, floor){
+  const t = n <= 1 ? 0 : i / (n - 1);
+  switch (S.mWave){
+    case 'constant': return 1;
+    case 'ramp': return 0.25 + 0.75 * t;
+    case 'pulse': return Math.floor(i / 2) % 2 ? 0 : 1;
+    case 'sine': return 0.15 + 0.85 * Math.sin(Math.PI * (i + 0.5) / n);
+    case 'random': return i === 0 ? 0.7 + Math.random() * 0.3 : 0.25 + Math.random() * 0.75;
+    case 'o_breath': case 'o_tide': {
+      const w = OFFICIAL_WAVES[S.mWave], k = Math.min(w.length - 1, Math.floor(t * (w.length - 1) + 0.5));
+      return Math.max(0.1, w[k][1] / 100);
+    }
+    default: return floor + (1 - floor) * Math.pow(1 - i / n, shape);     // 自动
+  }
+}
+// 预览：画最近一下（还没晃过就画一段示意）
+function drawMWave(){
+  const cv = $('#mWaveCv'); if (!cv || !cv.clientWidth) return;
+  const [ctx, w, h] = fitCanvas(cv);
+  ctx.clearRect(0, 0, w, h);
+  let items = SHK.items;
+  if (!items || !items.length){ const n = 12; items = []; for (let i = 0; i < n; i++) items.push([40, Math.round(100 * shakeEnv(i, n, 1.2, 0.4))]); }
+  const n = items.length, bw = w / Math.max(n, 12), pad = bw > 4 ? 1 : 0;
+  for (let i = 0; i < n; i++){
+    const v = items[i][1], bh = Math.max(1, v / 100 * (h - 22)), x = i * bw + pad, bwid = Math.max(1, bw - pad * 2);
+    const g = ctx.createLinearGradient(0, h - 4 - bh, 0, h - 4);
+    g.addColorStop(0, 'rgba(124,133,240,.95)'); g.addColorStop(1, 'rgba(94,106,210,.45)');
+    ctx.fillStyle = g; ctx.fillRect(x, h - 4 - bh, bwid, bh);
+  }
+  ctx.fillStyle = 'rgba(243,243,250,.55)'; ctx.font = '11px -apple-system,sans-serif';
+  ctx.fillText(SHK.items ? `最近一下：${n}×25ms · 颗粒 ${SHK.pf}ms` : '晃一下就能看到实际输出', 8, 12);
+}
+function shakeBurst(now, mult){
+  const dt = SHK.last ? now - SHK.last : 1e9;
+  SHK.last = now;
+  if (dt > 3000){ SHK.iv = 0; SHK.n = 0; SHK.mag = 0; }
+  else SHK.iv = !SHK.iv || dt < SHK.iv * 0.6 ? dt : SHK.iv * 0.6 + dt * 0.4;
+  SHK.n++;
+  const iv = SHK.iv || 300;                                    // 第一下还不知道节奏：按偏快处理，短促一下
+  const lo = Math.min(S.mFast, S.mSlow), hi = Math.max(S.mFast + 10, S.mSlow);
+  const f = clamp((hi - iv) / (hi - lo), 0, 1);                  // 1＝快 0＝慢
+  const pf = Math.round(140 - 128 * f);
+  const short = clamp(iv * 0.6, 40, 300);                         // 快晃：时长跟着间隔自动变短
+  const fill = Math.max(short, iv * 0.9);                        // 填满到下一下
+  const dur = (short * f + fill * (1 - f)) * (mult || 1);
+  const n = Math.max(2, Math.round(dur / 25)), fb = encFreq(pf);
+  const shape = 0.3 + 1.9 * f, floor = 0.7 - 0.55 * f;          // 慢＝平稳持续，快＝先猛后衰
+  const items = [];
+  for (let i = 0; i < n; i++) items.push([fb, Math.round(100 * shakeEnv(i, n, shape, floor))]);
+  placeItems(now, items, 1, undefined, true);
+  SHK.items = items;
+  SHK.pf = pf; SHK.dur = n * 25; SHK.fast = f >= 0.5;
+  drawMWave();
+  // 重击：比最近几下明显猛 → 临时加力
+  const mag = filt;
+  if (SHK.n > 2 && SHK.mag && mag > SHK.mag * SHK_HEAVY){
+    const bl = Math.min(S.mBoostMin, S.mBoostMax), bh = Math.max(S.mBoostMin, S.mBoostMax);
+    SHK.add = bl + Math.floor(Math.random() * (bh - bl + 1));
+    if (SHK.add > 0){
+      SHK.addUntil = now + SHK.dur + 150; strengthDirty = true;
+      setTimeout(() => { strengthDirty = true; }, SHK.dur + 200);
+      flyText('💥 +' + SHK.add, 8);
+    }
+    SHK.mag += (mag - SHK.mag) * 0.1;                            // 重击只轻微抬高“平时”的水平
+  } else SHK.mag = SHK.mag ? SHK.mag + (mag - SHK.mag) * 0.3 : mag;
+  return SHK.dur;
+}
+// 类似游戏连击数：贴着屏幕左右边缘跳出、上浮、淡出，不挡中间的内容
+const FLY_ICONS = ['🔥', '💥', '🎆', '🎇', '🧨', '💣', '✨', '⚡', '☄️'];
+let flySide = 0;
 function flyText(txt, level, cls){
   const el = document.createElement('div');
   el.className = 'fly' + (cls ? ' ' + cls : '');
   el.textContent = txt;
-  let x; do { x = 0.12 + Math.random() * 0.76; } while (Math.abs(x - flyLastX) < 0.15);
-  flyLastX = x;
+  flySide ^= 1;                                   // 左右交替
   const vh = window.innerHeight;
-  el.style.left = (x * 100) + 'vw';
-  el.style.top = (vh * (0.1 + Math.random() * 0.22)) + 'px';
-  el.style.fontSize = (16 + Math.min(level || 1, 20) * 1.1) + 'px';
+  if (flySide) el.style.left = (6 + Math.random() * 10) + 'px'; else el.style.right = (6 + Math.random() * 10) + 'px';
+  el.style.top = (vh * (0.22 + Math.random() * 0.45)) + 'px';
+  el.style.fontSize = (12 + Math.min(level || 1, 20) * 0.35) + 'px';
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1000);
+  setTimeout(() => el.remove(), 1300);
 }
 setInterval(() => renderCombo(false), 150);
 
-/* ================= 随机抖动 ================= */
-let rjAdd = 0, rjUntil = 0, rjNext = 0, rjKind = '';
-const rndf = (a, b) => { if (a > b) [a, b] = [b, a]; return a + Math.random() * (b - a); };
-// 实际下发的强度 = 基础强度 + 随机增强（只加在强度 > 0 的通道上，且不超过软上限）
+/* ================= 实际下发的强度 ================= */
+// 基础强度 + 颤抖调教重击的临时加力（只加在强度 > 0 的通道上，且不超过软上限）
 function effStr(c){
   const base = S['str'+c];
-  const add = base > 0 ? rjAdd + escAdd() : 0;
+  const add = base > 0 && S.mode === 'motion' ? shakeAdd(performance.now()) : 0;
   return clamp(base + add, 0, Math.min(200, S['soft'+c]));
 }
-function rjRunning(){ return S.rjOn && connected && armed && extrasOn(); }
-function rjStop(){
-  if (rjAdd){ rjAdd = 0; strengthDirty = true; }
-  rjUntil = 0; rjNext = 0; rjKind = '';
-}
-function rjTick(){
-  const now = performance.now();
-  if (!rjRunning()){ rjStop(); rjShow(now); return; }
-  if (rjUntil){
-    if (now >= rjUntil){ // 本次结束 → 恢复强度，排下一次
-      rjAdd = 0; strengthDirty = true; rjUntil = 0; rjKind = '';
-      rjNext = now + rndf(S.rjGapMin, S.rjGapMax) * 1000;
-    }
-  } else if (!rjNext){
-    rjNext = now + rndf(S.rjGapMin, S.rjGapMax) * 1000;
-  } else if (now >= rjNext){
-    rjKind = 'jolt';  // 偷袭 + 加码合一：加重力度并直接电一下
-    rjAdd = Math.round(rndf(S.rjAddMin, S.rjAddMax));
-    const dur = rndf(S.rjDurMin, S.rjDurMax) * 1000;
-    rjUntil = now + dur; rjNext = 0; strengthDirty = true;
-    if (rjKind === 'jolt'){
-      // 等强度指令先发出去（下一帧），再放电
-      setTimeout(() => {
-        if (!rjRunning()) return;
-        const t = performance.now();
-        placeBurst(t, Math.max(50, rjUntil - t), 1);
-        burstUntil = Math.max(burstUntil, rjUntil);
-      }, 120);
-    }
-    log(`随机${rjKind === 'jolt' ? '突袭' : '增强'}：+${rjAdd}，${(dur/1000).toFixed(1)}s`);
-    flyText((rjKind === 'jolt' ? '⚡+' : '📈+') + rjAdd, 6, 'jolt');
-    const c = $('#rjCard'); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
-  }
-  rjShow(now);
-}
-function rjShow(now){
-  const el = $('#rjStat');
-  if (!S.rjOn) el.textContent = '关';
-  else if (!connected) el.textContent = '等小狼来';
-  else if (!armed) el.textContent = '等你开开关';
-  else if (rjUntil) el.textContent = '⚡ 惊喜 +' + rjAdd + ' · ' + Math.max(0, (rjUntil - now) / 1000).toFixed(1) + 's';
-  else if (rjNext) el.textContent = '👀 ' + Math.max(0, (rjNext - now) / 1000).toFixed(1) + 's 后';
-  else el.textContent = '蓄势中';
-}
-setInterval(rjTick, 100);
 
-/* ================= 越激动越重：近 5 秒平均 vs 之前 10 秒平均 ================= */
-// 每 100ms 采一次“激动程度”：晃动＝晃动幅度/门槛；别出声＝音量/门槛；音乐节奏＝音量/60
-// 近 5 秒平均明显高于之前 10 秒平均 → 力度 +5~10 并保持；回落到当时的平均值 → 撤掉这一级；
-// 加完之后如果又明显更高 → 再加一级
-const ESC_N = 450;                         // 最长 45 秒 × 10 次/秒
-const escBuf = new Float32Array(ESC_N); let escI = 0, escCount = 0, escLastEval = 0, escLastUp = 0;
-let escStack = [];                         // [{add, base, ref}]
-const escAdd = () => escStack.reduce((a, l) => a + l.add, 0);
-function escSignal(){
-  if (S.mode === 'motion') return sensorOn ? filt / Math.max(1, S.thr) : 0;
-  if (!micOn) return 0;
-  if (S.band === 'quiet') return mE / Math.max(1, quietThr);
-  return mE / 60;
+/* ================= 惩罚时刻（禁声惩罚独有） ================= */
+const isQuiet = () => S.mode === 'music' && S.band === 'quiet';
+/* ---------- 禁声惩罚自己的惩罚时刻 ----------
+ * 时间窗里第 n 次出声（n 封顶到「封顶次数」）：这一下时长 × n，颗粒 × (1 - 0.1·(n-1))，即 ×0.9、×0.8…，最细到原来的 0.3 */
+let qHits = [];
+function qPenLevel(now){
+  const w = S.qPenWin * 1000; while (qHits.length && now - qHits[0] > w) qHits.shift();
+  return Math.min(qHits.length, Math.max(1, S.qPenCap));
 }
-function escReset(){
-  if (escStack.length){ escStack = []; strengthDirty = true; }
-  escCount = 0; escI = 0;
+function quietBurst(now){
+  qPenLevel(now); qHits.push(now);
+  const n = qPenLevel(now), grain = Math.max(0.3, 1 - 0.1 * (n - 1));
+  const dur = S.burstMu * n;
+  placeBurst(now, dur, 1, grain);
+  if (n > 1) flyText('⏱ ×' + n, 4 + n);
+  return dur;
 }
-function escMean(from, to){ // 相对“现在”的样本区间 [from, to)，单位：样本（100ms）
-  let s2 = 0, n = 0;
-  for (let k = from; k < to; k++){ s2 += escBuf[(escI - 1 - k + ESC_N * 2) % ESC_N]; n++; }
-  return n ? s2 / n : 0;
-}
-function escTick(){
-  const now = performance.now();
-  if (!S.escOn || !armed || !extrasOn()){ escReset(); escShow(); return; }
-  escBuf[escI] = escSignal(); escI = (escI + 1) % ESC_N; escCount = Math.min(ESC_N, escCount + 1);
-  const R = S.escRecent * 10, B = S.escBase * 10;
-  if (escCount < R + B || now - escLastEval < 1000){ escShow(); return; }
-  escLastEval = now;
-  const recent = escMean(0, R);            // 最近 N 秒
-  const before = escMean(R, R + B);        // 再往前 M 秒
-  const margin = (v) => v * (1 + S.escPct / 100) + 0.03;   // 至少高出 X%（再加一点底噪余量），避免抖一抖就加码
-  let changed = false;
-  // 回落：最近 5 秒回到某一级加码时的“刚才的平均值” → 撤掉这一级
-  while (escStack.length && recent <= escStack[escStack.length - 1].base * 1.1 + 0.04){
-    const l = escStack.pop(); changed = true;
-    log(`激动回落，力度 -${l.add}`);
-  }
-  // 刚加码后的 6 秒内，5 秒平均还在爬升，把这段的最高值记为这一级的“新水平”，避免一次变激动被算成两级
-  if (escStack.length && now - escLastUp <= S.escGap * 1000){ const top = escStack[escStack.length - 1]; top.ref = Math.max(top.ref, recent); }
-  // 加码：第一级跟“之前 10 秒”比；之后每级跟上一级加码时的强度比，且至少隔 5 秒
-  const ref = escStack.length ? escStack[escStack.length - 1].ref : before;
-  const base = escStack.length ? escStack[escStack.length - 1].ref : before;
-  if (recent > margin(ref) && now - escLastUp > S.escGap * 1000 && escStack.length < S.escMax){
-    const lo = Math.min(S.escAddMin, S.escAddMax), hi = Math.max(S.escAddMin, S.escAddMax);
-    const add = lo + Math.floor(Math.random() * (hi - lo + 1));
-    escStack.push({add, base, ref: recent});
-    escLastUp = now; changed = true;
-    log(`越来越激动（${before.toFixed(2)} → ${recent.toFixed(2)}），力度 +${add}`);
-    flyText('🔥+' + add, 8, 'jolt');
-  }
-  if (changed){ strengthDirty = true; }
-  escShow();
-}
-function escShow(){
-  const a = escAdd();
+function penReset(){ qHits = []; }
+// 力度卡头部的 ⏱×n：只在禁声惩罚里、惩罚叠加时显示
+function penShow(){
+  const m = isQuiet() ? qPenLevel(performance.now()) : 1;
   const el = $('#escPill');
-  el.classList.toggle('hidden', !a);
-  el.textContent = '🔥+' + a;
-  const st = $('#escStat');
-  st.textContent = !S.escOn ? '关' : !armed ? '等你开开关' : escCount < (S.escRecent + S.escBase) * 10 ? `观察中 ${Math.round(escCount / 10)}/${S.escRecent + S.escBase}s` : a ? `已加 +${a}（${escStack.length} 级）` : '盯着呢';
+  el.classList.toggle('hidden', m <= 1);
+  el.textContent = '⏱×' + m;
 }
-setInterval(escTick, 100);
+setInterval(penShow, 150);
 
 /* ================= 音乐节拍 ================= */
 let micOn = false, actx = null, analyser = null, fbuf = null, micStream = null, beatTimer = 0;
-let micSrc = null, songEl = null, songSrc = null, songOn = false;
-let mAvg = 0, mPrev = 0, mE = 0, beatLast = 0, beatCount = 0, bpm = 0;
-const beatTimes = [];
+let micSrc = null;
+let mAvg = 0, mE = 0, beatLast = 0, beatCount = 0, bpm = 0;
 const MH = 160, mh = new Float32Array(MH), mhT = new Float32Array(MH), mhB = new Uint8Array(MH); let mhI = 0;
 
 function stopMic(){
   try { micStream && micStream.getTracks().forEach(t => t.stop()); } catch(e){}
   try { if (micSrc) micSrc.disconnect(); } catch(e){}
-  micStream = null; micSrc = null; micOn = songOn; prevSpec = null;
+  micStream = null; micSrc = null; micOn = false; prevSpec = null;
 }
 function micDead(){
-  if (!micOn || songOn) return false;
+  if (!micOn) return false;
   const tr = micStream && micStream.getAudioTracks()[0];
   return !tr || tr.readyState === 'ended' || tr.muted || !actx || actx.state === 'closed' || actx.state === 'interrupted';
 }
-// 音频分析管线（麦克风和本地歌曲共用）
+// 音频分析管线（麦克风）
 async function ensureAudio(){
   if (!actx){
     actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1350,40 +1388,6 @@ async function ensureAudio(){
   if (actx.state === 'suspended') await actx.resume();
   if (!beatTimer) beatTimer = setInterval(beatStep, 10);
 }
-// 放手机里的歌：网页自己播放并直接分析音频，比麦克风准、锁定更快；暂停/放完自动回到麦克风
-async function playSong(file){
-  await ensureAudio();
-  if (!songEl){
-    songEl = new Audio(); songEl.preload = 'auto'; songEl.playsInline = true; songEl.setAttribute('playsinline', '');
-    songSrc = actx.createMediaElementSource(songEl);
-    songSrc.connect(actx.destination);
-    songEl.addEventListener('play', () => setSongOn(true));
-    songEl.addEventListener('pause', () => setSongOn(false));
-    songEl.addEventListener('ended', () => setSongOn(false));
-    songEl.addEventListener('timeupdate', renderSong);
-  }
-  if (songEl.src) URL.revokeObjectURL(songEl.src);
-  songEl.src = URL.createObjectURL(file);
-  $('#songName').textContent = file.name.replace(/\.[^.]+$/, '');
-  try { await songEl.play(); } catch(e){ toast('播放失败：' + e.message); }
-}
-function setSongOn(on){
-  songOn = on;
-  try { if (micSrc) micSrc.disconnect(); } catch(e){}
-  try { songSrc.disconnect(analyser); } catch(e){}
-  if (on) songSrc.connect(analyser); else if (micSrc) micSrc.connect(analyser);
-  // 换音源：清空节奏记录，重新快速锁定
-  envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0;
-  micOn = !!(micSrc || songOn);
-  renderSong();
-}
-function renderSong(){
-  const box = $('#songBox'); if (!box) return;
-  box.classList.toggle('hidden', !songEl || !songEl.src);
-  $('#songPlay').textContent = songOn ? '⏸' : '▶︎';
-  $('#songSrcTag').textContent = songOn ? '正在听：这首歌' : (micSrc ? '正在听：麦克风' : '暂停中');
-  if (songEl && songEl.duration) $('#songBar').style.width = (songEl.currentTime / songEl.duration * 100) + '%';
-}
 async function enableMic(){
   keepAwake();
   if (micOn) return;
@@ -1393,10 +1397,10 @@ async function enableMic(){
     micStream = stream;
     await ensureAudio();
     micSrc = actx.createMediaStreamSource(stream);
-    if (!songOn) micSrc.connect(analyser);
+    micSrc.connect(analyser);
     micOn = true;
     log('麦克风已启用 ' + actx.sampleRate + 'Hz');
-  }catch(e){ log('麦克风失败: ' + e.message); toast('手机不让听声音，点 🩺 看看怎么开权限'); }
+  }catch(e){ log('麦克风失败: ' + e.message); toast('手机不让用麦克风，点 🩺 看看怎么开权限'); }
 }
 
 function beatStep(){
@@ -1414,16 +1418,18 @@ function beatStep(){
     return;
   }
   // 自动节拍：频谱通量（各频点“变响”的总和）作为起音强度
-  const i0 = bin(30), i1 = bin(10000);
+  const i0 = bin(30), i1 = bin(10000), b1 = bin(200), b2 = bin(2000);
   if (!prevSpec) prevSpec = new Uint8Array(fbuf.length);
   let flux = 0, lvl = 0;
+  const bf = [0, 0, 0], bs = [0, 0, 0];             // 低 / 中 / 高 三个声部各自的起音和音量
   for (let i = i0; i <= i1; i++){
-    const d = fbuf[i] - prevSpec[i];
-    if (d > 0) flux += i < bin(200) ? d * 2 : d;   // 低频（鼓）加权
-    lvl += fbuf[i];
+    const d = fbuf[i] - prevSpec[i], k = i < b1 ? 0 : i < b2 ? 1 : 2;
+    if (d > 0){ flux += k === 0 ? d * 2 : d; bf[k] += d; }   // 低频（鼓）加权
+    lvl += fbuf[i]; bs[k] += fbuf[i];
   }
   prevSpec.set(fbuf);
   mE = lvl / (i1 - i0 + 1);
+  bandTrack(bf, bs, [b1 - i0, b2 - b1, i1 - b2 + 1], now);
   // 频谱重心（音色明亮度），慢慢平滑
   let num = 0, den = 0; for (let i = i0; i <= i1; i += 2){ const m = fbuf[i]; num += m * i * binHz; den += m; }
   if (den > 0) musCentroid += (num / den - musCentroid) * 0.02;
@@ -1436,6 +1442,30 @@ const envBuf = new Float32Array(ENV_N); let envI = 0, envCount = 0, envT = 0;
 let prevSpec = null, hopNext = 0, hopMax = 0, envPeak = 1;
 let tempoP = 0, tempoConf = 0, candP = 0, candHits = 0, lastAnal = 0;
 let nextBeatAt = 0, beatPendingMark = 0, silentSince = 0;
+// 分声部：每个声部的起音包络（跟 envBuf 同步写）、当前音量、慢平均、正在响的起点、一个音平均能持续多久
+const bandEnv = [0, 1, 2].map(() => new Float32Array(ENV_N)), bandHop = [0, 0, 0], bandPeak = [1e-3, 1e-3, 1e-3];
+const bandLvl = [0, 0, 0], bandAvg = [0, 0, 0], bandOn = [0, 0, 0], bandOnAt = [0, 0, 0], bandLen = [180, 120, 70];
+let mEfast = 0, mEslow = 0, musClimax = 0;
+function bandTrack(bf, bs, width, now){
+  for (let k = 0; k < 3; k++){
+    const w = Math.max(1, width[k]), lv = bs[k] / w;
+    bandHop[k] = Math.max(bandHop[k], bf[k] / w);
+    bandLvl[k] = lv;
+    bandAvg[k] = bandAvg[k] ? bandAvg[k] + 0.005 * (lv - bandAvg[k]) : lv;     // ~2 秒慢平均
+    const on = lv > bandAvg[k] * 1.15 + 3;
+    if (on && !bandOn[k]){ bandOn[k] = 1; bandOnAt[k] = now; }
+    else if (!on && bandOn[k]){ bandOn[k] = 0; bandLen[k] += (clamp(now - bandOnAt[k], 30, 2000) - bandLen[k]) * 0.2; }
+  }
+  mEfast += (mE - mEfast) * 0.01;                                           // ~1 秒
+  mEslow = mEslow ? mEslow + (mE - mEslow) * 0.0005 : mE;                   // ~20 秒
+  musClimax = clamp((mEfast / Math.max(1, mEslow) - 1.05) / 0.4, 0, 1);
+}
+// 这一拍附近某个声部的起音有多明显（0–1，相对它自己最近的峰值）
+function bandStrength(k, iv){
+  const m = Math.min(envCount, Math.max(2, Math.round(Math.min(iv, 400) / HOP)));
+  let r = 0; for (let j = 1; j <= m; j++) r = Math.max(r, bandEnv[k][(envI - j + ENV_N) % ENV_N]);
+  return clamp(r / Math.max(1e-3, bandPeak[k]), 0, 1);
+}
 
 function autoFeed(flux, now){
   hopMax = Math.max(hopMax, flux);
@@ -1452,6 +1482,7 @@ function autoFeed(flux, now){
 }
 
 function pushEnv(v, now){
+  for (let k = 0; k < 3; k++){ bandEnv[k][envI] = bandHop[k]; bandPeak[k] = Math.max(bandHop[k], bandPeak[k] * 0.995); bandHop[k] = 0; }
   envBuf[envI] = v; envI = (envI + 1) % ENV_N; envCount = Math.min(ENV_N, envCount + 1); envT = now;
   envPeak = Math.max(v, envPeak * 0.995);
   mh[mhI] = clamp(v / envPeak * 255, 0, 255); mhT[mhI] = 0; mhB[mhI] = beatPendingMark; beatPendingMark = 0;
@@ -1545,7 +1576,8 @@ function autoBeatTick(now){
   if (!tempoP || !nextBeatAt) return;
   const iv = beatInterval();
   // 敏感度 1–10：越高越容易出手（节奏把握门槛 0.37 → 0.05，静音门槛 9 → 3）
-  const ok = tempoConf >= 0.405 - S.musSens * 0.035 && mE > 9.6 - S.musSens * 0.66;
+  // 音量门槛 musThr：音量没过门槛就不电（0＝不限）
+  const ok = tempoConf >= 0.405 - S.musSens * 0.035 && mE > Math.max(S.musThr, 1);
   let fireAt = nextBeatAt - S.lead;
   let guard = 0;
   while (now >= fireAt && guard++ < 8){
@@ -1578,24 +1610,6 @@ function quietFeed(e, now){
   bpm = 0;
   mh[mhI] = e; mhT[mhI] = thrE; mhB[mhI] = beat; mhI = (mhI + 1) % MH;
 }
-function beatFeed(e, now){
-  mE = e;
-  mAvg = mAvg ? mAvg + 0.03 * (e - mAvg) : e;      // ~0.5s 滑动平均
-  const thrE = Math.max(mAvg * S.sens, 15);
-  let beat = 0;
-  if (e > thrE && e >= mPrev && now - beatLast >= S.beatGap){
-    beat = 1;
-    const dt = now - beatLast; beatLast = now; beatCount++;
-    if (dt > 240 && dt < 1500){ beatTimes.push(dt); if (beatTimes.length > 8) beatTimes.shift(); }
-    if (beatTimes.length >= 3){
-      const sorted = beatTimes.slice().sort((a, b) => a - b);
-      bpm = Math.round(60000 / sorted[sorted.length >> 1]);
-    }
-    if (armed && S.mode === 'music') trigger(clamp(e / thrE - 0.4, 0.3, 1), now, 'music');
-  }
-  mPrev = e;
-  mh[mhI] = e; mhT[mhI] = thrE; mhB[mhI] = beat; mhI = (mhI + 1) % MH;
-}
 
 const bcv = $('#beatCv');
 function drawIdle(cv, txt){
@@ -1608,7 +1622,7 @@ function drawIdle(cv, txt){
 const FX = {trigAt: -1e9, trigDur: 100, beatAt: -1e9, rings: [], sparks: [], peaks: new Float32Array(40), lastFrame: 0};
 function fxTrig(src){
   const now = performance.now();
-  FX.trigAt = now; FX.trigDur = src === 'music' ? S.burstMu : S.burst;
+  FX.trigAt = now; FX.trigDur = src === 'music' ? S.burstMu : (SHK.dur || S.burst);
   if (src === 'motion'){
     for (let i = 0; i < 7; i++) FX.sparks.push({x: 1, y: 0, vx: -(0.4 + Math.random() * 1.4), vy: (Math.random() - 0.5) * 2.4, t: now});
     if (FX.sparks.length > 40) FX.sparks.splice(0, FX.sparks.length - 40);
@@ -1632,7 +1646,7 @@ function drawBeat(now){
   const glow = Math.max(0, 1 - sinceBeat / 450);
   if (glow > 0){
     const g = ctx.createRadialGradient(w / 2, cy, 0, w / 2, cy, w * 0.6);
-    g.addColorStop(0, `rgba(255,95,162,${0.28 * glow})`); g.addColorStop(1, 'rgba(255,95,162,0)');
+    g.addColorStop(0, `rgba(94,106,210,${0.28 * glow})`); g.addColorStop(1, 'rgba(94,106,210,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
   }
   // 镜像频谱：40 条对数分布的频段，中心对称，顶部有下落的峰值帽
@@ -1647,11 +1661,11 @@ function drawBeat(now){
     let v = Math.pow(m / 255, 1.6);                         // 压一下低值，让动态更明显
     FX.peaks[i] = Math.max(v, FX.peaks[i] - 0.012);
     const bh = v * (cy - 3), x = i * (bw + gap);
-    const hue = 330 - (i / N) * 140;                         // 粉 → 紫 → 蓝
+    const hue = 255 - (i / N) * 50;                          // 靛 → 蓝（Linear 色系）
     const hot = quiet && m / 255 > thrLine;
-    ctx.fillStyle = hot ? 'rgba(255,90,106,.95)' : `hsla(${hue},90%,${62 + glow * 18}%,${0.55 + v * 0.45})`;
+    ctx.fillStyle = hot ? 'rgba(235,87,87,.95)' : `hsla(${hue},62%,${60 + glow * 14}%,${0.45 + v * 0.5})`;
     ctx.fillRect(x, cy - bh, bw, bh * 2 || 1);
-    ctx.fillStyle = `hsla(${hue},100%,85%,.85)`;
+    ctx.fillStyle = `hsla(${hue},70%,82%,.7)`;
     const py = FX.peaks[i] * (cy - 3);
     ctx.fillRect(x, cy - py - 2, bw, 1.5); ctx.fillRect(x, cy + py + 0.5, bw, 1.5);
   }
@@ -1681,10 +1695,9 @@ function drawBeat(now){
 }
 function beatStats(now){
   if (S.band === 'quiet'){
-    $('#beThrL').textContent = now < quietLearnUntil ? '记忆安静中' : '门槛'; $('#beThrV').textContent = Math.round(Math.max(quietBase * S.sens, quietBase + 8, 12));
+    $('#beThrL').textContent = '环境声'; $('#beThrV').textContent = now < quietLearnUntil ? '记忆中' : Math.round(quietBase);
   } else {
-    $('#beThrL').textContent = '把握';
-    $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '分析中';
+    $('#beThrL').textContent = tempoP ? '节奏捕捉' : '节奏捕捉中'; $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '';
   }
   $('#beV').textContent = Math.round(mE); $('#beatCntV').textContent = beatCount;
   $('#bpmV').textContent = bpm || '--';
@@ -1723,11 +1736,11 @@ function drawMotionCv(now){
   ctx.beginPath();
   for (let i=0; i<n; i++){ const v = hist[(histI+i)%n], X = i*w/(n-1); i ? ctx.lineTo(X, y(v)) : ctx.moveTo(X, y(v)); }
   ctx.save();
-  const grad = ctx.createLinearGradient(0,0,w,0); grad.addColorStop(0,'rgba(95,200,255,.4)'); grad.addColorStop(.7,'#a98bff'); grad.addColorStop(1,'#ff5fa2');
-  ctx.strokeStyle = grad; ctx.lineWidth = 2.2; ctx.shadowColor = 'rgba(169,139,255,.9)'; ctx.shadowBlur = 8; ctx.stroke();
+  const grad = ctx.createLinearGradient(0,0,w,0); grad.addColorStop(0,'rgba(94,106,210,.35)'); grad.addColorStop(.75,'#7c85f0'); grad.addColorStop(1,'#a5abff');
+  ctx.strokeStyle = grad; ctx.lineWidth = 1.8; ctx.shadowColor = 'rgba(94,106,210,.6)'; ctx.shadowBlur = 4; ctx.stroke();
   ctx.restore();
   ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
-  const fg = ctx.createLinearGradient(0,0,0,h); fg.addColorStop(0,'rgba(169,139,255,.30)'); fg.addColorStop(1,'rgba(169,139,255,0)');
+  const fg = ctx.createLinearGradient(0,0,0,h); fg.addColorStop(0,'rgba(94,106,210,.22)'); fg.addColorStop(1,'rgba(94,106,210,0)');
   ctx.fillStyle = fg; ctx.fill();
   // 最新点：亮点 + 触发时的涟漪
   const lastV = hist[(histI - 1 + n) % n], lx = w - 2, ly = y(lastV);
@@ -1745,7 +1758,7 @@ function drawMotionCv(now){
   }
 }
 function motionStats(){
-  $('#magV').textContent = Math.round(filt); $('#peakV').textContent = Math.round(peak); $('#thrV2').textContent = S.thr; $('#hzV').textContent = evHz;
+  $('#magV').textContent = Math.round(filt); $('#peakV').textContent = Math.round(peak); $('#hzV').textContent = evHz;
 }
 
 /* ---------- 手感：圆角渐变柱 + 流光 + 触发时的播放头 ---------- */
@@ -1764,7 +1777,7 @@ function drawWave(now){
     const v = wave[i][1], bh = Math.max(1, (v/100)*(h-12)), x = i*bw + pad, bwid = Math.max(1, bw - pad*2);
     const lit = playing && x <= headX;
     const g = ctx.createLinearGradient(0, h - 5 - bh, 0, h - 5);
-    g.addColorStop(0, lit ? '#ffd36e' : 'rgba(169,139,255,.95)'); g.addColorStop(1, lit ? 'rgba(255,95,162,.9)' : 'rgba(255,95,162,.45)');
+    g.addColorStop(0, lit ? '#f7f8f8' : 'rgba(124,133,240,.95)'); g.addColorStop(1, lit ? 'rgba(165,171,255,.9)' : 'rgba(94,106,210,.45)');
     ctx.fillStyle = g;
     const r = Math.min(3, bwid / 2);
     ctx.beginPath();
@@ -1778,7 +1791,7 @@ function drawWave(now){
   ctx.fillStyle = sh; ctx.fillRect(sx - 30, 0, 60, h);
   // 频率曲线（发光）
   ctx.save();
-  ctx.strokeStyle = 'rgba(95,200,255,.95)'; ctx.lineWidth = 1.6; ctx.shadowColor = 'rgba(95,200,255,.9)'; ctx.shadowBlur = 6;
+  ctx.strokeStyle = 'rgba(76,180,231,.95)'; ctx.lineWidth = 1.4; ctx.shadowColor = 'rgba(76,180,231,.6)'; ctx.shadowBlur = 3;
   ctx.beginPath();
   for (let i=0; i<n; i++){
     const yy = h - 5 - ((wave[i][0] - 10) / 230) * (h - 12), x = i*bw + bw/2;
@@ -1797,7 +1810,7 @@ function drawWave(now){
 }
 
 /* ================= GPU 视觉：7 种风格随机轮播（WebGL，30fps，低功耗） ================= */
-const GLFX_STYLES = ['极光流带'];
+const GLFX_STYLES = ['极光流带', '虫洞下坠', '点阵脉冲'];
 const GL_VS = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
 const GL_COMMON = `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
@@ -1806,17 +1819,21 @@ precision highp float;
 precision mediump float;
 #endif
 uniform vec2 R; uniform float T, BEAT, LVL, HOT; uniform float B[8];
+uniform float BASS, MID, TRE, Z, ROT; uniform vec4 RIP[6]; uniform vec3 C0, C1, C2, C3;
+vec3 pal4(float s){return mix(mix(C0,C1,smoothstep(0.,.5,s)),mix(C2,C3,smoothstep(.5,1.,s)),smoothstep(.35,.65,s));}
+float h11(float n){return fract(sin(n*91.345)*47453.5453);}
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
   return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
 float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*noise(p);p*=2.03;a*=.5;}return v;}
-vec3 pal(float t){return .55+.45*cos(6.2831*(t+vec3(.0,.33,.67)));}
+vec3 pal(float t){return clamp(.5+.62*cos(6.2831*(t+vec3(.0,.33,.67))),0.,1.);}   // 饱和度更高的调色板
 float band(float x){
   float f=clamp(x,0.,.999)*7.; int i=int(f); float r=fract(f);
   float a=0.,b=0.; for(int k=0;k<8;k++){ if(k==i)a=B[k]; if(k==i+1)b=B[k]; } if(i==7)b=a; return mix(a,b,r);}
-vec3 post(vec3 c){ // 越线/出声时整体染红
+vec3 post(vec3 c){ // 越线/出声时整体染红；整体再提一点饱和度
+  c=mix(vec3(dot(c,vec3(.299,.587,.114))), c, 1.35);
   c=mix(c, c*vec3(1.35,.4,.45)+vec3(.12,0.,.02), HOT*.65);
-  return c;
+  return max(c, 0.);
 }
 `;
 const GL_FS = [
@@ -1838,14 +1855,93 @@ const GL_FS = [
     float w=.005+e*.022+BEAT*.012;
     float line=w/(d+w*.5);
     vec3 c=pal(fk*.16+uv.x*.4+T*.05+e*.35);
-    col+=c*(line*line*.5+line*.16)*(.35+e*1.4+BEAT*.7)*(1.-fk*.1);
+    col+=c*(line*line*.6+line*.2)*(.45+e*1.6+BEAT*.8)*(1.-fk*.1);
     col+=c*smoothstep(.25,0.,abs(uv.y-y))*e*.05;               // 丝带周围的柔光
   }
-  col+=vec3(1.,.55,.85)*BEAT*.25*exp(-abs(uv.y-.5)*5.);
-  gl_FragColor=vec4(post(col/(1.+col*.45)),1.);
+  // 发光粒子：随机大小，慢慢淡入淡出，横向慢漂、上下摆动范围更大；能量越高越亮，节拍时一起闪
+  for(int k=0;k<28;k++){
+    float fk=float(k);
+    float h1=hash(vec2(fk,1.7)), h2=hash(vec2(fk,9.3)), h3=hash(vec2(fk,4.1)), h4=hash(vec2(fk,6.6)), h5=hash(vec2(fk,2.9));
+    float x=fract(h1+T*(.006+h2*.02)*(1.+LVL));
+    float ey=band(x);
+    float y=.5+(h3-.5)*(.75+ey*.4)+sin(T*(.12+h2*.25)+fk*1.7)*.18;
+    vec2 d=uv-vec2(x,y); d.x*=R.x/R.y;
+    float r=(.0015+h4*h4*.009)*(1.+ey*.8+BEAT*.5);                   // 随机大小
+    float g=r*r/(dot(d,d)+r*r*.25);
+    float life=sin(fract(T*(.03+h5*.05)+h4)*3.14159);               // 自己的淡入淡出周期
+    float fade=life*life*smoothstep(0.,.08,x)*smoothstep(1.,.92,x); // 两侧边缘也淡出
+    col+=pal(h1+T*.03+ey*.4)*g*fade*(.5+ey*1.5+BEAT*1.1);
+  }
+  col+=vec3(1.,.45,.9)*BEAT*.3*exp(-abs(uv.y-.5)*5.);
+  gl_FragColor=vec4(post(col/(1.+col*.35)),1.);
+}`,
+// 虫洞下坠：螺旋隧道壁 + 多层径向光束 + 发光出口和事件视界环；低频加快下坠，鼓点冲刺、镜头抖动、中心爆亮
+`void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*R)/(R.y*.5);
+  uv-=vec2(sin(T*.23),cos(T*.19))*.05;                              // 视角缓慢漂移
+  uv+=.014*BEAT*vec2(sin(T*70.),cos(T*53.));                        // 鼓点镜头抖动
+  float d=length(uv), a=atan(uv.y,uv.x);
+  float depth=.5/(d+.05)+Z;
+  float tw=a+ROT+depth*.1*(1.+BASS);
+  float ph=tw*6.;
+  float n=sin(ph+sin(depth*1.3)*2.)+.5*sin(ph*2.+depth*.8+sin(ph)*1.5); n=n*.5+.5;
+  float k=.5+.5*sin(depth*.45+tw);
+  vec3 wall=mix(mix(C0,C1,n),mix(C2,C3,n),k);
+  wall+=C2*pow(.5+.5*sin(depth*3.14159),12.)*(.3+BASS*1.4)*.9;      // 一圈圈肋骨，低频越强越亮
+  wall+=C3*pow(.5+.5*sin(ph*2.),24.)*.25*(.4+MID);
+  float fade=smoothstep(1.6,.05,d);
+  vec3 col=wall*(.12+.95*fade*fade);
+  float spd=.5+BASS*2.2+BEAT*3.4, len=clamp(.16+spd*.11,.16,.8);
+  for(int L=0;L<4;L++){                                             // 四层光束，每层速度和密度不同
+    float fl=float(L), N=48.+fl*20.;
+    vec2 g=vec2((a/6.2831853+.5)*N, (.5/(d+.05))*(.5+fl*.18)*1.6+Z*(1.6+fl*.4)+fl*3.1);
+    vec2 id=floor(g), f=fract(g);
+    float h=hash(id+fl*17.);
+    float ax=f.x-.5-(hash(id+5.3)-.5)*.6, w=.05+.05*hash(id+9.1);
+    float beam=exp(-ax*ax/(w*w))*smoothstep(0.,.05,f.y)*smoothstep(len,len*.55,f.y)*step(.6,h);
+    float sc=hash(id+2.2);
+    vec3 tint=sc<.25?C0:(sc<.5?C1:(sc<.75?C2:C3));
+    col+=mix(tint,vec3(1.),.55)*beam*(.4+.7*BEAT)*smoothstep(.08,.55,d);
+  }
+  col+=mix(C3,vec3(1.),.5)*exp(-d*4.5)*(.9+BEAT*1.6)*.3;            // 出口的光
+  col+=vec3(1.)*exp(-d*18.)*(.5+.5*BEAT);
+  col+=C1*exp(-pow((d-.14-.02*BASS)*26.,2.))*(.5+BEAT*1.2)+C2*exp(-pow((d-.17)*18.,2.))*.35;   // 事件视界环
+  col*=1.-.55*smoothstep(1.,1.9,d);
+  gl_FragColor=vec4(post(col),1.);
+}`,
+// 点阵脉冲：LED 圆点阵，三层叠加决定每个圆点的大小和亮度：中心对称的频谱柱、鼓点触发的扩散波纹、低频冲击；
+// 没有输入时每 2 秒左右自动扩散一圈
+`void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
+  float asp=R.x/R.y, cs=1./14.;
+  vec2 gg=uv/cs, id=floor(gg), lc=fract(gg)-.5, cu=(id+.5)*cs;
+  float xn=cu.x/asp+.5, ax=clamp(abs(xn-.5)*2.,0.,.999);
+  float bv=band(pow(ax,1.5));
+  float hh=bv*bv*.42+.012;
+  float f=smoothstep(hh+.035,hh-.035,abs(cu.y))*(.3+.55*min(bv*1.4,1.));
+  for(int i=0;i<6;i++){
+    vec4 q=RIP[i];
+    if(q.w>0.){ float dd=length(cu-q.xy); f+=exp(-pow((dd-q.z*.6)*13.,2.))*q.w*exp(-q.z*1.1); }
+  }
+  f+=.05+.04*sin(cu.x*7.+T*.9)*sin(cu.y*6.-T*.7);
+  f+=(BEAT*.2+BASS*.25)*exp(-length(cu)*4.);                        // 低频冲击：中心一块整体鼓起
+  f=clamp(f,0.,1.35);
+  float rad=.07+.4*min(f,1.), d=length(lc);
+  float dt=smoothstep(rad+.04,rad-.04,d), halo=exp(-d*6.5)*f*.4;
+  vec3 pc=pal4(fract(xn*1.2+cu.y*.9+T*.04+f*.15));
+  vec3 col=C0*.015+pc*(dt*(.09+f)+halo)+vec3(1.)*dt*smoothstep(1.,1.4,f)*.3;
+  col+=(hash(gl_FragCoord.xy+T)-.5)/150.;
+  gl_FragColor=vec4(post(col),1.);
 }`];
 
-const GLFX = {ok: false, gl: null, cv: null, progs: [], cur: 0, nextSwap: 0, bands: new Float32Array(8), beat: 0, hot: 0, lvl: 0, label: null, wrap: null, host: ''};
+const GLFX = {ok: false, gl: null, cv: null, progs: [], cur: 0, nextSwap: 0, bands: new Float32Array(8), beat: 0, hot: 0, lvl: 0, label: null, wrap: null, host: '',
+  bass: 0, mid: 0, tre: 0, z: 0, rot: 0, lastT: 0, beatPrev: 0, rip: new Float32Array(24), ripI: 0, lastRip: -9,
+  pal: [[.5,.3,.9],[.2,.7,1],[1,.3,.7],[.8,.9,1]], palI: 0, palAt: 0};
+// 每种效果自己的几套配色，每 24 秒慢慢换一套（参考样例的配色）
+const FX_PALS = {
+  1: [[[.35,.1,.95],[.1,.7,1],[1,.25,.7],[.7,.95,1]], [[1,.4,.1],[1,.15,.35],[1,.8,.25],[1,.9,.7]], [[.1,.9,.6],[.15,.5,1],[.6,.2,1],[.8,1,.9]], [[.95,.2,.4],[.5,.15,.9],[.2,.75,1],[1,.85,.9]]],
+  2: [[[.2,.9,1],[.4,.5,1],[.95,.3,.8],[1,.7,.3]], [[1,.3,.4],[1,.6,.2],[1,.9,.4],[.9,.2,.7]], [[.3,1,.6],[.2,.8,1],[.6,.5,1],[.95,1,.5]], [[.9,.9,1],[.5,.6,1],[.7,.4,1],[1,.5,.8]]],
+};
 function glfxInit(){
   try {
     const cv = document.createElement('canvas'); cv.className = 'glfx';
@@ -1859,7 +1955,15 @@ function glfxInit(){
     wrap.appendChild(cv); wrap.appendChild(label);
     GLFX.wrap = wrap; GLFX.label = label;
     cv.addEventListener('webglcontextlost', e => { e.preventDefault(); GLFX.ok = false; glfxShowFallback(true); });
-    GLFX.cur = 0;
+    GLFX.cur = clamp(S.fxStyle | 0, 0, GLFX_STYLES.length - 1);
+    if (FX_PALS[GLFX.cur]) GLFX.pal = FX_PALS[GLFX.cur][0].map(c => c.slice());
+    wrap.addEventListener('click', () => {
+      GLFX.cur = (GLFX.cur + 1) % GLFX_STYLES.length; S.fxStyle = GLFX.cur; save();
+      const pp = FX_PALS[GLFX.cur]; if (pp){ GLFX.palI = 0; GLFX.palAt = performance.now(); GLFX.pal = pp[0].map(c => c.slice()); }
+      label.textContent = GLFX_STYLES[GLFX.cur] + '  ·  点一下换下一个';
+      label.classList.remove('show'); void label.offsetWidth; label.classList.add('show');
+      wrap.classList.remove('swap'); void wrap.offsetWidth; wrap.classList.add('swap');
+    });
   } catch(e){ GLFX.ok = false; }
 }
 function glfxProg(i){
@@ -1871,7 +1975,8 @@ function glfxProg(i){
   gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, GL_COMMON + GL_FS[i]));
   gl.linkProgram(pr);
   const U = n => gl.getUniformLocation(pr, n);
-  const P = {pr, loc: gl.getAttribLocation(pr, 'p'), R: U('R'), T: U('T'), BEAT: U('BEAT'), LVL: U('LVL'), HOT: U('HOT'), B: U('B[0]')};
+  const P = {pr, loc: gl.getAttribLocation(pr, 'p'), R: U('R'), T: U('T'), BEAT: U('BEAT'), LVL: U('LVL'), HOT: U('HOT'), B: U('B[0]'),
+    BASS: U('BASS'), MID: U('MID'), TRE: U('TRE'), Z: U('Z'), ROT: U('ROT'), RIP: U('RIP[0]'), C: [U('C0'), U('C1'), U('C2'), U('C3')]};
   GLFX.progs[i] = P; return P;
 }
 // 把 GPU 画布挂到当前页面的图表位置（两个页面共用一个画布）
@@ -1919,6 +2024,32 @@ function glfxInputs(now){
   GLFX.lvl += (lvl - GLFX.lvl) * .3;
   GLFX.hot += (hot - GLFX.hot) * (hot > GLFX.hot ? .5 : .08);
   GLFX.beat = Math.max(0, 1 - beatAge / 420);
+  // 没有输入时给一段缓慢起伏的底波，画面不至于死掉
+  const live = (S.view === 'music' && micOn) || (S.view === 'motion' && sensorOn);
+  if (!live) for (let k = 0; k < 8; k++) b[k] += (.07 + .05 * Math.sin(k * .9 + now / 1250) - b[k]) * .1;
+  const dt = GLFX.lastT ? Math.min(0.1, (now - GLFX.lastT) / 1000) : 0.033; GLFX.lastT = now;
+  GLFX.bass += ((b[0] + b[1]) / 2 - GLFX.bass) * .4;
+  GLFX.mid += ((b[2] + b[3] + b[4]) / 3 - GLFX.mid) * .3;
+  GLFX.tre += ((b[5] + b[6] + b[7]) / 3 - GLFX.tre) * .3;
+  GLFX.z += dt * (.5 + GLFX.bass * 2.2 + GLFX.beat * 3.4);          // 虫洞：低频加快下坠，鼓点冲刺
+  GLFX.rot += dt * (.05 + GLFX.mid * .3);
+  // 点阵波纹：鼓点触发（45% 从中心、其余随机位置），没有输入时约每 2 秒一圈
+  const R6 = GLFX.rip, t = now / 1000, asp = GLFX.cv && GLFX.cv.clientHeight ? GLFX.cv.clientWidth / GLFX.cv.clientHeight : 2;
+  for (let i = 0; i < 6; i++) if (R6[i * 4 + 3] > 0){ R6[i * 4 + 2] += dt; if (R6[i * 4 + 2] > 3) R6[i * 4 + 3] = 0; }
+  const spawn = (x, y, amp) => { const j = GLFX.ripI * 4; R6[j] = x; R6[j + 1] = y; R6[j + 2] = 0; R6[j + 3] = amp; GLFX.ripI = (GLFX.ripI + 1) % 6; GLFX.lastRip = t; };
+  if (live){
+    if (GLFX.beat > .8 && GLFX.beatPrev <= .5 && t - GLFX.lastRip > .16){
+      const c = Math.random() < .45; spawn(c ? 0 : (Math.random() - .5) * asp * .6, c ? 0 : (Math.random() - .5) * .5, .7 + GLFX.beat * .6);
+    }
+  } else if (t - GLFX.lastRip > 2) spawn((Math.random() - .5) * asp * .5, (Math.random() - .5) * .4, .8);
+  GLFX.beatPrev = GLFX.beat;
+  // 配色：每 24 秒换下一套，平滑过渡
+  const pals = FX_PALS[GLFX.cur];
+  if (pals){
+    if (now - GLFX.palAt > 24000){ GLFX.palAt = now; GLFX.palI = (GLFX.palI + 1) % pals.length; }
+    const tg = pals[GLFX.palI % pals.length];
+    for (let i = 0; i < 4; i++) for (let k = 0; k < 3; k++) GLFX.pal[i][k] += (tg[i][k] - GLFX.pal[i][k]) * .04;
+  }
 }
 function glfxDraw(now){
   if (!GLFX.ok || !S.fxOn) return false;
@@ -1929,28 +2060,46 @@ function glfxDraw(now){
   if (!w || !h) return true;
   if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
   let P;
-  try { P = glfxProg(GLFX.cur); } catch(e){ log('视觉效果编译失败：' + GLFX_STYLES[GLFX.cur]); GLFX.cur = 0; return false; }
+  try { P = glfxProg(GLFX.cur); } catch(e){ log('视觉效果编译失败：' + GLFX_STYLES[GLFX.cur] + ' ' + e.message); GLFX.cur = 0; S.fxStyle = 0; return false; }
   gl.useProgram(P.pr);
   gl.enableVertexAttribArray(P.loc); gl.vertexAttribPointer(P.loc, 2, gl.FLOAT, false, 0, 0);
   gl.viewport(0, 0, w, h);
   gl.uniform2f(P.R, w, h); gl.uniform1f(P.T, (now / 1000) % 3600);
   gl.uniform1f(P.BEAT, GLFX.beat); gl.uniform1f(P.LVL, GLFX.lvl); gl.uniform1f(P.HOT, GLFX.hot);
   gl.uniform1fv(P.B, GLFX.bands);
+  gl.uniform1f(P.BASS, GLFX.bass); gl.uniform1f(P.MID, GLFX.mid); gl.uniform1f(P.TRE, GLFX.tre);
+  gl.uniform1f(P.Z, GLFX.z % 1000); gl.uniform1f(P.ROT, GLFX.rot % 6283.1853);
+  if (P.RIP) gl.uniform4fv(P.RIP, GLFX.rip);
+  for (let i = 0; i < 4; i++) if (P.C[i]) gl.uniform3fv(P.C[i], GLFX.pal[i]);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   return true;
 }
-// 门槛刻度条（GPU 视觉看不出门槛，在下面补一条细条）
+// 门槛刻度条（GPU 视觉看不出门槛，在下面补一条细条）；黄块可以直接拖动调门槛
+const MUS_TOP = 160;
+const lin160 = {map: x => clamp(x / MUS_TOP, 0, 1), unmap: p => p * MUS_TOP};
+// 摇一摇的数值跨度大（20–1000），用平方根刻度：低门槛那一段更好调
+const sqrt1000 = {map: x => Math.sqrt(clamp(x, 0, 1000) / 1000), unmap: p => p * p * 1000};
+function meterCfg(view){
+  if (view === 'motion') return Object.assign({v: filt, thr: S.thr,
+    set: t => { S.thr = clamp(Math.round(t / 5) * 5, 20, 1000); }}, sqrt1000);
+  if (view === 'music'){
+    if (S.band === 'quiet') return Object.assign({v: mE, thr: quietThr,
+      // 别出声的门槛＝环境声 × 倍数（有下限）；拖到哪就反算倍数
+      set: t => { const base = Math.max(quietBase, 1); S.sens = +clamp(t / base, 1.1, 10).toFixed(2); quietThr = Math.max(quietBase * S.sens, quietBase + 8, 12); }}, lin160);
+    return Object.assign({v: mE, thr: S.musThr, set: t => { S.musThr = clamp(Math.round(t), 0, 120); }}, lin160);
+  }
+  return null;
+}
 function meterDraw(){
-  let v = 0, thr = 0, top = 1;
-  if (S.view === 'motion'){ top = Math.max(S.thr * 1.6, peak * 1.05, 50); v = filt; thr = S.thr; }
-  else if (S.view === 'music'){
-    if (S.band === 'quiet'){ top = Math.max(quietThr * 1.8, 60); v = mE; thr = quietThr; }
-    else { top = 160; v = mE; thr = 0; }
-  } else return;
-  const el = S.view === 'motion' ? $('#meterM') : $('#meterB');
-  el.querySelector('i').style.width = clamp(v / top * 100, 0, 100) + '%';
-  const tb = el.querySelector('b'); tb.style.left = clamp(thr / top * 100, 0, 100) + '%'; tb.style.display = thr ? '' : 'none';
-  el.classList.toggle('over', !!thr && v > thr);
+  for (const [view, id] of [['motion', 'M'], ['music', 'B']]){
+    if (S.view !== view) continue;
+    const c = meterCfg(view), el = $('#meter' + id);
+    el.querySelector('i').style.width = c.map(c.v) * 100 + '%';
+    el.querySelector('b').style.left = c.map(c.thr) * 100 + '%';
+    el.classList.toggle('over', c.v > c.thr);
+    $('#thrLab' + id).textContent = Math.round(c.thr);
+    if (id === 'B') $('#thrNameB').textContent = S.band === 'quiet' ? '触发阈值' : '音量阈值';
+  }
 }
 
 /* ---------- 统一动画循环 ---------- */
@@ -1962,8 +2111,9 @@ function frame(now){
   if (S.view === 'motion' || S.view === 'music'){
     if (!glfxDraw(now)){ if (S.view === 'motion') drawMotionCv(now); else drawBeat(now); }
     meterDraw();
+    if (S.view === 'music') drawWave(now);     // 波形卡在声控调教页底部
+    else if (!SHK.items) drawMWave();
   }
-  else if (S.view === 'set') drawWave(now);
   if (now - statsAt > 150){ statsAt = now; if (S.view === 'motion') motionStats(); else if (S.view === 'music') beatStats(now); }
 }
 
@@ -2016,7 +2166,7 @@ async function selfCheck(){
     add('warn', '郊狼未连接', '确认：①郊狼已开机（指示灯亮）②没有被另一台手机或官方 App 连着——郊狼同时只能连一台，被占用时搜不到 ③手机离郊狼 1 米内。');
     if (navigator.bluetooth && navigator.bluetooth.getDevices){
       try {
-        const list = (await navigator.bluetooth.getDevices()).filter(d => (d.name || '').startsWith(NAME_PREFIX));
+        const list = (await navigator.bluetooth.getDevices()).filter(d => (d.name || '').startsWith(NAME_PREFIX) || (S.goodDevs || []).includes(d.id));
         add(list.length ? 'ok' : 'warn', list.length ? `已授权过 ${list.length} 台郊狼` : '还没有授权过郊狼', list.length ? '' : '点右上角「连接郊狼」，在弹出列表里选 47L121 开头的设备。');
       } catch(e){}
     }
@@ -2099,7 +2249,7 @@ async function keepAwake(){
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden){
-    setArm(false); holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear();
+    setArm(false); holding = false; burstUntil = 0; clearSlots();
   } else {
     onForeground();
   }
@@ -2110,7 +2260,7 @@ window.addEventListener('pageshow', e => { if (e.persisted) onForeground(); });
 let needGesture = false;
 function onForeground(){
   if (!connected && !armed && window.checkUpdate) checkUpdate(true);
-  txQueue.length = 0; slotMap.clear(); slotFreq.clear();
+  txQueue.length = 0; clearSlots();
   // 蓝牙：iOS/安卓切后台常会断开，这里主动重连
   if (device && !userDisconnect){
     const gattUp = device.gatt && device.gatt.connected;
@@ -2156,13 +2306,13 @@ function updateArm(){
   const el = $('#armPill');
   el.classList.toggle('on', armed);
   el.textContent = armed ? '● 调教中' : !connected ? '小狼没来' : (S.chA || S.chB) ? '暂停中' : '休息中';
-  if (!armed && was){ holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear(); }
+  if (!armed && was){ holding = false; burstUntil = 0; clearSlots(); }
   return armed;
 }
 function setArm(){ updateArm(); }
 function stopAll(){
-  combo = 0; rjStop(); escReset();
-  setArm(false); holding = false; burstUntil = 0; slotMap.clear(); slotFreq.clear();
+  combo = 0; penReset();
+  setArm(false); holding = false; burstUntil = 0; clearSlots();
   S.strA = 0; S.strB = 0; strengthDirty = true; pendingSerial = 0; renderStrength(); save();
   log('紧急停止：强度归零');
 }
@@ -2186,6 +2336,24 @@ function bindRange(id, key, fmt, onChange){
     save(); onChange && onChange();
   });
 }
+// 范围滑杆：一条轨道两个滑块，左右两侧显示最小/最大值
+function bindDual(id, loKey, hiKey, min, max, step, fmt, onChange){
+  const w = $('#' + id), [lo, hi] = w.querySelectorAll('input'), [lv, hv] = w.querySelectorAll('.rv'), tr = w.querySelector('.rtrack');
+  for (const r of [lo, hi]){ r.min = min; r.max = max; r.step = step; r.autocomplete = 'off'; }
+  const pct = v => (v - min) / ((max - min) || 1) * 100 + '%';
+  const paint = () => {
+    tr.style.setProperty('--lo', pct(S[loKey])); tr.style.setProperty('--hi', pct(S[hiKey]));
+    lv.textContent = fmt(S[loKey]); hv.textContent = fmt(S[hiKey]);
+    lo.style.zIndex = S[loKey] > (min + max) / 2 ? 3 : 1;   // 两个滑块叠在右端时，让左滑块在上面好拖回来
+  };
+  const sync = () => {
+    if (S[loKey] > S[hiKey]) [S[loKey], S[hiKey]] = [S[hiKey], S[loKey]];
+    lo.value = S[loKey]; hi.value = S[hiKey]; paint();
+  };
+  lo.addEventListener('input', () => { S[loKey] = Math.min(+lo.value, S[hiKey]); lo.value = S[loKey]; paint(); save(); onChange && onChange(); });
+  hi.addEventListener('input', () => { S[hiKey] = Math.max(+hi.value, S[loKey]); hi.value = S[hiKey]; paint(); save(); onChange && onChange(); });
+  sync(); syncers.push(sync);
+}
 function bindSeg(id, key, onChange){
   const seg = $('#'+id);
   const paint = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === S[key]));
@@ -2204,7 +2372,7 @@ $('#connBtn').onclick = () => {
   if (connState === 2){ if (confirm('让小狼先走（断开连接）？')) disconnect(); return; }
   connect();
 };
-bindCheck('autoConn', 'autoConn', () => { if (S.autoConn) autoConnect(); else stopAutoRetry(); });
+S.autoConn = true;   // 连接相关设置已从界面移除：自动召唤始终打开
 
 // 强度步进：点一下 ±1；按住 0.35s 后连续调节，越按越快（±1 → ±5）
 document.querySelectorAll('.stp button').forEach(b => {
@@ -2231,38 +2399,24 @@ const onChannel = c => () => {
 bindCheck('chA', 'chA', onChannel('A')); bindCheck('chB', 'chB', onChannel('B'));
 
 
-bindCheck('escOn', 'escOn', () => { escReset(); });
 
 
-bindRange('escAddMin', 'escAddMin');
-bindRange('escAddMax', 'escAddMax');
-bindRange('escPct', 'escPct');
-bindRange('escRecent', 'escRecent', null, escReset);
-bindRange('escBase', 'escBase', null, escReset);
-bindRange('escGap', 'escGap');
-bindRange('escMax', 'escMax', null, () => { if (escStack.length > S.escMax){ escStack.length = S.escMax; strengthDirty = true; } });
-bindCheck('rjOn', 'rjOn', () => { rjStop(); if (S.rjOn && !connected) toast('随机惊喜已准备，等小狼来了、开关打开才会开始'); });
-bindRange('rjGapMin', 'rjGapMin', null, () => { rjNext = 0; });
-bindRange('rjGapMax', 'rjGapMax', null, () => { rjNext = 0; });
-bindRange('rjAddMin', 'rjAddMin');
-bindRange('rjAddMax', 'rjAddMax');
-bindRange('rjDurMin', 'rjDurMin', v => (+v).toFixed(1));
-bindRange('rjDurMax', 'rjDurMax', v => (+v).toFixed(1));
 $('#chkBtn').onclick = () => runSelfCheck(false);
 $('#chkRerun').onclick = () => runSelfCheck(false);
 $('#chkClose').onclick = () => $('#chkMask').classList.add('hidden');
+$('#setBtn').onclick = () => { $('#setMask').classList.remove('hidden'); $('#setBtn').classList.remove('blink'); };
+$('#setClose').onclick = () => $('#setMask').classList.add('hidden');
+$('#setMask').addEventListener('click', e => { if (e.target.id === 'setMask') $('#setMask').classList.add('hidden'); });
 $('#chkMask').addEventListener('click', e => { if (e.target.id === 'chkMask') $('#chkMask').classList.add('hidden'); });
 $('#chkCopy').onclick = async () => {
   try { await navigator.clipboard.writeText(chkText); toast('已复制，直接发给开发者就好'); }
   catch(e){ toast('复制失败，请截图'); }
 };
-bindSeg('srcSeg', 'src');
-bindRange('thr', 'thr');
-bindRange('smooth', 'smooth', v => v.toFixed(2));
+S.src = 'both';   // 不再区分上下/前后晃，哪个猛用哪个
 // 每下电多久：20–1000ms，左边 3/4 细调 20–200，右边 1/4 是 200–1000
 const bPos2ms = p => p <= 750 ? Math.round(20 + p / 750 * 180) : Math.round(200 + (p - 750) / 250 * 800);
 const bMs2pos = m => m <= 200 ? (m - 20) / 180 * 750 : 750 + (m - 200) / 800 * 250;
-for (const key of ['burst', 'burstMu']){
+for (const key of ['burstMu']){
   S[key] = clamp(S[key], 20, 1000);
   const r = $('#' + key), lab = $('#' + key + 'V');
   const sync = () => { r.value = bMs2pos(S[key]); setP(r); lab.textContent = S[key]; };
@@ -2270,26 +2424,51 @@ for (const key of ['burst', 'burstMu']){
   r.addEventListener('input', () => { S[key] = bPos2ms(+r.value); setP(r); lab.textContent = S[key]; save(); });
 }
 bindRange('cool', 'cool');
-bindRange('rearm', 'rearm', v => v.toFixed(2));
-bindCheck('comboOn', 'comboOn', () => { renderCombo(false); });
-bindRange('comboStart', 'comboStart');
-bindRange('comboSteps', 'comboSteps');
-bindRange('comboWin', 'comboWin');
+// 防手抖、连发判定不再让用户调，固定用默认值
+S.smooth = 0.1; S.rearm = 0.6;
+S.mComboOn = true;   // 颤抖调教的连击始终开启
+bindDual('mBoost', 'mBoostMin', 'mBoostMax', 0, 30, 1, v => '+' + v);
+bindDual('mSpeed', 'mFast', 'mSlow', 50, 2000, 10, v => v);
+bindSeg('mWaveSeg', 'mWave', () => { SHK.items = null; drawMWave(); });
+bindRange('qPenWin', 'qPenWin');
+bindRange('qPenCap', 'qPenCap');
 const applyBand = () => document.querySelectorAll('.bp').forEach(el => el.classList.toggle('on', el.dataset.b === S.band));
-bindSeg('bandSeg', 'band', () => { escReset(); mAvg = 0; quietBase = 0; mhT.fill(0); applyBand(); });
+bindSeg('bandSeg', 'band', () => { combo = 0; penReset(); mAvg = 0; quietBase = 0; mhT.fill(0); applyBand(); });
 $('#quietRelearn').onclick = () => { quietBase = 0; toast('安静 2 秒，让我记住现在的环境声 🤫'); };
 applyBand();
 bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
 bindRange('musSens', 'musSens');
-bindCheck('musicExtras', 'musicExtras', () => { escReset(); rjStop(); });
-$('#songFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) playSong(f); e.target.value = ''; });
-$('#songPlay').onclick = () => { if (!songEl) return; if (songEl.paused) songEl.play(); else songEl.pause(); };
+// 门槛条：按住黄块（或点条上任意处）拖动
+for (const [view, id] of [['motion', 'M'], ['music', 'B']]){
+  const row = $('#meter' + id + 'Row'), bar = $('#meter' + id);
+  let dragging = false;
+  const setFrom = e => {
+    const r = bar.getBoundingClientRect(), c = meterCfg(view);
+    c.set(c.unmap(clamp((e.clientX - r.left) / r.width, 0, 1)));
+    meterDraw();
+  };
+  bar.addEventListener('pointerdown', e => {
+    dragging = true; row.classList.add('dragging');
+    try { bar.setPointerCapture(e.pointerId); } catch(_){}
+    setFrom(e); e.preventDefault();
+  });
+  bar.addEventListener('pointermove', e => { if (dragging) setFrom(e); });
+  const end = () => { if (!dragging) return; dragging = false; row.classList.remove('dragging'); save(); };
+  bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
+}
+bindCheck('musLayers', 'musLayers');
+setInterval(() => { const n = $('#waveNote'); if (n) n.classList.toggle('hidden', !(S.band === 'auto' && S.musLayers)); }, 300);
+bindCheck('musSwap', 'musSwap', () => { musSwap = false; musSwapIn = 8; });
 setInterval(() => {
   const el = $('#musAutoInfo'); if (!el || S.band !== 'auto') return;
+  $('#musSwapRow').style.opacity = S.musLayers ? '' : '.45';
+  if (S.musLayers && MUS.layers.length){
+    el.textContent = MUS.layers.map(l => `${BAND_NAME[l.k]} ${l.dur}ms·颗粒${l.pf}${l.ch ? '→' + l.ch : ''}`).join(' ｜ ') + (musClimax > 0.5 ? ' ｜ 🔥 高潮' : '');
+    return;
+  }
   el.textContent = MUS.dur ? `自动波形：每拍 ${MUS.dur}ms · 颗粒 ${MUS.pf}ms（${MUS.pf < 30 ? '细密酥麻' : MUS.pf < 50 ? '中等' : '粗重敲击'}）· 重拍更重` : '每一拍的波形自动生成：时长跟着拍子，颗粒跟着音色（明亮细密、低沉粗重），重拍更重。';
 }, 500);
 bindRange('lead', 'lead');
-bindRange('sens', 'sens', v => v.toFixed(2));
 bindRange('beatGap', 'beatGap');
 
 bindSeg('presetSeg', 'preset', buildWave);
@@ -2320,7 +2499,7 @@ function ensureInputs(fromGesture){
 document.addEventListener('pointerdown', () => ensureInputs(true), true);
 // 底部标签：晃动 / 节拍 = 切换触发方式并显示对应页面；设置 = 只切换页面，不改触发方式
 function applyView(fromClick){
-  if (S.view !== 'set') S.view = S.mode;
+  S.view = S.mode;                        // 设置改成弹窗了，页面只有两个玩法
   glfxMount(S.view);
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('on', el.dataset.p.split(' ').includes(S.view)));
   document.querySelectorAll('#tabBar button').forEach(b => {
@@ -2332,34 +2511,45 @@ function applyView(fromClick){
 $('#tabBar').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const t = b.dataset.t;
-  if (t === 'set') S.view = 'set';
-  else { if (t !== S.mode){ S.mode = t; combo = 0; escReset(); toast(t === 'music' ? '换成听声音 🎵' : '换成摇一摇 📳'); } S.view = t; }
+  { if (t !== S.mode){ S.mode = t; combo = 0; penReset(); toast(t === 'music' ? '换成声控调教 🎵' : '换成颤抖调教 📳'); } S.view = t; }
   save(); applyView(true); window.scrollTo(0, 0);
 });
+/* ---------- 背景散景光斑：随机大小、淡入淡出、慢速远距离漂移 ---------- */
+(() => {
+  const box = $('#bgfx');
+  if (!box || !box.animate) return;
+  const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const COLORS = ['167,139,250', '244,114,182', '56,189,248', '251,191,36', '129,140,248', '52,211,153', '236,72,153'];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function spawn(el, first){
+    const vmin = Math.min(innerWidth, innerHeight) / 100;
+    const size = rnd(8, 46) * vmin;                                  // 随机大小
+    const c = COLORS[Math.floor(Math.random() * COLORS.length)], a = rnd(.10, .24);
+    el.style.width = el.style.height = size + 'px';
+    el.style.background = `radial-gradient(circle,rgba(${c},${a * .45}) 0,rgba(${c},${a * .7}) 58%,rgba(${c},${a}) 68%,rgba(${c},0) 72%)`;
+    el.style.filter = `blur(${(rnd(4, 14) * (size / (30 * vmin))).toFixed(1)}px)`;   // 越大越虚
+    const x0 = rnd(-.15, 1.0) * innerWidth, y0 = rnd(-.15, 1.0) * innerHeight;
+    const ang = rnd(0, Math.PI * 2), dist = rnd(30, 60) * vmin;     // 漂得远
+    const x1 = x0 + Math.cos(ang) * dist, y1 = y0 + Math.sin(ang) * dist;
+    const s0 = rnd(.85, 1.05), s1 = s0 * rnd(.9, 1.2);
+    const dur = rnd(45, 80) * 1000;                                  // 漂得慢
+    const fi = rnd(.18, .3), fo = 1 - rnd(.18, .3);                  // 淡入 / 淡出占的比例
+    const at = p => `translate3d(${x0 + (x1 - x0) * p}px,${y0 + (y1 - y0) * p}px,0) scale(${s0 + (s1 - s0) * p})`;
+    const anim = el.animate([
+      {opacity: 0, transform: at(0)},
+      {opacity: 1, transform: at(fi), offset: fi},
+      {opacity: 1, transform: at(fo), offset: fo},
+      {opacity: 0, transform: at(1)},
+    ], {duration: dur, easing: 'linear', fill: 'both'});
+    if (first) anim.currentTime = rnd(0, dur * .85);                  // 一开始就分布在不同阶段，不会同时出现
+    if (still){ anim.currentTime = dur / 2; anim.pause(); return; }
+    anim.onfinish = () => spawn(el, false);
+  }
+  for (let i = 0; i < 9; i++){ const el = document.createElement('b'); box.appendChild(el); spawn(el, true); }
+})();
 glfxInit();
 applyView(false);
 updateArm();
-// 加料快捷入口 → 跳到设置页对应卡片并闪一下
-const PRESET_NAME = {constant:'一直狠', ramp:'慢慢加', pulse:'一顿一顿', sine:'一呼一吸', random:'猜不到', o_breath:'官方呼吸', o_tide:'官方潮汐'};
-function renderQuick(){
-  $('#quickCard').classList.toggle('dim', !extrasOn());
-  const set = (id, txt, on) => { const el = $('#' + id); el.textContent = txt; el.parentElement.classList.toggle('on', on); };
-  set('qWave', PRESET_NAME[S.preset] || S.preset, true);
-  set('qCombo', S.comboOn ? '开' : '关', S.comboOn);
-  set('qEsc', !S.escOn ? '关' : escAdd() ? '+' + escAdd() : '开', S.escOn);
-  set('qRj', S.rjOn ? '开' : '关', S.rjOn);
-  $('#quickNote').textContent = extrasOn() ? '点一下去设置里调' : '音乐节奏模式下暂停（节拍页可打开）';
-}
-setInterval(renderQuick, 400); renderQuick();
-document.querySelectorAll('.qbtn').forEach(b => b.onclick = () => {
-  S.view = 'set'; save(); applyView(false);
-  const card = $('#' + b.dataset.go);
-  setTimeout(() => {
-    const y = card.getBoundingClientRect().top + window.scrollY - 70;
-    window.scrollTo(0, Math.max(0, y));
-    card.classList.remove('hl'); void card.offsetWidth; card.classList.add('hl');
-  }, 0);
-});
 // 打开页面总是从顶端开始（不恢复上次滚动位置）
 try { history.scrollRestoration = 'manual'; } catch(e){}
 window.scrollTo(0, 0);
@@ -2367,38 +2557,19 @@ window.scrollTo(0, 0);
 
 // 说明开关
 try { if (localStorage.getItem('coyoteHints') === '1') document.body.classList.add('hints'); } catch(e){}
+const paintHint = () => { $('#hintTxt').textContent = document.body.classList.contains('hints') ? '说明：开' : '说明：关'; };
+paintHint();
 $('#hintBtn').onclick = () => {
   const on = document.body.classList.toggle('hints');
   try { localStorage.setItem('coyoteHints', on ? '1' : '0'); } catch(e){}
+  paintHint();
+  toast(on ? '已展开：每个设置下面都会显示详细说明' : '已收起详细说明，界面更清爽');
 };
 
 
 
-// 诊断面板
-const wmSeg = $('#wmSeg');
-const paintWm = () => wmSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === writeMode));
-wmSeg.addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  writeMode = b.dataset.v; paintWm();
-  if (wChar){ diag.mode = ''; pickWrite(); log('写入方式 → ' + diag.mode); }
-});
-paintWm();
-setInterval(() => {
-  const hints = [];
-  if (!connected) hints.push('未连接');
-  if (!S.chA && !S.chB) hints.push('⚠ A/B 通道都关着');
-  if (S.chA && S.strA === 0) hints.push('⚠ A 强度为 0，不会有输出');
-  if (S.chB && S.strB === 0) hints.push('⚠ B 强度为 0，不会有输出');
-  if (connected && actA === null) hints.push('⚠ 设备还没回传 B1（强度可能没设上）');
-  $('#diagTxt').innerHTML =
-    `150A 属性: ${diag.props || '-'} · 写入: ${diag.mode || '-'}<br>` +
-    `已发送 ${diag.tx} 帧 · 失败 ${diag.err} · 丢弃 ${diag.drop||0}${diag.lastErr ? '（' + diag.lastErr + '）' : ''}<br>` +
-    `设定 A${S.strA}/B${S.strB} · 设备实际 A${actA ?? '-'}/B${actB ?? '-'}<br>` +
-    `最近帧: ${diag.last || '-'}` +
-    (hints.length ? `<br><span style="color:var(--warn)">${hints.join('<br>')}</span>` : '');
-}, 300);
 
-window.addEventListener('resize', () => drawWave());
+window.addEventListener('resize', () => { drawWave(); drawMWave(); });
 renderStrength();
 buildWave();
 requestAnimationFrame(frame);
