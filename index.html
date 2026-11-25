@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-180750';
+const BUILD = '20261125-181230';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -131,7 +131,8 @@ body.hints #hintBtn .ic{background:var(--acc);color:#fff}
 /* 重击：统一用红色（门槛条上的红块、重击加力的数字、力度旁临时加的 +x） */
 #mBoost .rv,.mthr b.hvl{color:var(--bad)}
 .meter .hv{position:absolute;top:-3px;width:10px;height:10px;margin-left:-5px;border-radius:3px;background:var(--bad);
-  box-shadow:0 0 0 2px var(--s1);pointer-events:none;transition:left .25s linear}
+  box-shadow:0 0 0 2px var(--s1);pointer-events:none;transition:left .25s linear,width .12s,height .12s,top .12s,margin-left .12s}
+.mrow.dragging2 .meter .hv{top:-6px;width:16px;height:16px;margin-left:-8px;border-radius:4px;transition:none;box-shadow:0 0 0 2px var(--s1),0 0 0 6px rgba(235,87,87,.2)}
 .act{font-size:11px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums}
 .ch .act{text-align:center}
 .stp{display:flex;align-items:center;gap:4px;margin-top:2px}
@@ -329,7 +330,7 @@ body.hints .hint{display:block}
     <canvas id="motionCv" height="84"></canvas>
     <div class="mrow" id="meterMRow"><span class="mthr">门槛 <b id="thrLabM">60</b> 重击 <b id="heavyLabM" class="hvl">108</b></span><div class="meter" id="meterM"><i></i><b></b><s class="hv" id="heavyMk"></s></div></div>
     <div class="stats"><span>此刻 <b id="magV">0</b></span><span>最猛 <b id="peakV">0</b></span><span><b id="hzV">0</b> Hz</span><span id="mComboMini"></span></div>
-    <div class="hint">强弱是相对的：会记住你前几秒平时晃多大，不管是前后几厘米的小动作还是走路的大幅度，都按「平时」正常电；突然比平时猛很多（约 1.8 倍，图里粉色虚线）就来个大的（重击加力）。门槛条上：晃动过黄块＝触发，过红块＝重击；红块是第二阈值，等于「平时」× 1.8（至少是黄块 × 1.8），跟着平均自动移动，不用拖。之后一直保持这个幅度，一两秒后它就成了新的「平时」。黄块是最低门槛，只用来挡住手抖、呼吸这种小噪声：手放着不动也乱电就往右拖，轻轻动都没反应就往左拖。</div>
+    <div class="hint">门槛条上有两个块，都可以拖：晃动过<b style="color:var(--warn)">黄块</b>就电一下；过<b style="color:var(--bad)">红块</b>就是重击，这一下临时加力（重击加力的范围）。按住哪个块附近就拖哪个，红块不会低于黄块。手放着不动也乱电 → 黄块往右；轻轻动都没反应 → 黄块往左；重击太容易出 → 红块往右。</div>
     <div class="hint">A、B 都开时，手机往哪边歪，电流就往哪边流（右歪流向 B、左歪流向 A）；拿着不动几秒就自动回到两路一样。</div>
       <div class="f rng" id="mSpeed"><div class="lb"><span>快慢分界 (ms)<small class="sd">两下间隔：左边以内算快，右边以上算慢</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
       <div class="f rng" id="mBoost"><div class="lb"><span>重击加力<small class="sd">每次在范围里随机加</small></span></div><div class="rrow"><b class="rv"></b><div class="rtrack"><input type="range"><input type="range"></div><b class="rv hi"></b></div></div>
@@ -468,7 +469,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* ================= 设置 ================= */
 const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   strA:0, strB:0, chA:true, chB:false,
-  src:'both', thr:60, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:14, mode:'motion', burstMu:150, view:'motion',
+  src:'both', thr:60, thrHeavy:200, smooth:0.1, burst:75, cool:60, rearm:0.6, ver:14, mode:'motion', burstMu:150, view:'motion',
   mComboOn:true, mWave:'auto', mFast:150, mSlow:800, mBoostMin:2, mBoostMax:5, qPenWin:3, qPenCap:3,
   autoConn:true, lastDev:'', bfOn:false,
   fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
@@ -501,9 +502,9 @@ if ((S.ver|0) < 9){ S.preset = 'random'; }
 if ((S.ver|0) < 13){ S.fxStyle = S.fxStyle === 3 ? 2 : S.fxStyle === 2 ? 0 : S.fxStyle; }
 // v14：晃动改成相对强弱，原来的阈值只当最低门槛（挡噪声），默认放低
 if ((S.ver|0) < 14){ S.thr = Math.min(S.thr, 60); }
-// 门槛 / 冷却 / 重击加力的刻度改成 0–200（门槛最小 1）
-S.thr = clamp(S.thr, 1, 200); S.cool = clamp(S.cool, 0, 200);
-S.mBoostMin = clamp(S.mBoostMin, 0, 200); S.mBoostMax = clamp(S.mBoostMax, 0, 200);
+// 门槛 1–1000、冷却 0–200
+S.thr = clamp(S.thr, 1, 1000); S.thrHeavy = clamp(S.thrHeavy || 200, 2, 1000); S.cool = clamp(S.cool, 0, 200);
+S.mBoostMin = clamp(S.mBoostMin, 1, 50); S.mBoostMax = clamp(S.mBoostMax, 1, 50);   // 重击加力 1–50
 S.ver = 14;
 S.fxOn = true;
 S.minI = 0; S.maxI = 100;   // 最轻/最重 已移除，固定全范围   // 视觉效果固定开启（只有极光流带一种）
@@ -1294,9 +1295,12 @@ function onMotion(e){
  * 最低门槛（黄块）只用来挡住手抖、呼吸这种噪声，不决定强弱。 */
 const MOT = {env: 0, base: 0, lastT: 0, activeSince: 0, heavyAt: -1e9, heavyDone: false};
 const MOT_HEAVY = 1.8, MOT_REL = 0.45;
-const motThr = () => Math.max(S.thr, MOT.base * MOT_REL);
-// 第二阈值（重击线）：平均 × 1.8，至少是最低门槛 × 1.8 —— 不动的时候也有意义，红块一直显示
-const motHeavyLine = () => Math.max(S.thr, MOT.base) * MOT_HEAVY;
+// 相对强弱暂时关闭：改用手动的上下限 —— 黄块＝触发门槛，红块＝重击门槛，都可以拖。
+// 改回 true 就恢复上面说的「跟前几秒平均比」
+const MOT_RELATIVE = false;
+const motThr = () => MOT_RELATIVE ? Math.max(S.thr, MOT.base * MOT_REL) : S.thr;
+// 第二阈值（重击线）。相对模式：平均 × 1.8，至少是最低门槛 × 1.8；手动模式：红块的值（至少比黄块高 1）
+const motHeavyLine = () => MOT_RELATIVE ? Math.max(S.thr, MOT.base) * MOT_HEAVY : Math.max(S.thrHeavy, S.thr + 1);
 function motFeed(now){
   const dt = MOT.lastT ? clamp(now - MOT.lastT, 1, 200) : 16; MOT.lastT = now;
   MOT.env = Math.max(filt, MOT.env * Math.exp(-dt / 400));
@@ -1308,8 +1312,8 @@ function motFeed(now){
   MOT.base += (MOT.env - MOT.base) * (1 - Math.exp(-dt / tau));
 }
 function motHeavyCheck(now){
-  if (MOT.heavyDone || !MOT.activeSince || now - MOT.activeSince < 1500) return;   // 刚开始晃，平均还没学好
-  if (now - MOT.heavyAt < 1500 || filt < motHeavyLine()) return;
+  if (MOT.heavyDone || filt < motHeavyLine()) return;           // 每一下最多算一次重击
+  if (MOT_RELATIVE && (!MOT.activeSince || now - MOT.activeSince < 1500 || now - MOT.heavyAt < 1500)) return;   // 相对模式：刚开始晃平均还没学好；两次重击至少隔 1.5 秒
   MOT.heavyDone = true; MOT.heavyAt = now;
   const bl = Math.min(S.mBoostMin, S.mBoostMax), bh = Math.max(S.mBoostMin, S.mBoostMax);
   SHK.add = bl + Math.floor(Math.random() * (bh - bl + 1));
@@ -2444,8 +2448,10 @@ const lin160 = {map: x => clamp(x / MUS_TOP, 0, 1), unmap: p => p * MUS_TOP};
 const sqrt1000 = {map: x => Math.sqrt(clamp(x, 0, 1000) / 1000), unmap: p => p * p * 1000};
 function meterCfg(view){
   if (view === 'motion') return {v: filt, thr: S.thr,
-    map: x => SC200.toPos(x) / 300, unmap: p => SC200.toVal(p * 300),    // 左 2/3＝0–100，右 1/3＝100–200
-    set: t => { S.thr = clamp(Math.round(t), 1, 200); }};
+    map: x => SC1000.toPos(x) / 300, unmap: p => SC1000.toVal(p * 300),  // 左 2/3＝0–100，右 1/3＝100–1000
+    set: t => { S.thr = clamp(Math.round(t), 1, 1000); if (S.thrHeavy <= S.thr) S.thrHeavy = Math.min(1000, S.thr + 1); },
+    // 红块（重击门槛）：手动模式下可以拖，不能低于黄块
+    hv: MOT_RELATIVE ? null : t => { S.thrHeavy = clamp(Math.round(t), Math.min(999, S.thr + 1), 1000); }};
   if (view === 'music'){
     if (S.band === 'quiet') return Object.assign({v: mE, thr: S.qThr,
       // 禁声惩罚的触发阈值：拖到哪里就是哪里，声音超过黄块就电
@@ -2704,6 +2710,11 @@ const SC200 = {
   toPos: v => { v = clamp(v, 0, 200); return v <= 100 ? v * 2 : 200 + (v - 100); },
   toVal: p => { p = clamp(p, 0, 300); return Math.round(p <= 200 ? p / 2 : 100 + (p - 200)); }
 };
+// 门槛用：左边 2/3 还是 0–100（常用的小值调得细），右边 1/3 是 100–1000
+const SC1000 = {
+  toPos: v => { v = clamp(v, 0, 1000); return v <= 100 ? v * 2 : 200 + (v - 100) / 9; },
+  toVal: p => { p = clamp(p, 0, 300); return Math.round(p <= 200 ? p / 2 : 100 + (p - 200) * 9); }
+};
 function bindRange(id, key, fmt, onChange, sc){
   const r = $('#'+id), lab = $('#'+id+'V');
   if (!r){ log('缺少控件 ' + id); return; }
@@ -2809,7 +2820,7 @@ bindRange('cool', 'cool', null, null, SC200);
 // 防手抖、连发判定不再让用户调，固定用默认值
 S.smooth = 0.1; S.rearm = 0.6;
 S.mComboOn = true;   // 颤抖调教的连击始终开启
-bindDual('mBoost', 'mBoostMin', 'mBoostMax', 0, 200, 1, v => '+' + v, null, SC200);
+bindDual('mBoost', 'mBoostMin', 'mBoostMax', 1, 50, 1, v => '+' + v);
 bindDual('mSpeed', 'mFast', 'mSlow', 50, 2000, 10, v => v);
 bindSeg('mWaveSeg', 'mWave', () => { if (S.mWave === 'random') SHK.rnd = newShakeRnd(); SHK.items = null; drawMWave(); });
 bindRange('qPenWin', 'qPenWin');
@@ -2828,19 +2839,23 @@ bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
 // 门槛条：按住黄块（或点条上任意处）拖动
 for (const [view, id] of [['motion', 'M'], ['music', 'B']]){
   const row = $('#meter' + id + 'Row'), bar = $('#meter' + id);
-  let dragging = false;
+  let dragging = false, which = 'thr';
   const setFrom = e => {
     const r = bar.getBoundingClientRect(), c = meterCfg(view);
-    c.set(c.unmap(clamp((e.clientX - r.left) / r.width, 0, 1)));
+    const v = c.unmap(clamp((e.clientX - r.left) / r.width, 0, 1));
+    (which === 'hv' && c.hv ? c.hv : c.set)(v);
     meterDraw();
   };
   bar.addEventListener('pointerdown', e => {
-    dragging = true; row.classList.add('dragging');
+    // 两个块都能拖：按下的位置离哪个块近就拖哪个
+    const r = bar.getBoundingClientRect(), c = meterCfg(view), x = (e.clientX - r.left) / r.width;
+    which = c.hv && Math.abs(x - c.map(motHeavyLine())) < Math.abs(x - c.map(c.thr)) ? 'hv' : 'thr';
+    dragging = true; row.classList.add(which === 'hv' ? 'dragging2' : 'dragging');
     try { bar.setPointerCapture(e.pointerId); } catch(_){}
     setFrom(e); e.preventDefault();
   });
   bar.addEventListener('pointermove', e => { if (dragging) setFrom(e); });
-  const end = () => { if (!dragging) return; dragging = false; row.classList.remove('dragging'); save(); };
+  const end = () => { if (!dragging) return; dragging = false; row.classList.remove('dragging', 'dragging2'); save(); };
   bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
 }
 bindCheck('musFlow', 'musFlow');
