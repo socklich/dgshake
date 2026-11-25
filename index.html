@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-144257';
+const BUILD = '20261125-151758';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -345,14 +345,14 @@ body.hints .hint{display:block}
 <!-- ===== 节拍页 ===== -->
 <section class="card glass page" data-p="music" id="musicCard">
     <canvas id="beatCv" height="84"></canvas>
-    <div class="mrow" id="meterBRow"><span class="mthr"><span id="thrNameB">音量阈值</span> <b id="thrLabB">6</b></span><div class="meter" id="meterB"><i></i><b></b></div></div>
+    <div class="mrow" id="meterBRow"><span class="mthr"><span id="thrNameB">节奏敏感度</span> <b id="thrLabB">5</b></span><div class="meter" id="meterB"><i></i><b></b></div></div>
     <div class="stats"><span>音量 <b id="beV">0</b></span><span><span id="beThrL">节奏捕捉中</span> <b id="beThrV"></b></span><span>拍数 <b id="beatCntV">0</b></span><span>BPM <b id="bpmV">--</b></span></div>
     <div class="hint">用麦克风听歌。最好用另一台手机或音箱放歌，同一台手机边放边听可能会被系统打断。</div>
     <div class="seg" id="bandSeg" style="margin-top:6px"><button data-v="auto">🎼 节奏跟随</button><button data-v="quiet">🤫 禁声惩罚</button></div>
     <div class="cap">节奏跟随＝跟随音乐节奏电击 · 禁声惩罚＝禁止发声，一出声就电</div>
     <div class="hint">节奏跟随会听几秒算出 BPM，然后预判下一拍、提前出手，准准地踩在拍子上，偶尔漏听也不会断。禁声惩罚会先安静地听一会儿记住环境噪音，之后谁发出比这明显大的声音（说话、喘息、叫出声），就电一下；一直出声就隔一会儿再电一下，直到安静下来。</div>
     <div class="bp" data-b="auto">
-      <label class="f"><div class="lb"><span>节奏敏感度<small class="sd">高＝节奏不清楚也跟着电</small></span><b id="musSensV">5</b></div><input type="range" id="musSens" min="1" max="10" step="1"><div class="cap">听出来的拍子要多确定才出手（统计里的「节奏捕捉」）；声音要多大才电，看上面的音量阈值。</div></label>
+      <div class="hint">节奏跟随：上面的细条是「节奏把握」（听出来的拍子有多确定），黄块是门槛——把握过了黄块才开始电。往左拖＝更敏感（节奏不清楚也跟着电），往右拖＝更挑剔。电多强跟着此刻比前几秒响多少走，不再需要音量阈值。</div>
       <div class="tog"><span>持续律动<small class="sd">一直有底振，拍子上加尖刺</small></span><label class="sw"><input type="checkbox" id="musFlow"><span></span></label></div>
       <div class="hint">持续律动：有音乐时一直保持一层较轻的振动，颗粒跟着音色走（低沉＝粗、明亮＝细），力度跟着音量走，并随拍子轻轻起伏；每到一拍再叠一下短促满力的尖刺。两路都开时，低音那一路粗颗粒、高音那一路细颗粒。关掉就回到只在拍子上电。</div>
       <div class="tog"><span>分声部输出<small class="sd">低音粗、中音细、高音最细最短</small></span><label class="sw"><input type="checkbox" id="musLayers"><span></span></label></div>
@@ -460,7 +460,7 @@ const DEF = {softA:200, softB:200, fbA:128, fbB:128, ibA:128, ibB:128,
   mComboOn:true, mWave:'auto', mFast:150, mSlow:800, mBoostMin:2, mBoostMax:5, qPenWin:3, qPenCap:3,
   autoConn:true, lastDev:'', bfOn:false,
   fxOn:true, fxAuto:true, fxEvery:30, fxStyle:0,
-  musFlow:true, musLayers:true, musSwap:true, musSens:5, musThr:6, goodDevs:[], badDevs:[],
+  musFlow:true, musLayers:true, musSwap:true, musSens:5, goodDevs:[], badDevs:[],
   band:'auto', sens:1.5, beatGap:300, mult:'1', lead:120,
   preset:'random', pf:20, cyc:500, minI:0, maxI:100};
 let S = Object.assign({}, DEF);
@@ -1067,15 +1067,16 @@ function musicLayers(now, mult){
 /* ---------- 节奏跟随 · 持续律动 ----------
  * 有音乐（音量过了阈值）时一直输出一层底振：
  *   颗粒：跟着音色（频谱重心）——低沉 110ms 粗、明亮 15ms 细；双通道时低音那路粗、高音那路细
- *   力度：30–65%，跟着音量 / 各自声部的响度，高潮更重，并在每拍之间像呼吸一样起伏
+ *   力度：15–85%，跟着“此刻比最近几秒响多少”/ 各自声部的响度，高潮更重，并在每拍之间像呼吸一样起伏
  * 拍子上的电击（musicBurst）照常放进时间槽，取较强的一方 → 叠在底振上成为尖刺 */
 const FLOW = {pf: 60, pfX: 100, pfY: 20, on: false};
 function flowFill(now){
-  FLOW.on = armed && S.mode === 'music' && S.band === 'auto' && S.musFlow && micOn && mE > Math.max(S.musThr, 1);
+  FLOW.on = armed && S.mode === 'music' && S.band === 'auto' && S.musFlow && micOn && rhythmLocked();
   if (!FLOW.on) return;
   const bright = clamp((musCentroid - 600) / 3400, 0, 1);
-  const energy = clamp(mE / 70, 0, 1) * (0.85 + 0.15 * musClimax);
-  const lvl = k => clamp(bandLvl[k] / (bandAvg[k] * 1.6 + 1), 0, 1);
+  // 力度看“此刻比最近几秒响多少”：自动增益会把平均音量拉平，直接用音量的话力度几乎不变
+  const energy = 0.8 * musDyn + 0.2 * musClimax;
+  const lvl = k => clamp((bandLvl[k] / Math.max(1, bandAvg[k]) - 0.5) / 1.2, 0, 1);
   // 跟拍子呼吸：拍点上最强，两拍中间最弱
   const iv = beatInterval();
   const breath = k => { if (!iv || !nextBeatAt) return 1; const ph = ((now + k * 25 - nextBeatAt) / iv % 1 + 1) % 1; return 0.75 + 0.25 * Math.cos(2 * Math.PI * ph); };
@@ -1088,9 +1089,9 @@ function flowFill(now){
     const k = nextSlot + i, br = breath(i);
     if (two){
       const X = musSwap ? 'B' : 'A', Y = musSwap ? 'A' : 'B';
-      put(chSlot[X].m, chSlot[X].f, k, encFreq(FLOW.pfX), Math.round((30 + 35 * (0.5 * energy + 0.5 * lvl(0))) * br));
-      put(chSlot[Y].m, chSlot[Y].f, k, encFreq(FLOW.pfY), Math.round((30 + 35 * (0.5 * energy + 0.5 * lvl(2))) * br));
-    } else put(slotMap, slotFreq, k, encFreq(FLOW.pf), Math.round((30 + 35 * energy) * br));
+      put(chSlot[X].m, chSlot[X].f, k, encFreq(FLOW.pfX), Math.round((15 + 70 * (0.5 * energy + 0.5 * lvl(0))) * br));
+      put(chSlot[Y].m, chSlot[Y].f, k, encFreq(FLOW.pfY), Math.round((15 + 70 * (0.5 * energy + 0.5 * lvl(2))) * br));
+    } else put(slotMap, slotFreq, k, encFreq(FLOW.pf), Math.round((15 + 70 * energy) * br));
   }
 }
 function tick(){
@@ -1470,6 +1471,13 @@ function beatStep(){
   prevSpec.set(fbuf);
   mE = lvl / (i1 - i0 + 1);
   bandTrack(bf, bs, [b1 - i0, b2 - b1, i1 - b2 + 1], now);
+  // 真实响度：时域波形的 RMS（线性），换成 dB 后比较“此刻（~200ms）vs 最近 3 秒”，±4dB 对应 0–1
+  if (!tbuf || tbuf.length !== analyser.fftSize) tbuf = new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(tbuf);
+  let sq = 0; for (let i = 0; i < tbuf.length; i += 2) sq += tbuf[i] * tbuf[i];
+  const L = 10 * Math.log10(sq / (tbuf.length / 2) + 1e-10) - 20 * Math.log10(AGC.g);   // 去掉自动增益的影响，只看音乐本身的变化
+  Lfast += (L - Lfast) * 0.05; Lslow = Lslow ? Lslow + (L - Lslow) * 0.003 : L;
+  musDyn = clamp((Lfast - Lslow + 4) / 8, 0, 1);
   // 频谱重心（音色明亮度），慢慢平滑
   let num = 0, den = 0; for (let i = i0; i <= i1; i += 2){ const m = fbuf[i]; num += m * i * binHz; den += m; }
   if (den > 0) musCentroid += (num / den - musCentroid) * 0.02;
@@ -1485,7 +1493,7 @@ let nextBeatAt = 0, beatPendingMark = 0, silentSince = 0;
 // 分声部：每个声部的起音包络（跟 envBuf 同步写）、当前音量、慢平均、正在响的起点、一个音平均能持续多久
 const bandEnv = [0, 1, 2].map(() => new Float32Array(ENV_N)), bandHop = [0, 0, 0], bandPeak = [1e-3, 1e-3, 1e-3];
 const bandLvl = [0, 0, 0], bandAvg = [0, 0, 0], bandOn = [0, 0, 0], bandOnAt = [0, 0, 0], bandLen = [180, 120, 70];
-let mEfast = 0, mEslow = 0, musClimax = 0;
+let mEfast = 0, mEslow = 0, musClimax = 0, tbuf = null, Lfast = -60, Lslow = 0, musDyn = 0.5;
 function bandTrack(bf, bs, width, now){
   for (let k = 0; k < 3; k++){
     const w = Math.max(1, width[k]), lv = bs[k] / w;
@@ -1516,7 +1524,10 @@ function autoFeed(flux, now){
   }
   // 自动增益：太小慢慢放大，太大较快收回
   if (micGain){
-    if (mE > 110) AGC.g *= 0.95; else if (mE > AGC.TARGET * 1.35) AGC.g *= 0.985; else if (mE < AGC.TARGET * 0.8) AGC.g *= 1.006;
+    if (mE > 110) AGC.g *= 0.95;                                       // 快削峰
+    else if (mE < AGC.TARGET * 0.4) AGC.g *= 1.006;                    // 很小：快速拉起来
+    else if (mEslow > AGC.TARGET * 1.35) AGC.g *= 0.997;               // 平均偏大：慢慢收
+    else if (mEslow < AGC.TARGET * 0.8) AGC.g *= 1.0015;               // 平均偏小：慢慢放（几秒级，保留强弱变化）
     AGC.g = clamp(AGC.g, 1, AGC.MAX);
     if (Math.abs(micGain.gain.value - AGC.g) > 0.01) micGain.gain.value = AGC.g;
   }
@@ -1619,12 +1630,15 @@ function analyzeTempo(now){
 
 function beatInterval(){ return tempoP / (+S.mult || 1); }
 
+// 节奏敏感度 1–10 → 需要的节奏把握 0.37 → 0.05（越敏感要求越低）
+const musNeed = () => 0.405 - S.musSens * 0.035;
+// 节奏锁定：把握够了，且不是真的没声音（增益拉满还几乎听不到）
+function rhythmLocked(){ return tempoP > 0 && tempoConf >= musNeed() && !(mE < 8 && AGC.g >= AGC.MAX * 0.9); }
 function autoBeatTick(now){
   if (!tempoP || !nextBeatAt) return;
   const iv = beatInterval();
   // 敏感度 1–10：越高越容易出手（节奏把握门槛 0.37 → 0.05，静音门槛 9 → 3）
-  // 音量门槛 musThr：音量没过门槛就不电（0＝不限）
-  const ok = tempoConf >= 0.405 - S.musSens * 0.035 && mE > Math.max(S.musThr, 1);
+  const ok = rhythmLocked();
   let fireAt = nextBeatAt - S.lead;
   let guard = 0;
   while (now >= fireAt && guard++ < 8){
@@ -1746,7 +1760,7 @@ function beatStats(now){
   if (S.band === 'quiet'){
     $('#beThrL').textContent = '环境声'; $('#beThrV').textContent = now < quietLearnUntil ? '记忆中' : Math.round(quietBase);
   } else {
-    $('#beThrL').textContent = tempoP ? '节奏捕捉' : '节奏捕捉中'; $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '';
+    $('#beThrL').textContent = tempoP ? '节奏把握' : '节奏捕捉中'; $('#beThrV').textContent = tempoP ? Math.round(tempoConf * 100) + '%' : '';
   }
   $('#beV').textContent = Math.round(mE) + (S.band === 'auto' && AGC.g > 1.5 ? ` ·放大×${Math.round(AGC.g)}` : ''); $('#beatCntV').textContent = beatCount;
   $('#bpmV').textContent = bpm || '--';
@@ -2135,7 +2149,9 @@ function meterCfg(view){
     if (S.band === 'quiet') return Object.assign({v: mE, thr: quietThr,
       // 别出声的门槛＝环境声 × 倍数（有下限）；拖到哪就反算倍数
       set: t => { const base = Math.max(quietBase, 1); S.sens = +clamp(t / base, 1.1, 10).toFixed(2); quietThr = Math.max(quietBase * S.sens, quietBase + 8, 12); }}, lin160);
-    return Object.assign({v: mE, thr: S.musThr, set: t => { S.musThr = clamp(Math.round(t), 0, 120); }}, lin160);
+    // 节奏跟随：条＝节奏把握（0–100%），黄块＝要求的把握；往左拖更敏感
+    return {v: tempoConf, thr: musNeed(), good: true, lab: S.musSens, map: x => clamp(x, 0, 1), unmap: q => q,
+      set: t => { S.musSens = clamp(Math.round((0.405 - t) / 0.035 * 2) / 2, 1, 10); }};
   }
   return null;
 }
@@ -2145,9 +2161,9 @@ function meterDraw(){
     const c = meterCfg(view), el = $('#meter' + id);
     el.querySelector('i').style.width = c.map(c.v) * 100 + '%';
     el.querySelector('b').style.left = c.map(c.thr) * 100 + '%';
-    el.classList.toggle('over', c.v > c.thr);
-    $('#thrLab' + id).textContent = Math.round(c.thr);
-    if (id === 'B') $('#thrNameB').textContent = S.band === 'quiet' ? '触发阈值' : '音量阈值';
+    el.classList.toggle('over', !c.good && c.v > c.thr);
+    $('#thrLab' + id).textContent = c.lab !== undefined ? c.lab : Math.round(c.thr);
+    if (id === 'B') $('#thrNameB').textContent = S.band === 'quiet' ? '触发阈值' : '节奏敏感度';
   }
 }
 
@@ -2486,7 +2502,6 @@ bindSeg('bandSeg', 'band', () => { combo = 0; penReset(); mAvg = 0; quietBase = 
 $('#quietRelearn').onclick = () => { quietBase = 0; toast('安静 2 秒，让我记住现在的环境声 🤫'); };
 applyBand();
 bindSeg('multSeg', 'mult', () => { nextBeatAt = 0; lastAnal = 0; });
-bindRange('musSens', 'musSens');
 // 门槛条：按住黄块（或点条上任意处）拖动
 for (const [view, id] of [['motion', 'M'], ['music', 'B']]){
   const row = $('#meter' + id + 'Row'), bar = $('#meter' + id);
