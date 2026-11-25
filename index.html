@@ -11,7 +11,7 @@
 <script>
 // 版本自检：页面本身会被 GitHub Pages 缓存 10 分钟；这里用不走缓存的请求读取最新版本号，
 // 不一致就跳到带新版本号的地址（新 URL 不会命中旧缓存）。个性设置存在 localStorage，不受影响。
-const BUILD = '20261125-154403';
+const BUILD = '20261125-154942';
 (function(){
   if (location.protocol !== 'https:') return;
   window.checkUpdate = function(auto){
@@ -390,7 +390,7 @@ body.hints .hint{display:block}
   <div class="seg" id="presetSeg">
     <button data-v="constant">持续猛烈</button><button data-v="ramp">渐进加压</button><button data-v="pulse">间歇脉冲</button><button data-v="sine">呼吸同步</button><button data-v="random">🎲 随机</button><button data-v="chaos">🌀 混乱</button><button data-v="o_breath">呼吸</button><button data-v="o_tide">潮汐</button>
   </div>
-  <div class="cap">持续猛烈＝全程满力 · 渐进加压＝由轻到重 · 间歇脉冲＝一开一停 · 呼吸同步＝起起伏伏 · 随机＝随机生成一段并固定下来，再点一次「随机」换一段 · 混乱＝每一下都重新随机，完全不重样 · 呼吸 / 潮汐＝和郊狼官方 App 内置的一模一样（每次触发接着上次的位置往下放）</div>
+  <div class="cap">持续猛烈＝全程满力 · 渐进加压＝由轻到重 · 间歇脉冲＝一开一停 · 呼吸同步＝起起伏伏 · 随机＝随机生成一段并固定下来，再点一次「随机」换一段 · 混乱＝每一下都重新随机，力度和颗粒（20–200ms）都不重样 · 呼吸 / 潮汐＝和郊狼官方 App 内置的一模一样（每次触发接着上次的位置往下放）</div>
   <canvas id="waveCv" height="46" style="margin-top:8px"></canvas>
   <label class="f"><div class="lb"><span>颗粒密度<small class="sd">小＝酥麻 大＝一下下敲</small></span><b id="pfV">20</b></div><input type="range" id="pf" min="0" max="1000" step="1"><div class="ticks"><span>10</span><span>200 ms</span><span>1000</span></div><div class="hint">电脉冲之间的间隔。左半段 10–200ms 细细调（越小越密越麻），右半段 200–1000ms 是一下一下的敲打感。</div></label>
   <div class="grp"><div class="grph">更多 <small class="sd">单轮时长</small></div>
@@ -913,12 +913,14 @@ function genRandomWave(n){
   n = Math.max(3, n || Math.round((S.burstMu || 150) / 25));
   const lo = Math.min(S.minI, S.maxI), hi = Math.max(S.minI, S.maxI);
   const w = [];
-  let fPrev = clamp(S.pf * Math.pow(2, rnd(-1, 1)), 10, 1000);
+  const chaos = S.preset === 'chaos';
+  const pickF = () => chaos ? rnd(20, 200) : clamp(S.pf * Math.pow(2, rnd(-1, 1)), 10, 1000);   // 混乱：颗粒 20–200ms 全随机
+  let fPrev = pickF();
   while (w.length < n){
     const len = Math.min(n - w.length, Math.round(rnd(1, 3)));
     const shape = pick(['flat','up','down','pulse','sine','spark','spark']);
     const a = rnd(lo, hi), b = rnd(lo, hi);
-    const f0 = fPrev, f1 = clamp(S.pf * Math.pow(2, rnd(-1, 1)), 10, 1000); // 频率在段内滑动
+    const f0 = fPrev, f1 = pickF();                                         // 颗粒在段内滑动
     for (let j=0; j<len; j++){
       const k = len === 1 ? 1 : j / (len - 1);
       let I;
@@ -1442,6 +1444,7 @@ async function enableMic(){
     micStream = stream;
     await ensureAudio();
     micSrc = actx.createMediaStreamSource(stream);
+    AGC.g = clamp(S.agcG || 1, 1, AGC.MAX);
     micGain = actx.createGain(); micGain.gain.value = AGC.g;
     micSrc.connect(micGain); micGain.connect(analyser);
     micOn = true;
@@ -1525,27 +1528,39 @@ function bandStrength(k, iv){
   return clamp(r / Math.max(1e-3, bandPeak[k]), 0, 1);
 }
 
+// 起步反应：节奏还没锁定时，先跟着明显的鼓点直接电，不用等算出 BPM；锁定后交给预测节拍
+let reAvg = 0, rePrev = 0, reLast = 0;
+function reactiveOnset(v, now){
+  reAvg = reAvg ? reAvg + (v - reAvg) * 0.05 : v;
+  const thr = reAvg * 2.2 + 0.5;
+  const hit = v > thr && rePrev <= thr && now - reLast > 220;
+  rePrev = v;
+  if (!hit || envCount < 15 || rhythmLocked() || !armed || S.mode !== 'music' || S.band !== 'auto') return;   // 刚开始 0.3 秒不算（第一帧全是“变响”）
+  reLast = now; beatCount++; beatPendingMark = 1; fxBeat(1);
+  trigger(1, now, 'music');
+}
 function autoFeed(flux, now){
   hopMax = Math.max(hopMax, flux);
   if (!hopNext) hopNext = now + HOP;
   if (now >= hopNext){
-    pushEnv(hopMax, now); hopMax = 0;
+    pushEnv(hopMax, now); reactiveOnset(hopMax, now); hopMax = 0;
     hopNext += HOP; if (now - hopNext > 200) hopNext = now + HOP;
   }
   // 自动增益：太小慢慢放大，太大较快收回
   if (micGain){
     if (mE > 110) AGC.g *= 0.95;                                       // 快削峰
-    else if (mE < AGC.TARGET * 0.4) AGC.g *= 1.006;                    // 很小：快速拉起来
+    else if (mE < AGC.TARGET * 0.4) AGC.g *= 1.015;                    // 很小：快速拉起来（约每秒 4 倍）
     else if (mEslow > AGC.TARGET * 1.35) AGC.g *= 0.997;               // 平均偏大：慢慢收
     else if (mEslow < AGC.TARGET * 0.8) AGC.g *= 1.0015;               // 平均偏小：慢慢放（几秒级，保留强弱变化）
     AGC.g = clamp(AGC.g, 1, AGC.MAX);
     if (Math.abs(micGain.gain.value - AGC.g) > 0.01) micGain.gain.value = AGC.g;
+    if (now - (AGC.savedAt || 0) > 3000){ AGC.savedAt = now; S.agcG = +AGC.g.toFixed(2); save(); }   // 记住倍数，下次直接从这里开始
   }
   // 真的没声音（增益已经拉满还很小）持续 2.5 秒 → 清空，下一首从头快速锁定；
   // 以前是音量 < 8 持续 1 秒就清空，手机麦克风声音小时会一直被清掉，节奏永远锁不上
   if (mE < 8 && AGC.g >= AGC.MAX * 0.9){ if (!silentSince) silentSince = now; else if (now - silentSince > 2500 && envCount){ envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0; } }
   else silentSince = 0;
-  if (now - lastAnal > 250 && envCount >= 100){ lastAnal = now; analyzeTempo(now); }   // 有 2 秒音乐就开始判断，每 0.25 秒更新
+  if (now - lastAnal > 150 && envCount >= 60){ lastAnal = now; analyzeTempo(now); }    // 有 1.2 秒音乐就开始判断，每 0.15 秒更新
   autoBeatTick(now);
 }
 
@@ -1643,14 +1658,33 @@ function beatInterval(){ return tempoP / (+S.mult || 1); }
 // 节奏敏感度 1–10 → 需要的节奏把握 0.37 → 0.05（越敏感要求越低）
 const musNeed = () => 0.405 - S.musSens * 0.035;
 // 节奏锁定：把握够了，且不是真的没声音（增益拉满还几乎听不到）
-// 长音 / 干扰保持：刚锁定过，现在把握掉下去了（长音没有鼓点、或被键盘声打乱），但还明显有音乐声 → 继续保持 8 秒
-let lockAt = 0, Lmus = null;
-const musicPresent = () => Lmus !== null && Lfast > Lmus - 15;   // 比锁定时的音乐响度低不到 15dB，就算还有音乐
+// 锁定保持：锁定过一次之后，只要还有音乐声就一直保持输出（主歌、过门、人声段鼓点不明显时把握会掉，
+// 以前只保持 8 秒，歌没停却会空白一段）；音乐真的停了 1.5 秒才解除
+let lockAt = 0, Lmus = null, goneAt = 0;
+// 还有音乐：比锁定时的音乐响度低不到 20dB；音乐响度会跟着歌慢慢变轻 / 变响（安静下来的那一段也能跟上）
+function musicPresent(){
+  if (Lmus === null) return false;
+  if (Lfast > Lmus - 10) Lmus += (Lfast - Lmus) * 0.002;
+  return Lfast > Lmus - 20;
+}
 function rhythmLocked(){
   if (!tempoP || (mE < 8 && AGC.g >= AGC.MAX * 0.9)) return false;
   const now = performance.now();
-  if (tempoConf >= musNeed()){ lockAt = now; Lmus = Lmus === null ? Lfast : Lmus + (Lfast - Lmus) * 0.01; return true; }
-  return lockAt > 0 && now - lockAt < 8000 && musicPresent();
+  // 音乐真的停了 1.5 秒：解除，并清掉最近 6 秒的节奏记录（否则旧的鼓点还在，把握一直很高，安静了也照样电）
+  if (Lmus !== null && !musicPresent()){
+    if (!goneAt) goneAt = now;
+    if (now - goneAt > 1500){
+      lockAt = 0; goneAt = 0; Lmus = null;
+      envBuf.fill(0); envCount = 0; tempoP = 0; tempoConf = 0; candP = 0; candHits = 0; nextBeatAt = 0;
+      return false;
+    }
+  } else goneAt = 0;
+  if (tempoConf >= musNeed()){
+    lockAt = now;
+    if (Lmus === null) Lmus = Lfast; else if (Lfast > Lmus - 10) Lmus += (Lfast - Lmus) * 0.01;
+    return true;
+  }
+  return lockAt > 0;     // 锁定过：把握掉下去（没鼓点的段落、干扰）也继续，直到音乐真的停
 }
 // 有声部正在持续响（长音、尾音）超过 0.3 秒
 function sustaining(now){ for (let k = 0; k < 3; k++) if (bandOn[k] && now - bandOnAt[k] > 300) return true; return false; }
